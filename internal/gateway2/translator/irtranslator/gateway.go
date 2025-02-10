@@ -36,6 +36,7 @@ func (t *Translator) Translate(gw ir.GatewayIR, reporter reports.Reporter) Trans
 		res.Routes = append(res.Routes, routes...)
 	}
 
+	// TODO: handle add extra clusters.
 	return res
 }
 
