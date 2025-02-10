@@ -86,5 +86,7 @@ const (
 type BodyTransformation struct {
 	// +kubebuilder:default=AsString
 	ParseAs BodyParseBehavior `json:"parseAs,omitempty"`
-	Value   *InjaTemplate     `json:"value,omitempty"`
+
+	// +optional
+	Value *InjaTemplate `json:"value,omitempty"`
 }
