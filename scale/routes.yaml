@@ -1,0 +1,46 @@
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: route-{{.Index}}
+spec:
+  parentRefs:
+  - group: gateway.networking.k8s.io
+    kind: Gateway
+    name: http
+  rules:
+  - backendRefs:
+    - group: ""
+      kind: Service
+      name: kubernetes
+      port: 443
+      weight: 1
+    matches:
+    - path:
+        type: PathPrefix
+        value: /{{.Index}}
+  - backendRefs:
+    - group: "gateway.kgateway.dev"
+      kind: Backend
+      name: backend-{{.Index}}
+      weight: 1
+    filters:
+    - type: URLRewrite
+      urlRewrite:
+        path:
+          type: ReplacePrefixMatch
+          replacePrefixMatch: /anything/
+    matches:
+    - path:
+        type: PathPrefix
+        value: /foo/{{.Index}}
+---
+apiVersion: gateway.kgateway.dev/v1alpha1
+kind: Backend
+metadata:
+  name: backend-{{.Index}}
+spec:
+  type: static
+  static:
+    hosts:
+      - host: httpbin.io
+        port: 80
