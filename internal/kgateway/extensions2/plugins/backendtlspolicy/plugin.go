@@ -2,10 +2,10 @@ package backendtlspolicy
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"time"
 
+	"go.uber.org/zap"
 	"google.golang.org/protobuf/proto"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -16,16 +16,20 @@ import (
 
 	clusterv3 "github.com/envoyproxy/go-control-plane/envoy/config/cluster/v3"
 	envoy_config_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
+	envoyauth "github.com/envoyproxy/go-control-plane/envoy/extensions/transport_sockets/tls/v3"
+	envoy_type_matcher_v3 "github.com/envoyproxy/go-control-plane/envoy/type/matcher/v3"
 	"github.com/envoyproxy/go-control-plane/pkg/wellknown"
 	"github.com/solo-io/go-utils/contextutils"
 	"istio.io/istio/pkg/config/schema/kubeclient"
 	"istio.io/istio/pkg/kube/kclient"
 	"istio.io/istio/pkg/kube/krt"
 	"istio.io/istio/pkg/kube/kubetypes"
+	"istio.io/istio/pkg/ptr"
 
 	gwapiv1a2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 	gwapiv1a3 "sigs.k8s.io/gateway-api/apis/v1alpha3"
 
+	eiutils "github.com/kgateway-dev/kgateway/v2/internal/envoyinit/pkg/utils"
 	"github.com/kgateway-dev/kgateway/v2/internal/kgateway/extensions2/common"
 	extensionsplug "github.com/kgateway-dev/kgateway/v2/internal/kgateway/extensions2/plugin"
 	"github.com/kgateway-dev/kgateway/v2/internal/kgateway/ir"
@@ -121,29 +125,92 @@ func buildTranslateFunc(
 			ct: policyCR.CreationTimestamp.Time,
 		}
 
-		if len(spec.Validation.CACertificateRefs) == 0 {
+		if len(spec.Validation.CACertificateRefs) == 0 && (spec.Validation.WellKnownCACertificates == nil || *spec.Validation.WellKnownCACertificates == "") {
+			contextutils.LoggerFrom(ctx).Desugar().Warn("must specify either CACertificateRefs or WellKnownCACertificates", zap.String("policy", policyCR.Name), zap.String("namespace", policyCR.Namespace))
+			// TODO: return error
 			return &policyIr
 		}
 
-		certRef := spec.Validation.CACertificateRefs[0]
-		nn := types.NamespacedName{
-			Name:      string(certRef.Name),
-			Namespace: policyCR.Namespace,
+		var validationContext *envoyauth.CertificateValidationContext
+		tlsContext := &envoyauth.CommonTlsContext{
+			// default params
+			TlsParams: &envoyauth.TlsParameters{},
 		}
-		cfgmap := krt.FetchOne(krtctx, cfgmaps, krt.FilterObjectName(nn))
-		if cfgmap == nil {
-			contextutils.LoggerFrom(ctx).Error(errors.New(fmt.Sprintf("configmap %s not found", nn)))
-			return &policyIr
+		if len(spec.Validation.CACertificateRefs) > 0 {
+			certRef := spec.Validation.CACertificateRefs[0]
+			nn := types.NamespacedName{
+				Name:      string(certRef.Name),
+				Namespace: policyCR.Namespace,
+			}
+			cfgmap := ptr.Flatten(krt.FetchOne(krtctx, cfgmaps, krt.FilterObjectName(nn)))
+			if cfgmap == nil {
+				contextutils.LoggerFrom(ctx).Error(fmt.Errorf("configmap %s not found", nn))
+				return &policyIr
+			}
+			var err error
+			validationContext, err = getValidationContext(cfgmap)
+			if err != nil {
+				contextutils.LoggerFrom(ctx).Error(fmt.Errorf("could not create TLS config, err: %w", err))
+				return &policyIr
+			}
+			tlsContext.ValidationContextType = &envoyauth.CommonTlsContext_ValidationContext{
+				ValidationContext: validationContext,
+			}
+
+		} else {
+			switch *spec.Validation.WellKnownCACertificates {
+			case gwapiv1a3.WellKnownCACertificatesSystem:
+
+				sdsValidationCtx := &envoyauth.SdsSecretConfig{
+					Name: eiutils.SystemCaSecretName,
+				}
+				validationContext = &envoyauth.CertificateValidationContext{}
+				tlsContext.ValidationContextType = &envoyauth.CommonTlsContext_CombinedValidationContext{
+					CombinedValidationContext: &envoyauth.CommonTlsContext_CombinedCertificateValidationContext{
+						DefaultValidationContext:         validationContext,
+						ValidationContextSdsSecretConfig: sdsValidationCtx,
+					},
+				}
+
+			default:
+				// TODO: return error
+			}
+
+		}
+		tlsCfg := &envoyauth.UpstreamTlsContext{
+			CommonTlsContext: tlsContext,
+		}
+		tlsCfg.Sni = string(spec.Validation.Hostname)
+		for _, san := range spec.Validation.SubjectAltNames {
+			sanMatcher := &envoyauth.SubjectAltNameMatcher{}
+			switch san.Type {
+			case gwapiv1a3.HostnameSubjectAltNameType:
+				sanMatcher.SanType = envoyauth.SubjectAltNameMatcher_DNS
+				sanMatcher.Matcher = &envoy_type_matcher_v3.StringMatcher{
+					MatchPattern: &envoy_type_matcher_v3.StringMatcher_Exact{
+						Exact: string(san.Hostname),
+					},
+				}
+			case gwapiv1a3.URISubjectAltNameType:
+				sanMatcher.SanType = envoyauth.SubjectAltNameMatcher_URI
+				sanMatcher.Matcher = &envoy_type_matcher_v3.StringMatcher{
+					MatchPattern: &envoy_type_matcher_v3.StringMatcher_Exact{
+						Exact: string(san.URI),
+					},
+				}
+			default:
+				contextutils.LoggerFrom(ctx).Error(fmt.Errorf("unsupported SAN type: %s", san.Type))
+				// TODO: return error
+				return &policyIr
+			}
+
+			validationContext.MatchTypedSubjectAltNames = append(validationContext.MatchTypedSubjectAltNames, sanMatcher)
+
 		}
 
-		tlsCfg, err := ResolveUpstreamSslConfig(*cfgmap, string(spec.Validation.Hostname))
-		if err != nil {
-			contextutils.LoggerFrom(ctx).Error(errors.New(fmt.Sprintf("could not create TLS config, err: %s", err)))
-			return &policyIr
-		}
 		typedConfig, err := utils.MessageToAny(tlsCfg)
 		if err != nil {
-			contextutils.LoggerFrom(ctx).Error(errors.New(fmt.Sprintf("could not convert TLS config to proto, err: %s", err)))
+			contextutils.LoggerFrom(ctx).Error(fmt.Errorf("could not convert TLS config to proto, err: %w", err))
 			return &policyIr
 		}
 
@@ -153,6 +220,7 @@ func buildTranslateFunc(
 				TypedConfig: typedConfig,
 			},
 		}
+
 		return &policyIr
 	}
 }

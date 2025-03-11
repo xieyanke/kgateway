@@ -25,6 +25,7 @@ var (
 	manifests = []string{
 		filepath.Join(fsutils.MustGetThisDir(), "inputs/base.yaml"),
 		filepath.Join(fsutils.MustGetThisDir(), "inputs/nginx.yaml"),
+		filepath.Join(fsutils.MustGetThisDir(), "inputs/httpbin.yaml"),
 		defaults.CurlPodManifest,
 	}
 	proxyObjMeta = metav1.ObjectMeta{
@@ -97,5 +98,42 @@ func (s *clientTlsTestingSuite) TestRouteSecureRequestToUpstream() {
 		&matchers.HttpResponse{
 			StatusCode: http.StatusOK,
 			Body:       gomega.ContainSubstring(defaults.NginxResponse),
+		})
+}
+
+func (s *clientTlsTestingSuite) TestRouteSecureRequestWithSystemTrust() {
+	s.T().Cleanup(func() {
+		for _, manifest := range manifests {
+			err := s.testInstallation.Actions.Kubectl().DeleteFileSafe(s.ctx, manifest)
+			s.Require().NoError(err)
+		}
+		s.testInstallation.Assertions.EventuallyObjectsNotExist(s.ctx, proxyService, proxyDeployment, backendTlsPolicy)
+	})
+
+	for _, manifest := range manifests {
+		err := s.testInstallation.Actions.Kubectl().ApplyFile(s.ctx, manifest)
+		s.Require().NoError(err)
+	}
+
+	s.testInstallation.Assertions.EventuallyObjectsExist(s.ctx, proxyService, proxyDeployment, backendTlsPolicy)
+	// TODO: make this a specific assertion to remove the need for c/p the label selector
+	s.testInstallation.Assertions.EventuallyPodsRunning(s.ctx, defaults.CurlPod.GetNamespace(), metav1.ListOptions{
+		LabelSelector: "app.kubernetes.io/name=curl",
+	})
+	s.testInstallation.Assertions.EventuallyPodsRunning(s.ctx, proxyObjMeta.GetNamespace(), metav1.ListOptions{
+		LabelSelector: "app.kubernetes.io/name=gw",
+	})
+
+	s.testInstallation.Assertions.AssertEventualCurlResponse(
+		s.ctx,
+		defaults.CurlPodExecOpt,
+		[]curl.Option{
+			curl.WithHost(kubeutils.ServiceFQDN(proxyService.ObjectMeta)),
+			curl.WithHostHeader("httpbin.io"),
+			curl.WithPath("/anything/1"),
+		},
+		&matchers.HttpResponse{
+			StatusCode: http.StatusOK,
+			Body:       gomega.ContainSubstring("http://httpbin.io/anything/1"),
 		})
 }

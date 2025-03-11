@@ -14,7 +14,7 @@ import (
 
 var noKeyFoundMsg = "no key ca.crt found"
 
-func ResolveUpstreamSslConfig(cm *corev1.ConfigMap, sni string) (*envoyauth.UpstreamTlsContext, error) {
+func ResolveUpstreamSslConfig(cm *corev1.ConfigMap) (*envoyauth.UpstreamTlsContext, error) {
 	common, err := ResolveCommonSslConfig(cm, false)
 	if err != nil {
 		return nil, err
@@ -22,7 +22,6 @@ func ResolveUpstreamSslConfig(cm *corev1.ConfigMap, sni string) (*envoyauth.Upst
 
 	return &envoyauth.UpstreamTlsContext{
 		CommonTlsContext: common,
-		Sni:              sni,
 	}, nil
 }
 
@@ -55,6 +54,25 @@ func ResolveCommonSslConfig(cm *corev1.ConfigMap, mustHaveCert bool) (*envoyauth
 	// }
 	tlsContext.ValidationContextType = validationCtx
 	return tlsContext, err
+}
+
+func getValidationContext(cm *corev1.ConfigMap) (*envoyauth.CertificateValidationContext, error) {
+	caCrt, err := getSslSecrets(cm)
+	if err != nil {
+		return nil, err
+	}
+
+	// TODO: should we do some validation on the CA?
+	caCrtData := envoycore.DataSource{
+		Specifier: &envoycore.DataSource_InlineString{
+			InlineString: caCrt,
+		},
+	}
+
+	return &envoyauth.CertificateValidationContext{
+		TrustedCa: &caCrtData,
+	}, nil
+
 }
 
 func getSslSecrets(cm *corev1.ConfigMap) (string, error) {

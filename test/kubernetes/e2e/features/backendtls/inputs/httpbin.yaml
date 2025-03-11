@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: httpbin
+spec:
+  externalName: httpbin.io
+  ports:
+    - protocol: TCP
+      port: 443
+      name: https
