@@ -10,6 +10,7 @@ import (
 	envoy_service_listener_v3 "github.com/envoyproxy/go-control-plane/envoy/service/listener/v3"
 	envoy_service_route_v3 "github.com/envoyproxy/go-control-plane/envoy/service/route/v3"
 	envoycache "github.com/envoyproxy/go-control-plane/pkg/cache/v3"
+	"github.com/envoyproxy/go-control-plane/pkg/server/sotw/v3"
 	xdsserver "github.com/envoyproxy/go-control-plane/pkg/server/v3"
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	grpc_zap "github.com/grpc-ecosystem/go-grpc-middleware/logging/zap"
@@ -56,7 +57,7 @@ func NewControlPlaneWithListener(ctx context.Context,
 
 	snapshotCache := envoycache.NewSnapshotCache(true, xds.NewNodeRoleHasher(), logger.Sugar())
 
-	xdsServer := xdsserver.NewServer(ctx, snapshotCache, callbacks)
+	xdsServer := xdsserver.NewServer(ctx, snapshotCache, addErrorLogs(callbacks, logger), sotw.WithOrderedADS())
 	reflection.Register(grpcServer)
 
 	envoy_service_endpoint_v3.RegisterEndpointDiscoveryServiceServer(grpcServer, xdsServer)
@@ -68,4 +69,20 @@ func NewControlPlaneWithListener(ctx context.Context,
 	go grpcServer.Serve(lis)
 
 	return snapshotCache, grpcServer
+}
+
+type errorLoggingCallbacks struct {
+	xdsserver.Callbacks
+	logger *zap.Logger
+}
+
+func (c *errorLoggingCallbacks) OnStreamRequest(streamID int64, req *envoy_service_discovery_v3.DiscoveryRequest) error {
+	if req.ErrorDetail != nil {
+		c.logger.Warn("envoy NACK:", zap.Int32("errorCode", req.ErrorDetail.Code), zap.String("errorMessage", req.ErrorDetail.Message))
+	}
+	return c.Callbacks.OnStreamRequest(streamID, req)
+}
+
+func addErrorLogs(callbacks xdsserver.Callbacks, logger *zap.Logger) xdsserver.Callbacks {
+	return &errorLoggingCallbacks{Callbacks: callbacks, logger: logger}
 }
