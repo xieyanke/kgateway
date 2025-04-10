@@ -5,6 +5,7 @@ metadata:
   name: test-waypoint
 spec:
   gatewayClassName: kgateway-waypoint
+  listeners: []
   infrastructure:
     parametersRef:
       name: test-waypoint-params
