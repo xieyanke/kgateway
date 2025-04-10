@@ -1,4 +1,3 @@
-
 apiVersion: gateway.networking.k8s.io/v1
 kind: Gateway
 metadata:
@@ -6,6 +5,10 @@ metadata:
   namespace: infra
 spec:
   gatewayClassName: kgateway-waypoint
+  listeners:
+  - name: proxy
+    port: 15099
+    protocol: istio.io/PROXY
 ---
 # we should get a filter chain with a default virtualhost that just
 # sends traffic to the corresponding `kube` Service backend

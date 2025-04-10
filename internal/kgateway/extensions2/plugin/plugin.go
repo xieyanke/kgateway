@@ -27,14 +27,16 @@ func (a AttachmentPoints) Has(p AttachmentPoints) bool {
 	return a&p != 0
 }
 
-type GetBackendForRefPlugin func(kctx krt.HandlerContext, key ir.ObjectSource, port int32) *ir.BackendObjectIR
-type ProcessBackend func(ctx context.Context, pol ir.PolicyIR, in ir.BackendObjectIR, out *envoy_config_cluster_v3.Cluster)
-type EndpointPlugin func(
-	kctx krt.HandlerContext,
-	ctx context.Context,
-	ucc ir.UniqlyConnectedClient,
-	in ir.EndpointsForBackend,
-) (*envoy_config_endpoint_v3.ClusterLoadAssignment, uint64)
+type (
+	GetBackendForRefPlugin func(kctx krt.HandlerContext, key ir.ObjectSource, port int32) *ir.BackendObjectIR
+	ProcessBackend         func(ctx context.Context, pol ir.PolicyIR, in ir.BackendObjectIR, out *envoy_config_cluster_v3.Cluster)
+	EndpointPlugin         func(
+		kctx krt.HandlerContext,
+		ctx context.Context,
+		ucc ir.UniqlyConnectedClient,
+		in ir.EndpointsForBackend,
+	) (*envoy_config_endpoint_v3.ClusterLoadAssignment, uint64)
+)
 
 // TODO: consider changing PerClientProcessBackend to look like this:
 // PerClientProcessBackend  func(kctx krt.HandlerContext, ctx context.Context, ucc ir.UniqlyConnectedClient, in ir.BackendObjectIR)
@@ -72,6 +74,10 @@ type BackendPlugin struct {
 }
 
 type KGwTranslator interface {
+	// Transform allows modifying a Gateway early, as they enter the GatewayIndex.
+	// All plugins and translators will get this modified ir.Gateway.
+	Transform(gateway ir.Gateway) ir.Gateway
+
 	// This function is called by the reconciler when a K8s Gateway resource is created or updated.
 	// It returns an instance of the kgateway Proxy resource, that should configure a target kgateway Proxy workload.
 	// A null return value indicates the K8s Gateway resource failed to translate into a kgateway Proxy. The error will be reported on the provided reporter.
@@ -80,8 +86,10 @@ type KGwTranslator interface {
 		gateway *ir.Gateway,
 		reporter reports.Reporter) *ir.GatewayIR
 }
-type GwTranslatorFactory func(gw *gwv1.Gateway) KGwTranslator
-type ContributesPolicies map[schema.GroupKind]PolicyPlugin
+type (
+	GwTranslatorFactory func(gw *gwv1.Gateway) KGwTranslator
+	ContributesPolicies map[schema.GroupKind]PolicyPlugin
+)
 
 type Plugin struct {
 	ContributesPolicies     ContributesPolicies
@@ -94,9 +102,11 @@ type Plugin struct {
 	ExtraHasSynced func() bool
 }
 
-type AncestorReports map[ir.ObjectSource][]error
-type PolicyReport map[ir.AttachedPolicyRef]AncestorReports
-type ProcessPolicyStatus func(ctx context.Context, gkString string, polReport PolicyReport)
+type (
+	AncestorReports     map[ir.ObjectSource][]error
+	PolicyReport        map[ir.AttachedPolicyRef]AncestorReports
+	ProcessPolicyStatus func(ctx context.Context, gkString string, polReport PolicyReport)
+)
 
 func (p PolicyPlugin) AttachmentPoints() AttachmentPoints {
 	var ret AttachmentPoints

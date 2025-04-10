@@ -14,10 +14,6 @@ metadata:
   namespace: infra
 spec:
   gatewayClassName: kgateway-waypoint
-  listeners:
-  - name: proxy
-    port: 15088
-    protocol: istio.io/PROXY
 ---
 # we should get a filter chain with a default virtualhost that just
 # sends traffic to the corresponding `kube` Service backend

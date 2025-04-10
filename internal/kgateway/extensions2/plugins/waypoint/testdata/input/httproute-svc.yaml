@@ -14,10 +14,6 @@ metadata:
   namespace: infra
 spec:
   gatewayClassName: kgateway-waypoint
-  listeners:
-  - name: proxy
-    port: 15088
-    protocol: istio.io/PROXY
 ---
 # HTTPRoute parented to the Service only affects one chain
 apiVersion: gateway.networking.k8s.io/v1

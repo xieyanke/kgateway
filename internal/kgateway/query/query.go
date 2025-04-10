@@ -102,7 +102,7 @@ type GatewayQueries interface {
 	GetSecretForRef(kctx krt.HandlerContext, ctx context.Context, fromGk schema.GroupKind, fromns string, secretRef apiv1.SecretObjectReference) (*ir.Secret, error)
 
 	// GetRoutesForGateway finds the top level xRoutes attached to the provided Gateway
-	GetRoutesForGateway(kctx krt.HandlerContext, ctx context.Context, gw *gwv1.Gateway) (*RoutesForGwResult, error)
+	GetRoutesForGateway(kctx krt.HandlerContext, ctx context.Context, gw *ir.Gateway) (*RoutesForGwResult, error)
 	// GetRouteChain resolves backends and delegated routes for a the provided xRoute object
 	GetRouteChain(kctx krt.HandlerContext,
 		ctx context.Context,
@@ -152,7 +152,7 @@ type gatewayQueries struct {
 	collections *common.CommonCollections
 }
 
-func parentRefMatchListener(ref *apiv1.ParentReference, l *apiv1.Listener) bool {
+func parentRefMatchListener(ref *apiv1.ParentReference, l *ir.Listener) bool {
 	if ref != nil && ref.Port != nil && *ref.Port != l.Port {
 		return false
 	}
@@ -168,7 +168,7 @@ func parentRefMatchListener(ref *apiv1.ParentReference, l *apiv1.Listener) bool 
 //   - HTTPRoute
 //   - TCPRoute
 //   - TLSRoute
-func getParentRefsForGw(gw *apiv1.Gateway, obj ir.Route) []apiv1.ParentReference {
+func getParentRefsForGw(gw *ir.Gateway, obj ir.Route) []apiv1.ParentReference {
 	var ret []apiv1.ParentReference
 
 	for _, pRef := range obj.GetParentRefs() {
@@ -181,7 +181,7 @@ func getParentRefsForGw(gw *apiv1.Gateway, obj ir.Route) []apiv1.ParentReference
 }
 
 // isParentRefForGw checks if a ParentReference is associated with the provided Gateway.
-func isParentRefForGw(pRef *apiv1.ParentReference, gw *apiv1.Gateway, defaultNs string) bool {
+func isParentRefForGw(pRef *apiv1.ParentReference, gw *ir.Gateway, defaultNs string) bool {
 	if gw == nil || pRef == nil {
 		return false
 	}
@@ -201,7 +201,7 @@ func isParentRefForGw(pRef *apiv1.ParentReference, gw *apiv1.Gateway, defaultNs 
 	return ns == gw.Namespace && string(pRef.Name) == gw.Name
 }
 
-func hostnameIntersect(l *apiv1.Listener, routeHostnames []string) (bool, []string) {
+func hostnameIntersect(l *ir.Listener, routeHostnames []string) (bool, []string) {
 	var hostnames []string
 	if l == nil {
 		return false, hostnames

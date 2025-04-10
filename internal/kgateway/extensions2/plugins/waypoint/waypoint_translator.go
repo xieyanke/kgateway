@@ -144,8 +144,21 @@ var waypointSupportedKinds = []gwv1.RouteGroupKind{
 	},
 }
 
-// TODO allow _not_ specifying any listeners and inferring the specific
-// structure we expect with reasonable defaults (15088)
+func (w *waypointTranslator) Transform(gateway ir.Gateway) ir.Gateway {
+	// if we have 0 listeners on the Gateway spec, create a synthetic one
+	if len(gateway.Listeners) == 0 {
+		gateway.Listeners = append(gateway.Listeners, ir.Listener{
+			Listener: gwv1.Listener{
+				Name:     "mesh",
+				Port:     15088,
+				Protocol: IstioPROXYProtocol,
+				// TODO default AllowedRoutes?
+			},
+		})
+	}
+	return gateway
+}
+
 func (w *waypointTranslator) buildInboundListener(gw *ir.Gateway, reporter reports.GatewayReporter) (*ir.ListenerIR, *ir.Listener) {
 	// find the single inbound listener
 	var gatewayListener *ir.Listener
@@ -213,7 +226,7 @@ func (t *waypointTranslator) fetchGatewayRoutes(
 	reporter reports.Reporter,
 	gwReporter reports.GatewayReporter,
 ) ([]*query.RouteInfo, error) {
-	gwRoutes, err := t.queries.GetRoutesForGateway(kctx, ctx, gw.Obj)
+	gwRoutes, err := t.queries.GetRoutesForGateway(kctx, ctx, gw)
 	if err != nil {
 		gwReporter.SetCondition(reports.GatewayCondition{
 			Type:    gwv1.GatewayConditionProgrammed,

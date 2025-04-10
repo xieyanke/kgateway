@@ -131,7 +131,7 @@ func (r *gatewayQueries) GetRouteChain(
 	}
 }
 
-func (r *gatewayQueries) allowedRoutes(gw *gwv1.Gateway, l *gwv1.Listener) (func(krt.HandlerContext, string) bool, []metav1.GroupKind, error) {
+func (r *gatewayQueries) allowedRoutes(gw *ir.Gateway, l *ir.Listener) (func(krt.HandlerContext, string) bool, []metav1.GroupKind, error) {
 	var allowedKinds []metav1.GroupKind
 
 	// Determine the allowed route kinds based on the listener's protocol
@@ -283,7 +283,7 @@ func (r *gatewayQueries) fetchChildRoutes(
 	return refChildren, nil
 }
 
-func (r *gatewayQueries) GetRoutesForGateway(kctx krt.HandlerContext, ctx context.Context, gw *gwv1.Gateway) (*RoutesForGwResult, error) {
+func (r *gatewayQueries) GetRoutesForGateway(kctx krt.HandlerContext, ctx context.Context, gw *ir.Gateway) (*RoutesForGwResult, error) {
 	nns := types.NamespacedName{
 		Namespace: gw.Namespace,
 		Name:      gw.Name,
@@ -304,7 +304,7 @@ func (r *gatewayQueries) GetRoutesForGateway(kctx krt.HandlerContext, ctx contex
 func (r *gatewayQueries) processRoute(
 	kctx krt.HandlerContext,
 	ctx context.Context,
-	gw *gwv1.Gateway,
+	gw *ir.Gateway,
 	route ir.Route,
 	ret *RoutesForGwResult,
 ) error {
@@ -316,7 +316,7 @@ func (r *gatewayQueries) processRoute(
 		anyListenerMatched := false
 		anyHostsMatch := false
 
-		for _, l := range gw.Spec.Listeners {
+		for _, l := range gw.Listeners {
 			lr := ret.ListenerResults[string(l.Name)]
 			if lr == nil {
 				lr = &ListenerResult{}

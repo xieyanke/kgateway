@@ -97,7 +97,7 @@ func InitCollections(
 	backendIndex := NewBackendIndex(krtopts, backendRefPlugins, policies, refgrants)
 	initBackends(plugins, backendIndex)
 	endpointIRs := initEndpoints(plugins, krtopts)
-	gateways := NewGatewayIndex(krtopts, controllerName, policies, kubeRawGateways, gatewayClasses)
+	gateways := NewGatewayIndex(krtopts, controllerName, policies, kubeRawGateways, gatewayClasses, plugins.ContributesGwTranslator)
 
 	routes := NewRoutesIndex(krtopts, httpRoutes, tcproutes, tlsRoutes, policies, backendIndex, refgrants)
 	return gateways, routes, backendIndex, endpointIRs

@@ -6,10 +6,3 @@ metadata:
   namespace: httpbin
 spec:
   gatewayClassName: kgateway-waypoint
-  listeners:
-  - protocol: istio.io/PROXY
-    port: 15088
-    name: mesh
-    allowedRoutes:
-      namespaces:
-        from: Same

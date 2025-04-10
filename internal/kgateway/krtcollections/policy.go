@@ -162,6 +162,7 @@ func NewGatewayIndex(
 	policies *PolicyIndex,
 	gws krt.Collection[*gwv1.Gateway],
 	gwClasses krt.Collection[*gwv1.GatewayClass],
+	translatorFactory extensionsplug.GwTranslatorFactory,
 ) *GatewayIndex {
 	h := &GatewayIndex{policies: policies}
 
@@ -183,15 +184,36 @@ func NewGatewayIndex(
 			Listeners: make([]ir.Listener, 0, len(i.Spec.Listeners)),
 		}
 
+		// build initial listeners without policy before transform
+		for _, l := range i.Spec.Listeners {
+			out.Listeners = append(out.Listeners, ir.Listener{
+				Listener: l,
+			})
+		}
+
+		// apply transformation if applicable for this gw
+		var translator extensionsplug.KGwTranslator
+		if translatorFactory != nil {
+			translator = translatorFactory(i)
+			if translator != nil {
+				out = translator.Transform(out)
+			}
+		}
+
+		// perform policy attachment after calling transform
 		// TODO: http polic
 		//		panic("TODO: implement http policies not just listener")
 		out.AttachedListenerPolicies = toAttachedPolicies(h.policies.getTargetingPolicies(kctx, extensionsplug.GatewayAttachmentPoint, out.ObjectSource, ""))
 		out.AttachedHttpPolicies = out.AttachedListenerPolicies // see if i can find a better way to segment the listener level and http level policies
-		for _, l := range i.Spec.Listeners {
-			out.Listeners = append(out.Listeners, ir.Listener{
-				Listener:         l,
-				AttachedPolicies: toAttachedPolicies(h.policies.getTargetingPolicies(kctx, extensionsplug.RouteAttachmentPoint, out.ObjectSource, string(l.Name))),
-			})
+		for i, l := range out.Listeners {
+			out.Listeners[i].AttachedPolicies = toAttachedPolicies(
+				h.policies.getTargetingPolicies(
+					kctx,
+					extensionsplug.RouteAttachmentPoint,
+					out.ObjectSource,
+					string(l.Name),
+				),
+			)
 		}
 
 		return &out
@@ -295,6 +317,7 @@ func NewPolicyIndex(krtopts krtutil.KrtOptions, contributesPolicies extensionspl
 
 	return index
 }
+
 func (p *PolicyIndex) fetchByTargetRef(
 	kctx krt.HandlerContext,
 	targetRef targetRefIndexKey,

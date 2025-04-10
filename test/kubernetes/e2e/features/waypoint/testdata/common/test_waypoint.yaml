@@ -10,10 +10,6 @@ spec:
       name: test-waypoint-params
       group: gateway.kgateway.dev
       kind: GatewayParameters
-  listeners:
-  - name: proxy
-    port: 15088
-    protocol: istio.io/PROXY
 ---
 # to provide a waypoint gateway with a readiness probe
 kind: GatewayParameters
@@ -31,4 +27,4 @@ spec:
         periodSeconds: 10
         timeoutSeconds: 2
         failureThreshold: 3
-        successThreshold: 1      
+        successThreshold: 1

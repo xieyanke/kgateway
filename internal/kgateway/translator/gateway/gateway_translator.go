@@ -27,6 +27,10 @@ type translator struct {
 	queries query.GatewayQueries
 }
 
+func (t *translator) Transform(gateway ir.Gateway) ir.Gateway {
+	return gateway
+}
+
 func (t *translator) Translate(
 	kctx krt.HandlerContext,
 	ctx context.Context,
@@ -39,7 +43,7 @@ func (t *translator) Translate(
 
 	ctx = contextutils.WithLogger(ctx, "k8s-gateway-translator")
 	logger := contextutils.LoggerFrom(ctx)
-	routesForGw, err := t.queries.GetRoutesForGateway(kctx, ctx, gateway.Obj)
+	routesForGw, err := t.queries.GetRoutesForGateway(kctx, ctx, gateway)
 	if err != nil {
 		logger.Errorf("failed to get routes for gateway %.%ss: %v", gateway.Namespace, gateway.Name, err)
 		// TODO: decide how/if to report this error on Gateway
