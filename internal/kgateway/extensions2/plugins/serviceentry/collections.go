@@ -123,7 +123,7 @@ func (sw selectedWorkload) Equals(o selectedWorkload) bool {
 		maps.Equal(sw.portMapping, o.portMapping)
 }
 
-type serviceEntryCollections struct {
+type serviceEntryPlugin struct {
 	logger *zap.SugaredLogger
 
 	// core inputs
@@ -144,7 +144,7 @@ type serviceEntryCollections struct {
 func initServiceEntryCollections(
 	ctx context.Context,
 	commonCols *common.CommonCollections,
-) serviceEntryCollections {
+) serviceEntryPlugin {
 	logger := contextutils.LoggerFrom(ctx).Named("serviceentry")
 
 	// setup input collections
@@ -178,7 +178,7 @@ func initServiceEntryCollections(
 		}
 	})
 
-	return serviceEntryCollections{
+	return serviceEntryPlugin{
 		logger: contextutils.LoggerFrom(ctx),
 
 		ServiceEntries:  commonCols.ServiceEntries,
@@ -194,7 +194,7 @@ func initServiceEntryCollections(
 	}
 }
 
-func (s *serviceEntryCollections) HasSynced() bool {
+func (s *serviceEntryPlugin) HasSynced() bool {
 	if s == nil {
 		return false
 	}
