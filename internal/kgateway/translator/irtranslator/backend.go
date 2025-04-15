@@ -103,7 +103,7 @@ func (t *BackendTranslator) runPolicies(
 	}
 
 	// if no plugin initialized the inline CLA, and the cluster type needs one, do it now
-	if out.LoadAssignment == nil && inlineEps != nil && clusterSupportsInlineCLA(out) {
+	if out.GetLoadAssignment() == nil && inlineEps != nil && clusterSupportsInlineCLA(out) {
 		out.LoadAssignment = endpoints.PrioritizeEndpoints(
 			contextutils.LoggerFrom(ctx).Desugar(), // TODO BackendTranslator's logger
 			nil,

@@ -12,12 +12,11 @@ import (
 )
 
 type BackendInit struct {
-	// InitBackend optionally returns an `*ir.EndpointsForBackend`.
-	// If the returned EndpointsForBackend is non-nil, and the out Cluster is a type
-	// that supports using the inline ClusterLoadAssignment, we will build the CLA
-	// using those EndpointsForBackend and apply endpoint plugins on them.
-	// Ignored if PolicyPlugin sets the CLA via ProcessBackend or PerClientProcessBackend,
-	// as those plugins should utilize these EndpointsForBackend.
+	// InitBackend optionally returns an `*ir.EndpointsForBackend` that can be used
+	// to initialize a ClusterLoadAssignment inline on the Cluster, with proper locality
+	// based prioritization applied, as well as endpoint plugins applied.
+	// This will never override a ClusterLoadAssignment that is set inside of an InitBackend implementation.
+	// The CLA is only added if the Cluster has a compatible type (EDS, LOGICAL_DNS, STRICT_DNS).
 	InitBackend func(ctx context.Context, in BackendObjectIR, out *envoy_config_cluster_v3.Cluster) *EndpointsForBackend
 }
 

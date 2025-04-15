@@ -16,11 +16,9 @@ import (
 	"github.com/kgateway-dev/kgateway/v2/internal/kgateway/utils/krtutil"
 )
 
-// buildInlineCLA creates a CLA for non-EDS ServiceEntry.
-// TODO it would be nice to re-use the EndpointsForBackend collection to handle this.
-// rather than doing it as part of `initBackend` which doesn't have a way to apply
-// DestinationRule (or any per-client policy) properly.
-func (s *serviceEntryPlugin) buildInlineCLA(ctx context.Context, be ir.BackendObjectIR, se *networkingclient.ServiceEntry) *ir.EndpointsForBackend {
+// buildInlineEndpoints creates a static EndpointsForBackend for non-EDS a ServiceEntry using
+// the inline endpoints (or hosts field for DNS resolution without endpoints).
+func (s *serviceEntryPlugin) buildInlineEndpoints(ctx context.Context, be ir.BackendObjectIR, se *networkingclient.ServiceEntry) *ir.EndpointsForBackend {
 	var inlineWorkloads []selectedWorkload
 	for i, e := range se.Spec.GetEndpoints() {
 		converted := selectedWorkloadFromEntry(
