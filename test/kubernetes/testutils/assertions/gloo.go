@@ -14,7 +14,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 
-	"github.com/kgateway-dev/kgateway/v2/internal/kgateway/wellknown"
+	"github.com/kgateway-dev/kgateway/v2/pkg/kgateway/wellknown"
 	"github.com/kgateway-dev/kgateway/v2/pkg/utils/controllerutils/admincli"
 	"github.com/kgateway-dev/kgateway/v2/pkg/utils/kubeutils/portforward"
 	"github.com/kgateway-dev/kgateway/v2/pkg/utils/requestutils/curl"

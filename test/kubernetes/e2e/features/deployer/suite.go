@@ -17,7 +17,7 @@ import (
 	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
 
 	"github.com/kgateway-dev/kgateway/v2/api/v1alpha1"
-	"github.com/kgateway-dev/kgateway/v2/internal/kgateway/wellknown"
+	"github.com/kgateway-dev/kgateway/v2/pkg/kgateway/wellknown"
 	"github.com/kgateway-dev/kgateway/v2/pkg/utils/envoyutils/admincli"
 	"github.com/kgateway-dev/kgateway/v2/test/kubernetes/e2e"
 	testdefaults "github.com/kgateway-dev/kgateway/v2/test/kubernetes/e2e/defaults"

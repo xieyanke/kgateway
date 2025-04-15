@@ -13,7 +13,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/kgateway-dev/kgateway/v2/internal/kgateway/crds"
+	"github.com/kgateway-dev/kgateway/v2/pkg/kgateway/crds"
 )
 
 var (

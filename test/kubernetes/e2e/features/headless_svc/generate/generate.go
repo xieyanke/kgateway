@@ -8,7 +8,7 @@ import (
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/kgateway-dev/kgateway/v2/internal/gloo/pkg/defaults"
+	"github.com/kgateway-dev/kgateway/v2/pkg/gloo/pkg/defaults"
 	"github.com/kgateway-dev/kgateway/v2/pkg/utils/fsutils"
 	"github.com/kgateway-dev/kgateway/v2/test/kubernetes/e2e/features/headless_svc"
 	"github.com/kgateway-dev/kgateway/v2/test/kubernetes/testutils/resources"

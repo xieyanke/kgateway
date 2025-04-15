@@ -17,9 +17,9 @@ import (
 	"github.com/solo-io/solo-kit/pkg/api/v1/resources"
 	"github.com/solo-io/solo-kit/pkg/api/v1/resources/core"
 
-	v1 "github.com/kgateway-dev/kgateway/v2/internal/gateway/pkg/api/v1"
-	extauthv1 "github.com/kgateway-dev/kgateway/v2/internal/gloo/pkg/api/v1/enterprise/options/extauth/v1"
-	gloov1static "github.com/kgateway-dev/kgateway/v2/internal/gloo/pkg/api/v1/options/static"
+	v1 "github.com/kgateway-dev/kgateway/v2/pkg/gateway/pkg/api/v1"
+	extauthv1 "github.com/kgateway-dev/kgateway/v2/pkg/gloo/pkg/api/v1/enterprise/options/extauth/v1"
+	gloov1static "github.com/kgateway-dev/kgateway/v2/pkg/gloo/pkg/api/v1/options/static"
 	testmatchers "github.com/kgateway-dev/kgateway/v2/test/gomega/matchers"
 	"github.com/kgateway-dev/kgateway/v2/test/helpers"
 
@@ -30,9 +30,9 @@ import (
 
 	"github.com/kgateway-dev/kgateway/v2/test/e2e"
 
-	gloov1 "github.com/kgateway-dev/kgateway/v2/internal/gloo/pkg/api/v1"
-	"github.com/kgateway-dev/kgateway/v2/internal/gloo/pkg/api/v1/core/matchers"
-	"github.com/kgateway-dev/kgateway/v2/internal/gloo/pkg/api/v1/options/transformation"
+	gloov1 "github.com/kgateway-dev/kgateway/v2/pkg/gloo/pkg/api/v1"
+	"github.com/kgateway-dev/kgateway/v2/pkg/gloo/pkg/api/v1/core/matchers"
+	"github.com/kgateway-dev/kgateway/v2/pkg/gloo/pkg/api/v1/options/transformation"
 )
 
 var _ = Describe("Staged Transformation", FlakeAttempts(3), func() {

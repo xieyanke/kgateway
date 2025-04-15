@@ -10,8 +10,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 
-	gatewayv1 "github.com/kgateway-dev/kgateway/v2/internal/gateway/pkg/api/v1"
-	"github.com/kgateway-dev/kgateway/v2/internal/gateway/pkg/defaults"
+	gatewayv1 "github.com/kgateway-dev/kgateway/v2/pkg/gateway/pkg/api/v1"
+	"github.com/kgateway-dev/kgateway/v2/pkg/gateway/pkg/defaults"
 	"github.com/kgateway-dev/kgateway/v2/test/gomega/matchers"
 	"github.com/kgateway-dev/kgateway/v2/test/helpers"
 	testdefaults "github.com/kgateway-dev/kgateway/v2/test/kubernetes/e2e/defaults"

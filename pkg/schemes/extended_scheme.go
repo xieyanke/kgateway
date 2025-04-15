@@ -10,7 +10,7 @@ import (
 	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/rest"
 
-	"github.com/kgateway-dev/kgateway/v2/internal/kgateway/wellknown"
+	"github.com/kgateway-dev/kgateway/v2/pkg/kgateway/wellknown"
 
 	infextv1a2 "sigs.k8s.io/gateway-api-inference-extension/api/v1alpha2"
 	gwv1a2 "sigs.k8s.io/gateway-api/apis/v1alpha2"

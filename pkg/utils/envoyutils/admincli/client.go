@@ -12,7 +12,7 @@ import (
 	listenerv3 "github.com/envoyproxy/go-control-plane/envoy/config/listener/v3"
 	"github.com/solo-io/go-utils/threadsafe"
 
-	"github.com/kgateway-dev/kgateway/v2/internal/kgateway/wellknown"
+	"github.com/kgateway-dev/kgateway/v2/pkg/kgateway/wellknown"
 	"github.com/kgateway-dev/kgateway/v2/pkg/utils/cmdutils"
 	"github.com/kgateway-dev/kgateway/v2/pkg/utils/kubeutils/kubectl"
 	"github.com/kgateway-dev/kgateway/v2/pkg/utils/kubeutils/portforward"
@@ -20,7 +20,7 @@ import (
 	"github.com/kgateway-dev/kgateway/v2/pkg/utils/requestutils/curl"
 
 	// import for side effects; this is needed so we can unmarshal envoy types
-	_ "github.com/kgateway-dev/kgateway/v2/internal/envoyinit/hack/filter_types"
+	_ "github.com/kgateway-dev/kgateway/v2/pkg/envoyinit/hack/filter_types"
 )
 
 const (

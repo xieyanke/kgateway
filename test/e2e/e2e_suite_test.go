@@ -20,7 +20,7 @@ import (
 
 	"github.com/kgateway-dev/kgateway/v2/test/services"
 
-	"github.com/kgateway-dev/kgateway/v2/internal/gloo/pkg/defaults"
+	"github.com/kgateway-dev/kgateway/v2/pkg/gloo/pkg/defaults"
 )
 
 func TestE2e(t *testing.T) {

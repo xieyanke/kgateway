@@ -10,9 +10,9 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/solo-io/solo-kit/pkg/api/v1/resources/core"
 
-	gatewayv1 "github.com/kgateway-dev/kgateway/v2/internal/gateway/pkg/api/v1"
-	gloov1 "github.com/kgateway-dev/kgateway/v2/internal/gloo/pkg/api/v1"
-	"github.com/kgateway-dev/kgateway/v2/internal/gloo/pkg/api/v1/gloosnapshot"
+	gatewayv1 "github.com/kgateway-dev/kgateway/v2/pkg/gateway/pkg/api/v1"
+	gloov1 "github.com/kgateway-dev/kgateway/v2/pkg/gloo/pkg/api/v1"
+	"github.com/kgateway-dev/kgateway/v2/pkg/gloo/pkg/api/v1/gloosnapshot"
 	"github.com/kgateway-dev/kgateway/v2/test/helpers"
 	"github.com/kgateway-dev/kgateway/v2/test/kube2e"
 	"github.com/kgateway-dev/kgateway/v2/test/kube2e/helper"

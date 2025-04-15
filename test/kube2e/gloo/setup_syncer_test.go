@@ -12,16 +12,16 @@ import (
 
 	"github.com/kgateway-dev/kgateway/v2/pkg/utils/settingsutil"
 
-	"github.com/kgateway-dev/kgateway/v2/internal/gloo/pkg/bootstrap"
-	"github.com/kgateway-dev/kgateway/v2/internal/gloo/pkg/syncer/setup"
-	"github.com/kgateway-dev/kgateway/v2/internal/gloo/pkg/xds"
+	"github.com/kgateway-dev/kgateway/v2/pkg/gloo/pkg/bootstrap"
+	"github.com/kgateway-dev/kgateway/v2/pkg/gloo/pkg/syncer/setup"
+	"github.com/kgateway-dev/kgateway/v2/pkg/gloo/pkg/xds"
 	"github.com/kgateway-dev/kgateway/v2/pkg/bootstrap/leaderelector"
 	"github.com/kgateway-dev/kgateway/v2/pkg/bootstrap/leaderelector/singlereplica"
 	"github.com/kgateway-dev/kgateway/v2/pkg/utils/setuputils"
 
 	"github.com/solo-io/solo-kit/pkg/api/v1/clients"
 
-	"github.com/kgateway-dev/kgateway/v2/internal/gloo/pkg/defaults"
+	"github.com/kgateway-dev/kgateway/v2/pkg/gloo/pkg/defaults"
 
 	"github.com/golang/protobuf/ptypes/wrappers"
 	. "github.com/onsi/ginkgo/v2"
@@ -31,8 +31,8 @@ import (
 	"github.com/solo-io/solo-kit/pkg/utils/prototime"
 	"google.golang.org/grpc"
 
-	"github.com/kgateway-dev/kgateway/v2/internal/gloo/pkg/api/grpc/validation"
-	v1 "github.com/kgateway-dev/kgateway/v2/internal/gloo/pkg/api/v1"
+	"github.com/kgateway-dev/kgateway/v2/pkg/gloo/pkg/api/grpc/validation"
+	v1 "github.com/kgateway-dev/kgateway/v2/pkg/gloo/pkg/api/v1"
 	"github.com/kgateway-dev/kgateway/v2/test/helpers"
 	"github.com/kgateway-dev/kgateway/v2/test/kube2e"
 )

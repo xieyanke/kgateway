@@ -14,7 +14,7 @@ import (
 
 	"k8s.io/utils/pointer"
 
-	"github.com/kgateway-dev/kgateway/v2/internal/gloo/pkg/defaults"
+	"github.com/kgateway-dev/kgateway/v2/pkg/gloo/pkg/defaults"
 	"github.com/kgateway-dev/kgateway/v2/test/gomega/matchers"
 	"github.com/kgateway-dev/kgateway/v2/test/gomega/transforms"
 

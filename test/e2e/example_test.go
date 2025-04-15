@@ -13,7 +13,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	v1 "github.com/kgateway-dev/kgateway/v2/internal/gateway/pkg/api/v1"
+	v1 "github.com/kgateway-dev/kgateway/v2/pkg/gateway/pkg/api/v1"
 	"github.com/kgateway-dev/kgateway/v2/test/e2e"
 	"github.com/kgateway-dev/kgateway/v2/test/helpers"
 	"github.com/kgateway-dev/kgateway/v2/test/v1helpers"

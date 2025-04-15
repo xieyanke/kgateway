@@ -7,8 +7,8 @@ import (
 	"github.com/rotisserie/eris"
 	"github.com/solo-io/go-utils/contextutils"
 
-	"github.com/kgateway-dev/kgateway/v2/internal/envoyinit/pkg/runner"
-	"github.com/kgateway-dev/kgateway/v2/internal/kgateway/xds"
+	"github.com/kgateway-dev/kgateway/v2/pkg/envoyinit/pkg/runner"
+	"github.com/kgateway-dev/kgateway/v2/pkg/kgateway/xds"
 	"github.com/kgateway-dev/kgateway/v2/pkg/utils/envoyutils/bootstrap"
 	"github.com/kgateway-dev/kgateway/v2/pkg/utils/envutils"
 )

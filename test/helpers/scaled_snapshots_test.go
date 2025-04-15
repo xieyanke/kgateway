@@ -7,8 +7,8 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/solo-io/solo-kit/pkg/api/v1/resources/core"
 
-	v1 "github.com/kgateway-dev/kgateway/v2/internal/gloo/pkg/api/v1"
-	"github.com/kgateway-dev/kgateway/v2/internal/gloo/pkg/api/v1/gloosnapshot"
+	v1 "github.com/kgateway-dev/kgateway/v2/pkg/gloo/pkg/api/v1"
+	"github.com/kgateway-dev/kgateway/v2/pkg/gloo/pkg/api/v1/gloosnapshot"
 	"github.com/kgateway-dev/kgateway/v2/test/helpers"
 )
 

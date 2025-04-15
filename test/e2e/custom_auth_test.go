@@ -24,11 +24,11 @@ import (
 	"google.golang.org/genproto/googleapis/rpc/status"
 	"google.golang.org/grpc"
 
-	gloov1 "github.com/kgateway-dev/kgateway/v2/internal/gloo/pkg/api/v1"
-	"github.com/kgateway-dev/kgateway/v2/internal/gloo/pkg/api/v1/core/matchers"
-	v1 "github.com/kgateway-dev/kgateway/v2/internal/gloo/pkg/api/v1/enterprise/options/extauth/v1"
-	"github.com/kgateway-dev/kgateway/v2/internal/gloo/pkg/api/v1/options/static"
-	"github.com/kgateway-dev/kgateway/v2/internal/gloo/pkg/defaults"
+	gloov1 "github.com/kgateway-dev/kgateway/v2/pkg/gloo/pkg/api/v1"
+	"github.com/kgateway-dev/kgateway/v2/pkg/gloo/pkg/api/v1/core/matchers"
+	v1 "github.com/kgateway-dev/kgateway/v2/pkg/gloo/pkg/api/v1/enterprise/options/extauth/v1"
+	"github.com/kgateway-dev/kgateway/v2/pkg/gloo/pkg/api/v1/options/static"
+	"github.com/kgateway-dev/kgateway/v2/pkg/gloo/pkg/defaults"
 	"github.com/kgateway-dev/kgateway/v2/test/services"
 	"github.com/kgateway-dev/kgateway/v2/test/v1helpers"
 )

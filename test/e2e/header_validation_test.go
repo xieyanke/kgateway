@@ -12,9 +12,9 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	gatewayv1 "github.com/kgateway-dev/kgateway/v2/internal/gateway/pkg/api/v1"
-	gloov1 "github.com/kgateway-dev/kgateway/v2/internal/gloo/pkg/api/v1"
-	header_validation "github.com/kgateway-dev/kgateway/v2/internal/gloo/pkg/api/v1/options/header_validation"
+	gatewayv1 "github.com/kgateway-dev/kgateway/v2/pkg/gateway/pkg/api/v1"
+	gloov1 "github.com/kgateway-dev/kgateway/v2/pkg/gloo/pkg/api/v1"
+	header_validation "github.com/kgateway-dev/kgateway/v2/pkg/gloo/pkg/api/v1/options/header_validation"
 	"github.com/kgateway-dev/kgateway/v2/test/e2e"
 )
 

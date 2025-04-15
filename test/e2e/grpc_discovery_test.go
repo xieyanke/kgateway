@@ -5,10 +5,10 @@ package e2e_test
 import (
 	"context"
 
-	"github.com/kgateway-dev/kgateway/v2/internal/gloo/pkg/api/v1/core/matchers"
-	"github.com/kgateway-dev/kgateway/v2/internal/gloo/pkg/api/v1/options/grpc"
+	"github.com/kgateway-dev/kgateway/v2/pkg/gloo/pkg/api/v1/core/matchers"
+	"github.com/kgateway-dev/kgateway/v2/pkg/gloo/pkg/api/v1/options/grpc"
 
-	v1 "github.com/kgateway-dev/kgateway/v2/internal/gateway/pkg/api/v1"
+	v1 "github.com/kgateway-dev/kgateway/v2/pkg/gateway/pkg/api/v1"
 
 	"github.com/kgateway-dev/kgateway/v2/test/testutils"
 
@@ -24,8 +24,8 @@ import (
 	"github.com/kgateway-dev/kgateway/v2/test/services"
 	"github.com/kgateway-dev/kgateway/v2/test/v1helpers"
 
-	gatewayv1 "github.com/kgateway-dev/kgateway/v2/internal/gateway/pkg/api/v1"
-	gloov1 "github.com/kgateway-dev/kgateway/v2/internal/gloo/pkg/api/v1"
+	gatewayv1 "github.com/kgateway-dev/kgateway/v2/pkg/gateway/pkg/api/v1"
+	gloov1 "github.com/kgateway-dev/kgateway/v2/pkg/gloo/pkg/api/v1"
 )
 
 var _ = Describe("GRPC to JSON Transcoding Plugin - Discovery", func() {

@@ -24,8 +24,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 
-	gatewaydefaults "github.com/kgateway-dev/kgateway/v2/internal/gateway/pkg/defaults"
-	gloov1 "github.com/kgateway-dev/kgateway/v2/internal/gloo/pkg/api/v1"
+	gatewaydefaults "github.com/kgateway-dev/kgateway/v2/pkg/gateway/pkg/defaults"
+	gloov1 "github.com/kgateway-dev/kgateway/v2/pkg/gloo/pkg/api/v1"
 	testhelpers "github.com/kgateway-dev/kgateway/v2/test/helpers"
 	"github.com/kgateway-dev/kgateway/v2/test/services"
 	"github.com/kgateway-dev/kgateway/v2/test/v1helpers"

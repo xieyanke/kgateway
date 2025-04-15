@@ -12,8 +12,8 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	gloov1 "github.com/kgateway-dev/kgateway/v2/internal/gloo/pkg/api/v1"
-	"github.com/kgateway-dev/kgateway/v2/internal/gloo/pkg/api/v1/options/kubernetes"
+	gloov1 "github.com/kgateway-dev/kgateway/v2/pkg/gloo/pkg/api/v1"
+	"github.com/kgateway-dev/kgateway/v2/pkg/gloo/pkg/api/v1/options/kubernetes"
 	"github.com/kgateway-dev/kgateway/v2/pkg/utils/fsutils"
 	testdefaults "github.com/kgateway-dev/kgateway/v2/test/kubernetes/e2e/defaults"
 	"github.com/kgateway-dev/kgateway/v2/test/kubernetes/e2e/tests/base"

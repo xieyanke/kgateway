@@ -16,11 +16,11 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
 
-	"github.com/kgateway-dev/kgateway/v2/internal/kgateway/extensions2/common"
-	extensionsplug "github.com/kgateway-dev/kgateway/v2/internal/kgateway/extensions2/plugin"
-	"github.com/kgateway-dev/kgateway/v2/internal/kgateway/ir"
-	"github.com/kgateway-dev/kgateway/v2/internal/kgateway/plugins"
-	"github.com/kgateway-dev/kgateway/v2/internal/kgateway/setup"
+	"github.com/kgateway-dev/kgateway/v2/pkg/kgateway/extensions2/common"
+	extensionsplug "github.com/kgateway-dev/kgateway/v2/pkg/kgateway/extensions2/plugin"
+	"github.com/kgateway-dev/kgateway/v2/pkg/kgateway/ir"
+	"github.com/kgateway-dev/kgateway/v2/pkg/kgateway/plugins"
+	"github.com/kgateway-dev/kgateway/v2/pkg/kgateway/setup"
 )
 
 /******

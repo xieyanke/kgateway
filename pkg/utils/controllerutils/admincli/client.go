@@ -8,7 +8,7 @@ import (
 	"github.com/rotisserie/eris"
 	"github.com/solo-io/go-utils/threadsafe"
 
-	"github.com/kgateway-dev/kgateway/v2/internal/kgateway/wellknown"
+	"github.com/kgateway-dev/kgateway/v2/pkg/kgateway/wellknown"
 	"github.com/kgateway-dev/kgateway/v2/pkg/utils/cmdutils"
 	"github.com/kgateway-dev/kgateway/v2/pkg/utils/requestutils/curl"
 )

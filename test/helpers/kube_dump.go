@@ -15,7 +15,7 @@ import (
 	"github.com/onsi/ginkgo/v2"
 	"github.com/solo-io/go-utils/threadsafe"
 
-	"github.com/kgateway-dev/kgateway/v2/internal/kgateway/wellknown"
+	"github.com/kgateway-dev/kgateway/v2/pkg/kgateway/wellknown"
 	kgatewayAdminCli "github.com/kgateway-dev/kgateway/v2/pkg/utils/controllerutils/admincli"
 	"github.com/kgateway-dev/kgateway/v2/pkg/utils/envoyutils/admincli"
 	"github.com/kgateway-dev/kgateway/v2/pkg/utils/kubeutils/kubectl"

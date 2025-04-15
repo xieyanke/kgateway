@@ -13,9 +13,9 @@ import (
 	"github.com/onsi/gomega"
 	"github.com/stretchr/testify/suite"
 
-	gloov1 "github.com/kgateway-dev/kgateway/v2/internal/gloo/pkg/api/v1"
-	"github.com/kgateway-dev/kgateway/v2/internal/gloo/pkg/translator"
-	"github.com/kgateway-dev/kgateway/v2/internal/gloo/pkg/upstreams/kubernetes"
+	gloov1 "github.com/kgateway-dev/kgateway/v2/pkg/gloo/pkg/api/v1"
+	"github.com/kgateway-dev/kgateway/v2/pkg/gloo/pkg/translator"
+	"github.com/kgateway-dev/kgateway/v2/pkg/gloo/pkg/upstreams/kubernetes"
 	"github.com/kgateway-dev/kgateway/v2/pkg/utils/envoyutils/admincli"
 	"github.com/kgateway-dev/kgateway/v2/pkg/utils/kubeutils"
 	"github.com/kgateway-dev/kgateway/v2/pkg/utils/requestutils/curl"

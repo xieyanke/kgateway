@@ -32,11 +32,11 @@ import (
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/utils/pointer"
 
-	"github.com/kgateway-dev/kgateway/v2/internal/kgateway/deployer"
+	"github.com/kgateway-dev/kgateway/v2/pkg/kgateway/deployer"
 
 	values "github.com/kgateway-dev/kgateway/v2/install/helm/gloo/generate"
 	"github.com/kgateway-dev/kgateway/v2/install/test/securitycontext"
-	"github.com/kgateway-dev/kgateway/v2/internal/gateway/pkg/defaults"
+	"github.com/kgateway-dev/kgateway/v2/pkg/gateway/pkg/defaults"
 	"github.com/kgateway-dev/kgateway/v2/pkg/utils/kubeutils"
 	"github.com/kgateway-dev/kgateway/v2/test/gomega/matchers"
 	"github.com/kgateway-dev/kgateway/v2/test/helpers"

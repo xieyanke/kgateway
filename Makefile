@@ -43,7 +43,7 @@ SOURCES := $(shell find . -name "*.go" | grep -v test.go)
 # universal header validation has been enabled and if so, we expect
 # failures in `test/e2e/header_validation_test.go`.
 export ENVOY_IMAGE ?= quay.io/solo-io/envoy-gloo:1.34.0-patch0
-export LDFLAGS := -X 'github.com/kgateway-dev/kgateway/v2/internal/version.Version=$(VERSION)'
+export LDFLAGS := -X 'github.com/kgateway-dev/kgateway/v2/pkg/version.Version=$(VERSION)'
 export GCFLAGS ?=
 
 UNAME_M := $(shell uname -m)
@@ -148,7 +148,7 @@ mod-tidy: mod-download  ## Tidy the go mod file
 
 .PHONY: check-format
 check-format:
-	NOT_FORMATTED=$$(gofmt -l ./pkg/ ./internal/ ./test/) && if [ -n "$$NOT_FORMATTED" ]; then echo These files are not formatted: $$NOT_FORMATTED; exit 1; fi
+	NOT_FORMATTED=$$(gofmt -l ./pkg/ ./test/) && if [ -n "$$NOT_FORMATTED" ]; then echo These files are not formatted: $$NOT_FORMATTED; exit 1; fi
 
 .PHONY: check-spelling
 check-spelling:
@@ -373,13 +373,13 @@ GETTERCHECK ?= go tool github.com/saiskee/gettercheck
 # TODO: do we still want this?
 .PHONY: getter-check
 getter-check: ## Runs all generate directives for mockgen in the repo
-	$(GETTERCHECK) -ignoretests -ignoregenerated -write ./internal/kgateway/...
+	$(GETTERCHECK) -ignoretests -ignoregenerated -write ./pkg/kgateway/...
 
 #----------------------------------------------------------------------------------
 # Distroless base images
 #----------------------------------------------------------------------------------
 
-DISTROLESS_DIR=internal/distroless
+DISTROLESS_DIR=pkg/distroless
 DISTROLESS_OUTPUT_DIR=$(OUTPUT_DIR)/$(DISTROLESS_DIR)
 
 $(DISTROLESS_OUTPUT_DIR)/Dockerfile: $(DISTROLESS_DIR)/Dockerfile
@@ -408,7 +408,7 @@ distroless-with-utils-docker: distroless-docker $(DISTROLESS_OUTPUT_DIR)/Dockerf
 # Controller
 #----------------------------------------------------------------------------------
 
-K8S_GATEWAY_DIR=internal/kgateway
+K8S_GATEWAY_DIR=pkg/kgateway
 K8S_GATEWAY_SOURCES=$(call get_sources,$(K8S_GATEWAY_DIR))
 CONTROLLER_OUTPUT_DIR=$(OUTPUT_DIR)/$(K8S_GATEWAY_DIR)
 export CONTROLLER_IMAGE_REPO ?= kgateway
@@ -447,7 +447,7 @@ kgateway-distroless-docker: $(CONTROLLER_OUTPUT_DIR)/kgateway-linux-$(GOARCH) $(
 # SDS Server - gRPC server for serving Secret Discovery Service config
 #----------------------------------------------------------------------------------
 
-SDS_DIR=internal/sds
+SDS_DIR=pkg/sds
 SDS_SOURCES=$(call get_sources,$(SDS_DIR))
 SDS_OUTPUT_DIR=$(OUTPUT_DIR)/$(SDS_DIR)
 export SDS_IMAGE_REPO ?= sds
@@ -482,23 +482,23 @@ sds-distroless-docker: $(SDS_OUTPUT_DIR)/sds-linux-$(GOARCH) $(SDS_OUTPUT_DIR)/D
 # Envoy init (BASE/SIDECAR)
 #----------------------------------------------------------------------------------
 
-ENVOYINIT_DIR=internal/envoyinit
+ENVOYINIT_DIR=pkg/envoyinit
 ENVOYINIT_SOURCES=$(call get_sources,$(ENVOYINIT_DIR))
 ENVOYINIT_OUTPUT_DIR=$(OUTPUT_DIR)/$(ENVOYINIT_DIR)
 export ENVOYINIT_IMAGE_REPO ?= envoy-wrapper
 
 $(ENVOYINIT_OUTPUT_DIR)/envoyinit-linux-$(GOARCH): $(ENVOYINIT_SOURCES)
-	$(GO_BUILD_FLAGS) GOOS=linux go build -ldflags='$(LDFLAGS)' -gcflags='$(GCFLAGS)' -o $@ ./internal/envoyinit/cmd/...
+	$(GO_BUILD_FLAGS) GOOS=linux go build -ldflags='$(LDFLAGS)' -gcflags='$(GCFLAGS)' -o $@ ./pkg/envoyinit/cmd/...
 
 .PHONY: envoyinit
 envoyinit: $(ENVOYINIT_OUTPUT_DIR)/envoyinit-linux-$(GOARCH)
 
 # TODO(nfuden) cheat the process for now with -r but try to find a cleaner method
-$(ENVOYINIT_OUTPUT_DIR)/Dockerfile.envoyinit: internal/envoyinit/Dockerfile.envoyinit
+$(ENVOYINIT_OUTPUT_DIR)/Dockerfile.envoyinit: pkg/envoyinit/Dockerfile.envoyinit
 	cp  -r  ${ENVOYINIT_DIR}/rustformations $(ENVOYINIT_OUTPUT_DIR)
 	cp $< $@
 
-$(ENVOYINIT_OUTPUT_DIR)/docker-entrypoint.sh: internal/envoyinit/cmd/docker-entrypoint.sh
+$(ENVOYINIT_OUTPUT_DIR)/docker-entrypoint.sh: pkg/envoyinit/cmd/docker-entrypoint.sh
 	cp $< $@
 
 .PHONY: envoy-wrapper-docker
@@ -508,7 +508,7 @@ envoy-wrapper-docker: $(ENVOYINIT_OUTPUT_DIR)/envoyinit-linux-$(GOARCH) $(ENVOYI
 		--build-arg ENVOY_IMAGE=$(ENVOY_IMAGE) \
 		-t $(IMAGE_REGISTRY)/$(ENVOYINIT_IMAGE_REPO):$(VERSION)
 
-$(ENVOYINIT_OUTPUT_DIR)/Dockerfile.envoyinit.distroless: internal/envoyinit/Dockerfile.envoyinit.distroless
+$(ENVOYINIT_OUTPUT_DIR)/Dockerfile.envoyinit.distroless: pkg/envoyinit/Dockerfile.envoyinit.distroless
 	cp $< $@
 
 # Explicitly specify the base image is amd64 as we only build the amd64 flavour of envoy

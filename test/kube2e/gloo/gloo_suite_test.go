@@ -24,7 +24,7 @@ import (
 
 	"github.com/solo-io/go-utils/testutils"
 
-	"github.com/kgateway-dev/kgateway/v2/internal/gloo/pkg/defaults"
+	"github.com/kgateway-dev/kgateway/v2/pkg/gloo/pkg/defaults"
 	"github.com/kgateway-dev/kgateway/v2/test/helpers"
 	"github.com/kgateway-dev/kgateway/v2/test/kube2e"
 	"github.com/kgateway-dev/kgateway/v2/test/kube2e/helper"

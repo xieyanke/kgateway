@@ -23,13 +23,13 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	v1 "github.com/kgateway-dev/kgateway/v2/internal/gateway/pkg/api/v1"
-	gatewaydefaults "github.com/kgateway-dev/kgateway/v2/internal/gateway/pkg/defaults"
-	v3 "github.com/kgateway-dev/kgateway/v2/internal/gloo/pkg/api/external/envoy/config/core/v3"
-	gloov1 "github.com/kgateway-dev/kgateway/v2/internal/gloo/pkg/api/v1"
-	"github.com/kgateway-dev/kgateway/v2/internal/gloo/pkg/api/v1/options/headers"
-	"github.com/kgateway-dev/kgateway/v2/internal/gloo/pkg/api/v1/options/proxy_protocol"
-	"github.com/kgateway-dev/kgateway/v2/internal/gloo/pkg/api/v1/ssl"
+	v1 "github.com/kgateway-dev/kgateway/v2/pkg/gateway/pkg/api/v1"
+	gatewaydefaults "github.com/kgateway-dev/kgateway/v2/pkg/gateway/pkg/defaults"
+	v3 "github.com/kgateway-dev/kgateway/v2/pkg/gloo/pkg/api/external/envoy/config/core/v3"
+	gloov1 "github.com/kgateway-dev/kgateway/v2/pkg/gloo/pkg/api/v1"
+	"github.com/kgateway-dev/kgateway/v2/pkg/gloo/pkg/api/v1/options/headers"
+	"github.com/kgateway-dev/kgateway/v2/pkg/gloo/pkg/api/v1/options/proxy_protocol"
+	"github.com/kgateway-dev/kgateway/v2/pkg/gloo/pkg/api/v1/ssl"
 	"github.com/kgateway-dev/kgateway/v2/test/e2e"
 )
 
