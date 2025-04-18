@@ -8,8 +8,8 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/kgateway-dev/kgateway/v2/pkg/kgateway/setup"
-	"github.com/kgateway-dev/kgateway/v2/pkg/version"
 	"github.com/kgateway-dev/kgateway/v2/pkg/utils/probes"
+	"github.com/kgateway-dev/kgateway/v2/pkg/version"
 )
 
 func main() {
@@ -24,8 +24,9 @@ func main() {
 			}
 			ctx := context.Background()
 			probes.StartLivenessProbeServer(ctx)
-			if err := setup.Main(ctx); err != nil {
-				return fmt.Errorf("err in main: %w", err)
+			s := setup.New()
+			if err := s.Start(ctx); err != nil {
+				return fmt.Errorf("failed to start kgateway: %w", err)
 			}
 			return nil
 		},

@@ -28,31 +28,37 @@ import (
 	"github.com/kgateway-dev/kgateway/v2/pkg/kgateway/krtcollections"
 	"github.com/kgateway-dev/kgateway/v2/pkg/kgateway/utils/krtutil"
 	"github.com/kgateway-dev/kgateway/v2/pkg/kgateway/wellknown"
-	"github.com/kgateway-dev/kgateway/v2/pkg/version"
 	"github.com/kgateway-dev/kgateway/v2/pkg/utils/envutils"
+	"github.com/kgateway-dev/kgateway/v2/pkg/version"
 )
 
 const (
 	componentName = "kgateway"
 )
 
-func Main(customCtx context.Context) error {
-	SetupLogging(customCtx, componentName)
-	return startSetupLoop(customCtx)
+type kgateway struct {
+	extraPlugins func(ctx context.Context, commoncol *common.CommonCollections) []extensionsplug.Plugin
 }
 
-func startSetupLoop(ctx context.Context) error {
-	return StartKgateway(ctx, nil)
-}
+type Option func(*kgateway)
 
-func createKubeClient(restConfig *rest.Config) (istiokube.Client, error) {
-	restCfg := istiokube.NewClientConfigForRestConfig(restConfig)
-	client, err := istiokube.NewClient(restCfg, "")
-	if err != nil {
-		return nil, err
+func WithExtraPlugins(extraPlugins func(ctx context.Context, commoncol *common.CommonCollections) []extensionsplug.Plugin) Option {
+	return func(k *kgateway) {
+		k.extraPlugins = extraPlugins
 	}
-	istiokube.EnableCrdWatcher(client)
-	return client, nil
+}
+
+func New(opts ...Option) *kgateway {
+	k := &kgateway{}
+	for _, opt := range opts {
+		opt(k)
+	}
+	return k
+}
+
+func (k *kgateway) Start(ctx context.Context) error {
+	setupLogging(ctx, componentName)
+	return StartKgateway(ctx, k.extraPlugins)
 }
 
 func StartKgateway(
@@ -86,8 +92,13 @@ func StartKgateway(
 		MetricsBindAddress:     ":9092",
 	}
 
-	restConfig := ctrl.GetConfigOrDie()
-	return StartKgatewayWithConfig(ctx, setupOpts, restConfig, uccBuilder, extraPlugins)
+	return StartKgatewayWithConfig(
+		ctx,
+		setupOpts,
+		ctrl.GetConfigOrDie(),
+		uccBuilder,
+		extraPlugins,
+	)
 }
 
 func startControlPlane(
@@ -156,8 +167,18 @@ func StartKgatewayWithConfig(
 	return c.Start(ctx)
 }
 
-// SetupLogging sets up controller-runtime logging
-func SetupLogging(ctx context.Context, loggerName string) {
+func createKubeClient(restConfig *rest.Config) (istiokube.Client, error) {
+	restCfg := istiokube.NewClientConfigForRestConfig(restConfig)
+	client, err := istiokube.NewClient(restCfg, "")
+	if err != nil {
+		return nil, err
+	}
+	istiokube.EnableCrdWatcher(client)
+	return client, nil
+}
+
+// setupLogging sets up controller-runtime logging
+func setupLogging(ctx context.Context, loggerName string) {
 	level := zapcore.InfoLevel
 	// if log level is set in env, use that
 	if envLogLevel := os.Getenv(contextutils.LogLevelEnvName); envLogLevel != "" {
