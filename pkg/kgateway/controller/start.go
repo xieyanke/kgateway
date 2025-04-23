@@ -10,6 +10,7 @@ import (
 	"istio.io/istio/pkg/kube/krt"
 	istiolog "istio.io/istio/pkg/log"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/rest"
 	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -19,6 +20,7 @@ import (
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	infextv1a2 "sigs.k8s.io/gateway-api-inference-extension/api/v1alpha2"
 
+	"github.com/kgateway-dev/kgateway/v2/pkg/client/clientset/versioned"
 	"github.com/kgateway-dev/kgateway/v2/pkg/kgateway/deployer"
 	"github.com/kgateway-dev/kgateway/v2/pkg/kgateway/extensions2"
 	"github.com/kgateway-dev/kgateway/v2/pkg/kgateway/extensions2/common"
@@ -31,7 +33,6 @@ import (
 	"github.com/kgateway-dev/kgateway/v2/pkg/kgateway/proxy_syncer"
 	"github.com/kgateway-dev/kgateway/v2/pkg/kgateway/utils/krtutil"
 	"github.com/kgateway-dev/kgateway/v2/pkg/kgateway/wellknown"
-	"github.com/kgateway-dev/kgateway/v2/pkg/client/clientset/versioned"
 	kgtwschemes "github.com/kgateway-dev/kgateway/v2/pkg/schemes"
 	"github.com/kgateway-dev/kgateway/v2/pkg/utils/kubeutils"
 	"github.com/kgateway-dev/kgateway/v2/pkg/utils/namespaces"
@@ -44,7 +45,8 @@ const (
 )
 
 type SetupOpts struct {
-	Cache envoycache.SnapshotCache
+	Cache  envoycache.SnapshotCache
+	Scheme *runtime.Scheme
 
 	KrtDebugger *krt.DebugHandler
 
@@ -60,6 +62,7 @@ var setupLog = ctrl.Log.WithName("setup")
 
 type StartConfig struct {
 	ControllerName string
+	Scheme         *runtime.Scheme
 
 	Dev        bool
 	SetupOpts  *SetupOpts
@@ -97,16 +100,14 @@ func NewControllerBuilder(ctx context.Context, cfg StartConfig) (*ControllerBuil
 	ctrl.SetLogger(czap.New(opts...))
 	istiolog.Configure(loggingOptions)
 
-	scheme := DefaultScheme()
-
 	// Extend the scheme if the TCPRoute CRD exists.
-	if err := kgtwschemes.AddGatewayV1A2Scheme(cfg.RestConfig, scheme); err != nil {
+	if err := kgtwschemes.AddGatewayV1A2Scheme(cfg.RestConfig, cfg.Scheme); err != nil {
 		return nil, err
 	}
 
-	mgrOpts := ctrl.Options{
+	mgr, err := ctrl.NewManager(cfg.RestConfig, ctrl.Options{
 		BaseContext:      func() context.Context { return ctx },
-		Scheme:           scheme,
+		Scheme:           cfg.Scheme,
 		PprofBindAddress: cfg.SetupOpts.PprofBindAddress,
 		// if you change the port here, also change the port "health" in the helmchart.
 		HealthProbeBindAddress: cfg.SetupOpts.HealthProbeBindAddress,
@@ -120,8 +121,7 @@ func NewControllerBuilder(ctx context.Context, cfg StartConfig) (*ControllerBuil
 			// the name validation here.
 			SkipNameValidation: ptr.To(true),
 		},
-	}
-	mgr, err := ctrl.NewManager(cfg.RestConfig, mgrOpts)
+	})
 	if err != nil {
 		setupLog.Error(err, "unable to start manager")
 		return nil, err
@@ -133,7 +133,7 @@ func NewControllerBuilder(ctx context.Context, cfg StartConfig) (*ControllerBuil
 	setupLog.Info("initializing kgateway extensions")
 	// Extend the scheme and add the EPP plugin if the inference extension is enabled and the InferencePool CRD exists.
 	if cfg.SetupOpts.GlobalSettings.EnableInferExt {
-		exists, err := kgtwschemes.AddInferExtV1A2Scheme(cfg.RestConfig, scheme)
+		exists, err := kgtwschemes.AddInferExtV1A2Scheme(cfg.RestConfig, cfg.Scheme)
 		switch {
 		case err != nil:
 			return nil, err

@@ -14,6 +14,7 @@ import (
 	"go.uber.org/zap/zapcore"
 	istiokube "istio.io/istio/pkg/kube"
 	"istio.io/istio/pkg/kube/krt"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/log"
@@ -28,6 +29,7 @@ import (
 	"github.com/kgateway-dev/kgateway/v2/pkg/kgateway/krtcollections"
 	"github.com/kgateway-dev/kgateway/v2/pkg/kgateway/utils/krtutil"
 	"github.com/kgateway-dev/kgateway/v2/pkg/kgateway/wellknown"
+	"github.com/kgateway-dev/kgateway/v2/pkg/schemes"
 	"github.com/kgateway-dev/kgateway/v2/pkg/utils/envutils"
 	"github.com/kgateway-dev/kgateway/v2/pkg/version"
 )
@@ -38,6 +40,7 @@ const (
 
 type kgateway struct {
 	extraPlugins func(ctx context.Context, commoncol *common.CommonCollections) []extensionsplug.Plugin
+	scheme       *runtime.Scheme
 }
 
 type Option func(*kgateway)
@@ -45,6 +48,12 @@ type Option func(*kgateway)
 func WithExtraPlugins(extraPlugins func(ctx context.Context, commoncol *common.CommonCollections) []extensionsplug.Plugin) Option {
 	return func(k *kgateway) {
 		k.extraPlugins = extraPlugins
+	}
+}
+
+func WithScheme(scheme *runtime.Scheme) Option {
+	return func(k *kgateway) {
+		k.scheme = scheme
 	}
 }
 
@@ -58,11 +67,15 @@ func New(opts ...Option) *kgateway {
 
 func (k *kgateway) Start(ctx context.Context) error {
 	setupLogging(ctx, componentName)
-	return StartKgateway(ctx, k.extraPlugins)
+	if k.scheme == nil {
+		k.scheme = schemes.DefaultScheme()
+	}
+	return StartKgateway(ctx, k.scheme, k.extraPlugins)
 }
 
 func StartKgateway(
 	ctx context.Context,
+	scheme *runtime.Scheme,
 	extraPlugins func(ctx context.Context, commoncol *common.CommonCollections) []extensionsplug.Plugin,
 ) error {
 	logger := contextutils.LoggerFrom(ctx)
@@ -94,6 +107,7 @@ func StartKgateway(
 
 	return StartKgatewayWithConfig(
 		ctx,
+		scheme,
 		setupOpts,
 		ctrl.GetConfigOrDie(),
 		uccBuilder,
@@ -111,6 +125,7 @@ func startControlPlane(
 
 func StartKgatewayWithConfig(
 	ctx context.Context,
+	scheme *runtime.Scheme,
 	setupOpts *controller.SetupOpts,
 	restConfig *rest.Config,
 	uccBuilder krtcollections.UniquelyConnectedClientsBulider,
@@ -146,7 +161,7 @@ func StartKgatewayWithConfig(
 		Client:         kubeClient,
 		AugmentedPods:  augmentedPods,
 		UniqueClients:  ucc,
-
+		Scheme:         scheme,
 		// Dev flag may be useful for development purposes; not currently tied to any user-facing API
 		Dev:        os.Getenv("LOG_LEVEL") == "debug",
 		KrtOptions: krtOpts,

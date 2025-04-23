@@ -56,6 +56,7 @@ import (
 	"github.com/kgateway-dev/kgateway/v2/pkg/kgateway/krtcollections"
 	"github.com/kgateway-dev/kgateway/v2/pkg/kgateway/proxy_syncer"
 	"github.com/kgateway-dev/kgateway/v2/pkg/kgateway/setup"
+	"github.com/kgateway-dev/kgateway/v2/pkg/schemes"
 )
 
 func getAssetsDir(t *testing.T) string {
@@ -409,11 +410,16 @@ func setupEnvTestAndRun(t *testing.T, globalSettings *settings.Settings, run fun
 		GlobalSettings: globalSettings,
 	}
 
+	scheme := schemes.DefaultScheme()
+	if err := schemes.AddGatewayV1A2Scheme(cfg, scheme); err != nil {
+		t.Fatalf("failed to add gateway v1a2 scheme: %v", err)
+	}
+
 	// start kgateway
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		setup.StartKgatewayWithConfig(ctx, setupOpts, cfg, builder, nil)
+		setup.StartKgatewayWithConfig(ctx, scheme, setupOpts, cfg, builder, nil)
 	}()
 	// give kgateway time to initialize so we don't get
 	// "kgateway not initialized" error
