@@ -142,19 +142,16 @@ func (s *CombinedTranslator) TranslateGateway(kctx krt.HandlerContext, ctx conte
 
 func (s *CombinedTranslator) TranslateEndpoints(kctx krt.HandlerContext, ucc ir.UniqlyConnectedClient, ep ir.EndpointsForBackend) (*envoy_config_endpoint_v3.ClusterLoadAssignment, uint64) {
 	// check if we have a plugin to do it
-	cla, additionalHash := proccessWithPlugins(s.endpointPlugins, kctx, context.TODO(), ucc, ep)
-	if cla != nil {
-		return cla, additionalHash
-	}
-	return endpoints.PrioritizeEndpoints(s.logger, nil, ep, ucc), 0
+	inputs, additionalHash := proccessWithPlugins(s.endpointPlugins, kctx, context.TODO(), ucc, ep)
+	return endpoints.PrioritizeEndpoints(s.logger, ucc, inputs), additionalHash
 }
 
-func proccessWithPlugins(plugins []extensionsplug.EndpointPlugin, kctx krt.HandlerContext, ctx context.Context, ucc ir.UniqlyConnectedClient, in ir.EndpointsForBackend) (*envoy_config_endpoint_v3.ClusterLoadAssignment, uint64) {
+func proccessWithPlugins(plugins []extensionsplug.EndpointPlugin, kctx krt.HandlerContext, ctx context.Context, ucc ir.UniqlyConnectedClient, in ir.EndpointsForBackend) (endpoints.EndpointsInputs, uint64) {
+	out := endpoints.EndpointsInputs{}
+	var hash uint64
 	for _, processEnddpoints := range plugins {
-		cla, additionalHash := processEnddpoints(kctx, context.TODO(), ucc, in)
-		if cla != nil {
-			return cla, additionalHash
-		}
+		additionalHash := processEnddpoints(kctx, context.TODO(), ucc, &out)
+		hash ^= additionalHash
 	}
-	return nil, 0
+	return out, hash
 }

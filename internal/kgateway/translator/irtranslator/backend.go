@@ -79,12 +79,13 @@ func (t *BackendTranslator) runPolicies(
 	inlineEps *ir.EndpointsForBackend,
 	out *clusterv3.Cluster,
 ) {
+	var endpointInputs *endpoints.EndpointsInputs
+	if inlineEps != nil {
+		// this backend has inlineEps so we need to run endpoint plugins
+		endpointInputs = &endpoints.EndpointsInputs{EndpointsForBackend: *inlineEps}
+	}
+
 	for gk, policyPlugin := range t.ContributedPolicies {
-		if inlineEps != nil && policyPlugin.PerClientProcessEndpoints != nil {
-			if cla, _ := policyPlugin.PerClientProcessEndpoints(kctx, ctx, ucc, *inlineEps); cla != nil {
-				out.LoadAssignment = cla
-			}
-		}
 		// TODO: in theory it would be nice to do `ProcessBackend` once, and only do
 		// the the per-client processing for each client.
 		// that would require refactoring and thinking about the proper IR, so we'll punt on that for
@@ -92,6 +93,11 @@ func (t *BackendTranslator) runPolicies(
 		// like.
 		if policyPlugin.PerClientProcessBackend != nil {
 			policyPlugin.PerClientProcessBackend(kctx, ctx, ucc, backend, out)
+		}
+
+		// process endpoints if they're initialized during initBackend
+		if endpointInputs != nil && policyPlugin.PerClientProcessEndpoints != nil {
+			policyPlugin.PerClientProcessEndpoints(kctx, ctx, ucc, endpointInputs)
 		}
 
 		if policyPlugin.ProcessBackend == nil {
@@ -103,12 +109,11 @@ func (t *BackendTranslator) runPolicies(
 	}
 
 	// if no plugin initialized the inline CLA, and the cluster type needs one, do it now
-	if out.GetLoadAssignment() == nil && inlineEps != nil && clusterSupportsInlineCLA(out) {
+	if clusterSupportsInlineCLA(out) && endpointInputs != nil {
 		out.LoadAssignment = endpoints.PrioritizeEndpoints(
-			contextutils.LoggerFrom(ctx).Desugar(), // TODO BackendTranslator's logger
-			nil,
-			*inlineEps,
+			contextutils.LoggerFrom(ctx).Desugar(),
 			ucc,
+			*endpointInputs,
 		)
 	}
 }
