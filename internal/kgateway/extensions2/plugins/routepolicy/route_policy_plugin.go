@@ -8,12 +8,15 @@ import (
 	"strconv"
 	"time"
 
+	ratelimitv3 "github.com/envoyproxy/go-control-plane/envoy/config/ratelimit/v3"
 	exteniondynamicmodulev3 "github.com/envoyproxy/go-control-plane/envoy/extensions/dynamic_modules/v3"
 	dynamicmodulesv3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/dynamic_modules/v3"
 	envoy_ext_proc_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/ext_proc/v3"
 	localratelimitv3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/local_ratelimit/v3"
+	ratev3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/ratelimit/v3"
 	envoyhttp "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/http_connection_manager/v3"
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/durationpb"
 	skubeclient "istio.io/istio/pkg/config/schema/kubeclient"
 	"istio.io/istio/pkg/kube/kclient"
 	"istio.io/istio/pkg/kube/krt"
@@ -24,6 +27,7 @@ import (
 
 	envoy_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
 	envoy_config_listener_v3 "github.com/envoyproxy/go-control-plane/envoy/config/listener/v3"
+	routeconfv3 "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
 	routev3 "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
 	envoy_ext_authz_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/ext_authz/v3"
 	envoy_matcher_v3 "github.com/envoyproxy/go-control-plane/envoy/type/matcher/v3"
@@ -56,6 +60,7 @@ const (
 	localRateLimitFilterNamePrefix        = "ratelimit/local"
 	localRateLimitStatPrefix              = "http_local_rate_limiter"
 	transformationFilterMetadataNamespace = "io.solo.transformation" // TODO: remove this as we move onto rustformations and off envoy-gloo
+	rateLimitFilterNamePrefix             = "ratelimit"
 )
 
 func extAuthFilterName(name string) string {
@@ -115,6 +120,8 @@ type trafficPolicySpecIr struct {
 	rustformationStringToStash string
 	extAuth                    *extAuthIR
 	localRateLimit             *localratelimitv3.LocalRateLimit
+	rateLimit                  *ratev3.RateLimit        //  Rate limiting filter configuration
+	rateLimitActions           []*routeconfv3.RateLimit // Rate limit descriptors for routes/vhosts
 	errors                     []error
 }
 
@@ -176,9 +183,10 @@ type trafficPolicyGatewayExtensionIR struct {
 	name    string
 	extType v1alpha1.GatewayExtensionType
 
-	extAuth *envoy_ext_authz_v3.ExtAuthz
-	extProc *envoy_ext_proc_v3.ExternalProcessor
-	err     error
+	extAuth   *envoy_ext_authz_v3.ExtAuthz
+	extProc   *envoy_ext_proc_v3.ExternalProcessor
+	rateLimit *ratev3.RateLimit
+	err       error
 }
 
 // ResourceName returns the unique name for this extension.
@@ -195,6 +203,9 @@ func (e trafficPolicyGatewayExtensionIR) Equals(other trafficPolicyGatewayExtens
 		return false
 	}
 	if !proto.Equal(e.extProc, other.extProc) {
+		return false
+	}
+	if !proto.Equal(e.rateLimit, other.rateLimit) {
 		return false
 	}
 
@@ -223,6 +234,7 @@ type trafficPolicyPluginGwPass struct {
 	localRateLimitInChain *localratelimitv3.LocalRateLimit
 	extAuthPerProvider    map[string]providerWithFromListener
 	extProcPerProvider    map[string]providerWithFromListener
+	rateLimitConfig       *ratev3.RateLimit
 }
 
 func (p *trafficPolicyPluginGwPass) ApplyHCM(ctx context.Context, pCtx *ir.HcmContext, out *envoyhttp.HttpConnectionManager) error {
@@ -303,6 +315,54 @@ func NewPlugin(ctx context.Context, commoncol *common.CommonCollections) extensi
 			p.extProc = &envoy_ext_proc_v3.ExternalProcessor{
 				GrpcService: envoyGrpcService,
 			}
+
+		case v1alpha1.GatewayExtensionTypeRateLimit:
+			if gExt.RateLimit == nil {
+				p.err = fmt.Errorf("rate limit extension missing configuration")
+				return p
+			}
+
+			// Create a base configuration from the extension definition
+			rateLimitConfig := &ratev3.RateLimit{
+				Domain:          gExt.RateLimit.Domain,
+				FailureModeDeny: !gExt.RateLimit.FailOpen,
+			}
+
+			// Create the rate limit service configuration if a gRPC service is specified
+			if gExt.RateLimit.GrpcService != nil {
+				envoyGrpcService, err := resolveExtGrpcService(krtctx, commoncol, gExt.ObjectSource, gExt.RateLimit.GrpcService)
+				if err != nil {
+					p.err = fmt.Errorf("failed to resolve RateLimit backend: %w", err)
+					return p
+				}
+
+				rateLimitConfig.RateLimitService = &ratelimitv3.RateLimitServiceConfig{
+					GrpcService:         envoyGrpcService,
+					TransportApiVersion: envoy_core_v3.ApiVersion_V3,
+				}
+			} else {
+				p.err = fmt.Errorf("rate limit extension requires a gRPC service")
+				return p
+			}
+
+			// Setup other configuration defaults
+			rateLimitConfig.EnableXRatelimitHeaders = ratev3.RateLimit_DRAFT_VERSION_03
+			rateLimitConfig.RequestType = "both"
+			rateLimitConfig.StatPrefix = localRateLimitStatPrefix
+
+			// Set the timeout if specified
+			if gExt.RateLimit.Timeout != "" {
+				duration, err := time.ParseDuration(gExt.RateLimit.Timeout)
+				if err != nil {
+					p.err = fmt.Errorf("invalid timeout in RateLimit extension: %w", err)
+					return p
+				}
+				rateLimitConfig.Timeout = durationpb.New(duration)
+			} else {
+				rateLimitConfig.Timeout = durationpb.New(defaultRateLimitTimeout)
+			}
+
+			p.rateLimit = rateLimitConfig
 		}
 		return p
 	})
@@ -375,6 +435,68 @@ func resolveExtGrpcService(krtctx krt.HandlerContext, commoncol *common.CommonCo
 	return envoyGrpcService, nil
 }
 
+func resolveRateLimitService(krtctx krt.HandlerContext, commoncol *common.CommonCollections, objectSource ir.ObjectSource, rateLimit *v1alpha1.RateLimitProvider) (*ratev3.RateLimit, error) {
+	var clusterName string
+
+	if rateLimit == nil {
+		return nil, errors.New("rate limit provider not provided")
+	}
+
+	if rateLimit.GrpcService == nil {
+		return nil, errors.New("grpc service not provided in rate limit provider")
+	}
+
+	if rateLimit.GrpcService.BackendRef == nil {
+		return nil, errors.New("backend not provided in grpc service")
+	}
+
+	backendRef := rateLimit.GrpcService.BackendRef.BackendObjectReference
+	backend, err := commoncol.BackendIndex.GetBackendFromRef(krtctx, objectSource, backendRef)
+	if err != nil {
+		return nil, err
+	}
+	if backend != nil {
+		clusterName = backend.ClusterName()
+	}
+
+	if clusterName == "" {
+		return nil, errors.New("backend not found")
+	}
+
+	envoyRateLimit := &ratev3.RateLimit{
+		Domain:          rateLimit.Domain,
+		FailureModeDeny: !rateLimit.FailOpen,
+		RateLimitService: &ratelimitv3.RateLimitServiceConfig{
+			GrpcService: &envoy_core_v3.GrpcService{
+				TargetSpecifier: &envoy_core_v3.GrpcService_EnvoyGrpc_{
+					EnvoyGrpc: &envoy_core_v3.GrpcService_EnvoyGrpc{
+						ClusterName: clusterName,
+					},
+				},
+			},
+			TransportApiVersion: envoy_core_v3.ApiVersion_V3,
+		},
+	}
+
+	// Set timeout if specified
+	if rateLimit.Timeout != "" {
+		duration, err := time.ParseDuration(rateLimit.Timeout)
+		if err != nil {
+			return nil, fmt.Errorf("invalid timeout in rate limit provider: %w", err)
+		}
+		envoyRateLimit.Timeout = durationpb.New(duration)
+	} else {
+		envoyRateLimit.Timeout = durationpb.New(defaultRateLimitTimeout)
+	}
+
+	// Set defaults for other required fields
+	envoyRateLimit.StatPrefix = rateLimitStatPrefix
+	envoyRateLimit.EnableXRatelimitHeaders = ratev3.RateLimit_DRAFT_VERSION_03
+	envoyRateLimit.RequestType = "both"
+
+	return envoyRateLimit, nil
+}
+
 func convert(targetRefs []v1alpha1.LocalPolicyTargetReference) []ir.PolicyRef {
 	refs := make([]ir.PolicyRef, 0, len(targetRefs))
 	for _, targetRef := range targetRefs {
@@ -423,6 +545,8 @@ func (p *trafficPolicyPluginGwPass) ApplyListenerPlugin(ctx context.Context, pCt
 	}
 	p.localRateLimitInChain = policy.spec.localRateLimit
 
+	p.rateLimitConfig = policy.spec.rateLimit
+
 	if policy.spec.transform != nil {
 		p.setTransformationInChain = true
 		p.listenerTransform = policy.spec.transform
@@ -435,6 +559,15 @@ func (p *trafficPolicyPluginGwPass) ApplyListenerPlugin(ctx context.Context, pCt
 }
 
 func (p *trafficPolicyPluginGwPass) ApplyVhostPlugin(ctx context.Context, pCtx *ir.VirtualHostContext, out *routev3.VirtualHost) {
+	policy, ok := pCtx.Policy.(*trafficPolicy)
+	if !ok {
+		return
+	}
+
+	// Apply global rate limit actions to the virtual host if they exist
+	if policy.spec.rateLimitActions != nil && len(policy.spec.rateLimitActions) > 0 {
+		out.RateLimits = append(out.RateLimits, policy.spec.rateLimitActions...)
+	}
 }
 
 // called 0 or more times
@@ -513,6 +646,15 @@ func (p *trafficPolicyPluginGwPass) ApplyForRoute(ctx context.Context, pCtx *ir.
 			p.localRateLimitInChain = &localratelimitv3.LocalRateLimit{
 				StatPrefix: localRateLimitStatPrefix,
 			}
+		}
+	}
+
+	// Apply global rate limit actions to the route if they exist
+	if policy.spec.rateLimitActions != nil {
+		// Apply global rate limit actions to the route
+		route := outputRoute.GetRoute()
+		if route != nil {
+			route.RateLimits = append(route.RateLimits, policy.spec.rateLimitActions...)
 		}
 	}
 
@@ -746,6 +888,7 @@ func (p *trafficPolicyPluginGwPass) HttpFilters(ctx context.Context, fcc ir.Filt
 			&transformationpb.FilterTransformations{},
 			plugins.BeforeStage(plugins.FaultStage)))
 	}
+
 	// Add Ext_authz filter for listener
 	for providerName, providerExtauth := range p.extAuthPerProvider {
 		extAuthFilter := providerExtauth.provider.extAuth
@@ -770,6 +913,13 @@ func (p *trafficPolicyPluginGwPass) HttpFilters(ctx context.Context, fcc ir.Filt
 	if p.localRateLimitInChain != nil {
 		filters = append(filters, plugins.MustNewStagedFilter(localRateLimitFilterNamePrefix,
 			p.localRateLimitInChain,
+			plugins.BeforeStage(plugins.AcceptedStage)))
+	}
+
+	// Add global rate limit filter if configured
+	if p.rateLimitConfig != nil {
+		filters = append(filters, plugins.MustNewStagedFilter(rateLimitFilterNamePrefix,
+			p.rateLimitConfig,
 			plugins.BeforeStage(plugins.AcceptedStage)))
 	}
 
@@ -867,6 +1017,12 @@ func mergePolicies(policies []ir.PolicyAtt) ir.PolicyAtt {
 			merged.spec.localRateLimit = p2.spec.localRateLimit
 			out.MergeOrigins["rateLimit"] = p2Ref
 		}
+		// Handle global rate limit merging
+		if policy.IsMergeable(merged.spec.rateLimit, p2.spec.rateLimit, mergeOpts) {
+			merged.spec.rateLimit = p2.spec.rateLimit
+			merged.spec.rateLimitActions = p2.spec.rateLimitActions
+			out.MergeOrigins["rateLimit"] = p2Ref
+		}
 
 		out.HierarchicalPriority = policies[i].HierarchicalPriority
 	}
@@ -917,6 +1073,9 @@ func buildTranslateFunc(
 
 		// Apply rate limit specific translation
 		localRateLimitForSpec(policyCR.Spec, &outSpec)
+
+		// Apply global rate limit specific translation
+		rateLimitForSpec(commoncol, krtctx, policyCR, gatewayExtensions, &outSpec)
 
 		for _, err := range outSpec.errors {
 			contextutils.LoggerFrom(ctx).Error(policyCR.GetNamespace(), policyCR.GetName(), err)
@@ -993,6 +1152,39 @@ func localRateLimitForSpec(spec v1alpha1.TrafficPolicySpec, out *trafficPolicySp
 			out.errors = append(out.errors, err)
 		}
 	}
+}
 
-	// TODO: Support rate limit extension
+// Add this function to handle the global rate limit configuration
+func rateLimitForSpec(
+	commoncol *common.CommonCollections,
+	krtctx krt.HandlerContext,
+	policy *v1alpha1.TrafficPolicy,
+	gatewayExtensions krt.Collection[trafficPolicyGatewayExtensionIR],
+	out *trafficPolicySpecIr,
+) {
+	if policy.Spec.RateLimit == nil || policy.Spec.RateLimit.Global == nil {
+		return
+	}
+
+	globalPolicy := policy.Spec.RateLimit.Global
+	rlFilterConfig, err := toRateLimitFilterConfig(globalPolicy, commoncol.GatewayExtensions, krtctx, policy)
+	if err != nil {
+		out.errors = append(out.errors, fmt.Errorf("failed to configure global rate limit: %w", err))
+		return
+	}
+	out.rateLimit = rlFilterConfig
+
+	// Create rate limit actions for the route or vhost
+	actions, err := createRateLimitActions(globalPolicy.Descriptors)
+	if err != nil {
+		out.errors = append(out.errors, fmt.Errorf("failed to create rate limit actions: %w", err))
+		return
+	}
+
+	// Create route rate limits
+	out.rateLimitActions = []*routeconfv3.RateLimit{
+		{
+			Actions: actions,
+		},
+	}
 }

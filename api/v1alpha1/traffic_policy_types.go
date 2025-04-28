@@ -221,6 +221,10 @@ type RateLimit struct {
 	// Local defines a local rate limiting policy.
 	// +required
 	Local *LocalRateLimitPolicy `json:"local"`
+
+		// Global defines a global rate limiting policy using an external service.
+	// +optional
+	Global *RateLimitPolicy `json:"global,omitempty"`
 }
 
 // LocalRateLimitPolicy represents a policy for local rate limiting.
@@ -255,4 +259,65 @@ type TokenBucket struct {
 	// +required
 	// +kubebuilder:validation:Format=duration
 	FillInterval string `json:"fillInterval"`
+}
+
+type RateLimitPolicy struct {
+	// Domain identifies a rate limiting configuration.
+	// The external rate limit service uses this domain to look up the appropriate rate limits.
+	// +required
+	Domain string `json:"domain"`
+
+	// Descriptors define the dimensions for rate limiting.
+	// These values are passed to the rate limit service which applies configured limits based on them.
+	// +required
+	// +kubebuilder:validation:MinItems=1
+	Descriptors []RateLimitDescriptor `json:"descriptors"`
+
+	// ExtensionRef references a GatewayExtension that provides the global rate limit service.
+	// +required
+	ExtensionRef *corev1.LocalObjectReference `json:"extensionRef"`
+
+	// FailOpen determines if requests are limited when the rate limit service is unavailable.
+	// When true, requests are not limited if the rate limit service is unavailable.
+	// This setting overrides the FailOpen setting in the referenced GatewayExtension's RateLimitProvider.
+	// +optional
+	// +kubebuilder:default=false
+	FailOpen bool `json:"failOpen,omitempty"`
+}
+
+// RateLimitDescriptor defines a descriptor for rate limiting.
+type RateLimitDescriptor struct {
+	// Key for the descriptor entry.
+	// +required
+	Key string `json:"key"`
+
+	// Value for the descriptor entry.
+	// If both Value and ValueFrom are not specified, the descriptor will be invalid.
+	// If both Value and ValueFrom are specified, Value takes precedence.
+	// +optional
+	Value string `json:"value,omitempty"`
+
+	// ValueFrom extracts value from request attributes.
+	// If both Value and ValueFrom are not specified, the descriptor will be invalid.
+	// If both Value and ValueFrom are specified, Value takes precedence.
+	// +optional
+	ValueFrom *RateLimitValueSource `json:"valueFrom,omitempty"`
+}
+
+// RateLimitValueSource defines sources for extracting values for rate limiting.
+// Only one value source should be specified. If multiple sources are specified,
+// they will be evaluated in the following order of precedence: Header, RemoteAddress, Path.
+// This is implemented according to the Envoy rate limit descriptor value source:
+type RateLimitValueSource struct {
+	// Header extracts value from a request header.
+	// +optional
+	Header string `json:"header,omitempty"`
+
+	// RemoteAddress uses the client's IP address as the value.
+	// +optional
+	RemoteAddress bool `json:"remoteAddress,omitempty"`
+
+	// Path uses the request path as the value.
+	// +optional
+	Path bool `json:"path,omitempty"`
 }
