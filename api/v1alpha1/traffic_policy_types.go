@@ -222,7 +222,7 @@ type RateLimit struct {
 	// +required
 	Local *LocalRateLimitPolicy `json:"local"`
 
-		// Global defines a global rate limiting policy using an external service.
+	// Global defines a global rate limiting policy using an external service.
 	// +optional
 	Global *RateLimitPolicy `json:"global,omitempty"`
 }

@@ -371,6 +371,46 @@ spec:
                 type: object
               rateLimit:
                 properties:
+                  global:
+                    properties:
+                      descriptors:
+                        items:
+                          properties:
+                            key:
+                              type: string
+                            value:
+                              type: string
+                            valueFrom:
+                              properties:
+                                header:
+                                  type: string
+                                path:
+                                  type: boolean
+                                remoteAddress:
+                                  type: boolean
+                              type: object
+                          required:
+                          - key
+                          type: object
+                        minItems: 1
+                        type: array
+                      domain:
+                        type: string
+                      extensionRef:
+                        properties:
+                          name:
+                            default: ""
+                            type: string
+                        type: object
+                        x-kubernetes-map-type: atomic
+                      failOpen:
+                        default: false
+                        type: boolean
+                    required:
+                    - descriptors
+                    - domain
+                    - extensionRef
+                    type: object
                   local:
                     properties:
                       tokenBucket:

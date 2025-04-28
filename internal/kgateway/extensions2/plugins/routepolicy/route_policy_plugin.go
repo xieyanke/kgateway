@@ -566,7 +566,7 @@ func (p *trafficPolicyPluginGwPass) ApplyVhostPlugin(ctx context.Context, pCtx *
 
 	// Apply global rate limit actions to the virtual host if they exist
 	if policy.spec.rateLimitActions != nil && len(policy.spec.rateLimitActions) > 0 {
-		out.RateLimits = append(out.RateLimits, policy.spec.rateLimitActions...)
+		out.RateLimits = append(out.GetRateLimits(), policy.spec.rateLimitActions...)
 	}
 }
 
@@ -654,7 +654,7 @@ func (p *trafficPolicyPluginGwPass) ApplyForRoute(ctx context.Context, pCtx *ir.
 		// Apply global rate limit actions to the route
 		route := outputRoute.GetRoute()
 		if route != nil {
-			route.RateLimits = append(route.RateLimits, policy.spec.rateLimitActions...)
+			route.RateLimits = append(route.GetRateLimits(), policy.spec.rateLimitActions...)
 		}
 	}
 
