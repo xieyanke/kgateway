@@ -1,20 +1,4 @@
 apiVersion: gateway.kgateway.dev/v1alpha1
-kind: GatewayExtension
-metadata:
-  name: global-ratelimit
-  namespace: kgateway-system
-spec:
-  type: RateLimit
-  rateLimit:
-    grpcService:
-      backendRef:
-        name: ratelimit
-        namespace: kgateway-system
-        port: 8081
-    domain: "api-gateway"
-    timeout: "100ms"
----
-apiVersion: gateway.kgateway.dev/v1alpha1
 kind: TrafficPolicy
 metadata:
   name: user-rate-limit
@@ -25,6 +9,7 @@ spec:
     kind: HTTPRoute
     name: test-route-1
   rateLimit:
+    local: {}  # Added required empty local configuration
     global:
       domain: "api-gateway"
       descriptors:

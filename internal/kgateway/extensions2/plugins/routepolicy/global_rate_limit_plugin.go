@@ -88,11 +88,10 @@ func toRateLimitFilterConfig(policy *v1alpha1.RateLimitPolicy, gweCollection krt
 	// Construct cluster name from the backendRef
 	clusterName := ""
 	if extension.GrpcService != nil && extension.GrpcService.BackendRef != nil {
-		// Format: outbound|<port>||<service>.<namespace>.svc.cluster.local
-		clusterName = fmt.Sprintf("outbound|%d||%s.%s.svc.cluster.local",
-			extension.GrpcService.BackendRef.Port,
+		clusterName = fmt.Sprintf("%s.%s.svc.cluster.local:%d",
 			extension.GrpcService.BackendRef.Name,
-			gwExt.Namespace)
+			gwExt.Namespace,
+			extension.GrpcService.BackendRef.Port)
 	} else {
 		return nil, fmt.Errorf("GrpcService BackendRef not specified in GatewayExtension %s/%s",
 			extensionNamespace, extensionName)

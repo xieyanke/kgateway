@@ -322,44 +322,11 @@ func NewPlugin(ctx context.Context, commoncol *common.CommonCollections) extensi
 				return p
 			}
 
-			// Create a base configuration from the extension definition
-			rateLimitConfig := &ratev3.RateLimit{
-				Domain:          gExt.RateLimit.Domain,
-				FailureModeDeny: !gExt.RateLimit.FailOpen,
-			}
-
-			// Create the rate limit service configuration if a gRPC service is specified
-			if gExt.RateLimit.GrpcService != nil {
-				envoyGrpcService, err := resolveExtGrpcService(krtctx, commoncol, gExt.ObjectSource, gExt.RateLimit.GrpcService)
-				if err != nil {
-					p.err = fmt.Errorf("failed to resolve RateLimit backend: %w", err)
-					return p
-				}
-
-				rateLimitConfig.RateLimitService = &ratelimitv3.RateLimitServiceConfig{
-					GrpcService:         envoyGrpcService,
-					TransportApiVersion: envoy_core_v3.ApiVersion_V3,
-				}
-			} else {
-				p.err = fmt.Errorf("rate limit extension requires a gRPC service")
+			// Use the specialized function for rate limit service resolution
+			rateLimitConfig, err := resolveRateLimitService(krtctx, commoncol, gExt.ObjectSource, gExt.RateLimit)
+			if err != nil {
+				p.err = fmt.Errorf("failed to resolve RateLimit backend: %w", err)
 				return p
-			}
-
-			// Setup other configuration defaults
-			rateLimitConfig.EnableXRatelimitHeaders = ratev3.RateLimit_DRAFT_VERSION_03
-			rateLimitConfig.RequestType = "both"
-			rateLimitConfig.StatPrefix = localRateLimitStatPrefix
-
-			// Set the timeout if specified
-			if gExt.RateLimit.Timeout != "" {
-				duration, err := time.ParseDuration(gExt.RateLimit.Timeout)
-				if err != nil {
-					p.err = fmt.Errorf("invalid timeout in RateLimit extension: %w", err)
-					return p
-				}
-				rateLimitConfig.Timeout = durationpb.New(duration)
-			} else {
-				rateLimitConfig.Timeout = durationpb.New(defaultRateLimitTimeout)
 			}
 
 			p.rateLimit = rateLimitConfig
@@ -918,7 +885,7 @@ func (p *trafficPolicyPluginGwPass) HttpFilters(ctx context.Context, fcc ir.Filt
 
 	// Add global rate limit filter if configured
 	if p.rateLimitConfig != nil {
-		filters = append(filters, plugins.MustNewStagedFilter(rateLimitFilterNamePrefix,
+		filters = append(filters, plugins.MustNewStagedFilter(rateLimitFilterName,
 			p.rateLimitConfig,
 			plugins.BeforeStage(plugins.AcceptedStage)))
 	}

@@ -5,7 +5,7 @@ metadata:
   namespace: kgateway-system
 spec:
   parentRefs:
-  - name: kgateway
+  - name: http
   hostnames:
   - "example.com"
   rules:
@@ -25,7 +25,7 @@ metadata:
   namespace: kgateway-system
 spec:
   parentRefs:
-  - name: kgateway
+  - name: http
   hostnames:
   - "example.com"
   rules:
