@@ -27,7 +27,6 @@ import (
 
 	envoy_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
 	envoy_config_listener_v3 "github.com/envoyproxy/go-control-plane/envoy/config/listener/v3"
-	routeconfv3 "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
 	routev3 "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
 	envoy_ext_authz_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/ext_authz/v3"
 	envoy_matcher_v3 "github.com/envoyproxy/go-control-plane/envoy/type/matcher/v3"
@@ -60,7 +59,7 @@ const (
 	extauthFilterNamePrefix                     = "ext_auth"
 	localRateLimitFilterNamePrefix              = "ratelimit/local"
 	localRateLimitStatPrefix                    = "http_local_rate_limiter"
-  rateLimitFilterNamePrefix                   = "ratelimit"
+	rateLimitFilterNamePrefix                   = "ratelimit"
 )
 
 func extAuthFilterName(name string) string {
@@ -120,8 +119,8 @@ type trafficPolicySpecIr struct {
 	rustformationStringToStash string
 	extAuth                    *extAuthIR
 	localRateLimit             *localratelimitv3.LocalRateLimit
-	rateLimit                  *ratev3.RateLimit        //  Rate limiting filter configuration
-	rateLimitActions           []*routeconfv3.RateLimit // Rate limit descriptors for routes/vhosts
+	rateLimit                  *ratev3.RateLimit    //  Rate limiting filter configuration
+	rateLimitActions           []*routev3.RateLimit // Rate limit descriptors for routes/vhosts
 	errors                     []error
 }
 
@@ -1147,7 +1146,7 @@ func rateLimitForSpec(
 	}
 
 	// Create route rate limits
-	out.rateLimitActions = []*routeconfv3.RateLimit{
+	out.rateLimitActions = []*routev3.RateLimit{
 		{
 			Actions: actions,
 		},

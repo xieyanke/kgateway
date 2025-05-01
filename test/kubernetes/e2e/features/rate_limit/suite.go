@@ -264,19 +264,3 @@ func (s *testingSuite) assertConsistentResponseWithHeader(path string, headerNam
 			StatusCode: expectedStatus,
 		})
 }
-
-func (s *testingSuite) assertEventualResponse(path string, expectedStatus int) {
-	resp := s.testInstallation.Assertions.AssertEventualCurlReturnResponse(
-		s.ctx,
-		testdefaults.CurlPodExecOpt,
-		[]curl.Option{
-			curl.WithPath(path),
-			curl.WithHost(kubeutils.ServiceFQDN(proxyObjectMeta)),
-			curl.WithHostHeader("example.com"),
-			curl.WithPort(8080),
-		},
-		&testmatchers.HttpResponse{
-			StatusCode: expectedStatus,
-		})
-	defer resp.Body.Close()
-}
