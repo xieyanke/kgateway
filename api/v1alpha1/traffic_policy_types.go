@@ -261,14 +261,11 @@ type TokenBucket struct {
 	FillInterval string `json:"fillInterval"`
 }
 
+// RateLimitPolicy defines a global rate limiting policy using an external service.
 type RateLimitPolicy struct {
-	// Domain identifies a rate limiting configuration.
-	// The external rate limit service uses this domain to look up the appropriate rate limits.
-	// +required
-	Domain string `json:"domain"`
-
 	// Descriptors define the dimensions for rate limiting.
 	// These values are passed to the rate limit service which applies configured limits based on them.
+	// Each descriptor represents a single rate limit rule with one or more entries.
 	// +required
 	// +kubebuilder:validation:MinItems=1
 	Descriptors []RateLimitDescriptor `json:"descriptors"`
@@ -276,48 +273,62 @@ type RateLimitPolicy struct {
 	// ExtensionRef references a GatewayExtension that provides the global rate limit service.
 	// +required
 	ExtensionRef *corev1.LocalObjectReference `json:"extensionRef"`
-
-	// FailOpen determines if requests are limited when the rate limit service is unavailable.
-	// When true, requests are not limited if the rate limit service is unavailable.
-	// This setting overrides the FailOpen setting in the referenced GatewayExtension's RateLimitProvider.
-	// +optional
-	// +kubebuilder:default=false
-	FailOpen bool `json:"failOpen,omitempty"`
 }
 
 // RateLimitDescriptor defines a descriptor for rate limiting.
+// A descriptor is a group of entries that form a single rate limit rule.
 type RateLimitDescriptor struct {
-	// Key for the descriptor entry.
+	// Entries are the individual components that make up this descriptor.
+	// When translated to Envoy, these entries combine to form a single descriptor.
+	// +required
+	// +kubebuilder:validation:MinItems=1
+	Entries []RateLimitDescriptorEntry `json:"entries"`
+}
+
+// RateLimitDescriptorEntryType defines the type of a rate limit descriptor entry.
+// +kubebuilder:validation:Enum=Generic;Header;RemoteAddress;Path
+type RateLimitDescriptorEntryType string
+
+const (
+	// RateLimitDescriptorEntryTypeGeneric represents a generic key-value descriptor entry.
+	RateLimitDescriptorEntryTypeGeneric RateLimitDescriptorEntryType = "Generic"
+
+	// RateLimitDescriptorEntryTypeHeader represents a descriptor entry that extracts its value from a request header.
+	RateLimitDescriptorEntryTypeHeader RateLimitDescriptorEntryType = "Header"
+
+	// RateLimitDescriptorEntryTypeRemoteAddress represents a descriptor entry that uses the client's IP address as its value.
+	RateLimitDescriptorEntryTypeRemoteAddress RateLimitDescriptorEntryType = "RemoteAddress"
+
+	// RateLimitDescriptorEntryTypePath represents a descriptor entry that uses the request path as its value.
+	RateLimitDescriptorEntryTypePath RateLimitDescriptorEntryType = "Path"
+)
+
+// RateLimitDescriptorEntry defines a single entry in a rate limit descriptor.
+// Only one entry type may be specified.
+// +kubebuilder:validation:XValidation:message="exactly one entry type must be specified",rule="(has(self.type) && (self.type == 'Generic' && has(self.generic) && !has(self.header)) || (self.type == 'Header' && has(self.header) && !has(self.generic)) || (self.type == 'RemoteAddress' && !has(self.generic) && !has(self.header)) || (self.type == 'Path' && !has(self.generic) && !has(self.header)))"
+type RateLimitDescriptorEntry struct {
+	// Type specifies what kind of rate limit descriptor entry this is.
+	// +required
+	Type RateLimitDescriptorEntryType `json:"type"`
+
+	// Generic contains the configuration for a generic key-value descriptor entry.
+	// This field must be specified when Type is Generic.
+	// +optional
+	Generic *RateLimitDescriptorEntryGeneric `json:"generic,omitempty"`
+
+	// Header specifies a request header to extract the descriptor value from.
+	// This field must be specified when Type is Header.
+	// +optional
+	Header string `json:"header,omitempty"`
+}
+
+// RateLimitDescriptorEntryGeneric defines a generic key-value descriptor entry.
+type RateLimitDescriptorEntryGeneric struct {
+	// Key is the name of this descriptor entry.
 	// +required
 	Key string `json:"key"`
 
-	// Value for the descriptor entry.
-	// If both Value and ValueFrom are not specified, the descriptor will be invalid.
-	// If both Value and ValueFrom are specified, Value takes precedence.
-	// +optional
-	Value string `json:"value,omitempty"`
-
-	// ValueFrom extracts value from request attributes.
-	// If both Value and ValueFrom are not specified, the descriptor will be invalid.
-	// If both Value and ValueFrom are specified, Value takes precedence.
-	// +optional
-	ValueFrom *RateLimitValueSource `json:"valueFrom,omitempty"`
-}
-
-// RateLimitValueSource defines sources for extracting values for rate limiting.
-// Only one value source should be specified. If multiple sources are specified,
-// they will be evaluated in the following order of precedence: Header, RemoteAddress, Path.
-// This is implemented according to the Envoy rate limit descriptor value source:
-type RateLimitValueSource struct {
-	// Header extracts value from a request header.
-	// +optional
-	Header string `json:"header,omitempty"`
-
-	// RemoteAddress uses the client's IP address as the value.
-	// +optional
-	RemoteAddress bool `json:"remoteAddress,omitempty"`
-
-	// Path uses the request path as the value.
-	// +optional
-	Path bool `json:"path,omitempty"`
+	// Value is the static value for this descriptor entry.
+	// +required
+	Value string `json:"value"`
 }

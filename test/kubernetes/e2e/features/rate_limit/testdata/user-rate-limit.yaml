@@ -11,11 +11,9 @@ spec:
   rateLimit:
     local: {}  # Added required empty local configuration
     global:
-      domain: "api-gateway"
       descriptors:
-      - key: "user_id"
-        valueFrom:
+      - entries:
+        - type: Header
           header: "X-User-ID"
       extensionRef:
         name: global-ratelimit
-      failOpen: false

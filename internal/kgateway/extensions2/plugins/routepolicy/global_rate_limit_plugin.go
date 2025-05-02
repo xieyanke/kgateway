@@ -23,6 +23,13 @@ const (
 	defaultRateLimitTimeout = 2 * time.Second
 )
 
+// RateLimitIR represents the intermediate representation of a rate limit policy
+type RateLimitIR struct {
+	provider         *trafficPolicyGatewayExtensionIR
+	rateLimitConfig  *ratev3.RateLimit
+	rateLimitActions []*routeconfv3.RateLimit
+}
+
 // toRateLimitFilterConfig translates a RateLimitPolicy to Envoy rate limit configuration.
 func toRateLimitFilterConfig(policy *v1alpha1.RateLimitPolicy, gweCollection krt.Collection[ir.GatewayExtension], kctx krt.HandlerContext, trafficpolicy *v1alpha1.TrafficPolicy) (*ratev3.RateLimit, error) {
 	if policy == nil || policy.ExtensionRef == nil {
@@ -77,13 +84,9 @@ func toRateLimitFilterConfig(policy *v1alpha1.RateLimitPolicy, gweCollection krt
 		timeout = durationpb.New(defaultRateLimitTimeout)
 	}
 
-	// Domain precedence: We prioritize the policy domain to allow specifying domain per policy.
-	// If policy domain is not specified, then fall back to the extension domain.
-	// This ensures each policy can have its own rate limit domain when needed.
-	domain := policy.Domain
-	if domain == "" && extension.Domain != "" {
-		domain = extension.Domain
-	}
+	// Use the domain from the extension.
+	// Domain and FailOpen are listener level settings that come from the RateLimitProvider.
+	domain := extension.Domain
 
 	// Construct cluster name from the backendRef
 	clusterName := ""
@@ -137,51 +140,67 @@ func createRateLimitActions(descriptors []v1alpha1.RateLimitDescriptor) ([]*rout
 		return nil, errors.New("at least one descriptor is required for global rate limiting")
 	}
 
-	result := make([]*routeconfv3.RateLimit_Action, 0, len(descriptors))
+	var result []*routeconfv3.RateLimit_Action
 
-	for _, desc := range descriptors {
-		action := &routeconfv3.RateLimit_Action{}
+	// Process each descriptor
+	for _, descriptor := range descriptors {
+		// Each descriptor becomes a separate RateLimit in Envoy with its own set of actions
+		// Create actions for each entry in the descriptor
+		var actions []*routeconfv3.RateLimit_Action
 
-		// Handle different types of descriptor sources
-		if desc.Value != "" {
-			// Static value
-			action.ActionSpecifier = &routeconfv3.RateLimit_Action_GenericKey_{
-				GenericKey: &routeconfv3.RateLimit_Action_GenericKey{
-					DescriptorKey:   desc.Key,
-					DescriptorValue: desc.Value,
-				},
-			}
-		} else if desc.ValueFrom != nil {
-			// Dynamic value source
-			if desc.ValueFrom.RemoteAddress {
-				// Use remote address as descriptor value
+		for _, entry := range descriptor.Entries {
+			action := &routeconfv3.RateLimit_Action{}
+
+			// Set the action specifier based on entry type
+			switch entry.Type {
+			case v1alpha1.RateLimitDescriptorEntryTypeGeneric:
+				if entry.Generic == nil {
+					return nil, fmt.Errorf("generic entry requires Generic field to be set")
+				}
+				action.ActionSpecifier = &routeconfv3.RateLimit_Action_GenericKey_{
+					GenericKey: &routeconfv3.RateLimit_Action_GenericKey{
+						DescriptorKey:   entry.Generic.Key,
+						DescriptorValue: entry.Generic.Value,
+					},
+				}
+			case v1alpha1.RateLimitDescriptorEntryTypeHeader:
+				if entry.Header == "" {
+					return nil, fmt.Errorf("header entry requires Header field to be set")
+				}
+				action.ActionSpecifier = &routeconfv3.RateLimit_Action_RequestHeaders_{
+					RequestHeaders: &routeconfv3.RateLimit_Action_RequestHeaders{
+						HeaderName:    entry.Header,
+						DescriptorKey: entry.Header, // Use header name as key
+					},
+				}
+			case v1alpha1.RateLimitDescriptorEntryTypeRemoteAddress:
 				action.ActionSpecifier = &routeconfv3.RateLimit_Action_RemoteAddress_{
 					RemoteAddress: &routeconfv3.RateLimit_Action_RemoteAddress{},
 				}
-			} else if desc.ValueFrom.Path {
-				// Use request path as descriptor value
+			case v1alpha1.RateLimitDescriptorEntryTypePath:
 				action.ActionSpecifier = &routeconfv3.RateLimit_Action_RequestHeaders_{
 					RequestHeaders: &routeconfv3.RateLimit_Action_RequestHeaders{
 						HeaderName:    ":path",
-						DescriptorKey: desc.Key,
+						DescriptorKey: "path",
 					},
 				}
-			} else if desc.ValueFrom.Header != "" {
-				// Use header value as descriptor value
-				action.ActionSpecifier = &routeconfv3.RateLimit_Action_RequestHeaders_{
-					RequestHeaders: &routeconfv3.RateLimit_Action_RequestHeaders{
-						HeaderName:    desc.ValueFrom.Header,
-						DescriptorKey: desc.Key,
-					},
-				}
-			} else {
-				return nil, fmt.Errorf("descriptor %s has no valid value source specified", desc.Key)
+			default:
+				return nil, fmt.Errorf("unsupported entry type: %s", entry.Type)
 			}
-		} else {
-			return nil, fmt.Errorf("descriptor %s has no value or valueFrom specified", desc.Key)
+
+			actions = append(actions, action)
 		}
 
-		result = append(result, action)
+		// If we have actions for this descriptor, add it
+		if len(actions) > 0 {
+			// In Envoy, a single RateLimit includes multiple Actions that together form a descriptor
+			rateLimit := &routeconfv3.RateLimit{
+				Actions: actions,
+			}
+
+			// The final result is a slice of complete RateLimit objects
+			result = append(result, rateLimit.Actions...)
+		}
 	}
 
 	return result, nil

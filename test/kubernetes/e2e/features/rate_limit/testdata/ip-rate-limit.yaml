@@ -14,11 +14,8 @@ spec:
   rateLimit:
     local: {}  # Added required empty local configuration
     global:
-      domain: "api-gateway"
       descriptors:
-      - key: "remote_address"
-        valueFrom:
-          remoteAddress: true
+      - entries:
+        - type: RemoteAddress
       extensionRef:
         name: global-ratelimit
-      failOpen: false
