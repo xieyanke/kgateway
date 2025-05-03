@@ -219,8 +219,8 @@ type BufferSettings struct {
 // RateLimit defines a rate limiting policy.
 type RateLimit struct {
 	// Local defines a local rate limiting policy.
-	// +required
-	Local *LocalRateLimitPolicy `json:"local"`
+	// +optional
+	Local *LocalRateLimitPolicy `json:"local,omitempty"`
 
 	// Global defines a global rate limiting policy using an external service.
 	// +optional

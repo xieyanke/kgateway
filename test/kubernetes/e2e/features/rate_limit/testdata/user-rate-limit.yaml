@@ -9,11 +9,11 @@ spec:
     kind: HTTPRoute
     name: test-route-1
   rateLimit:
-    local: {}  # Added required empty local configuration
+    # local: {}
     global:
       descriptors:
       - entries:
         - type: Header
-          header: "X-User-ID"
+          header: "user_id"
       extensionRef:
         name: global-ratelimit

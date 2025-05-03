@@ -16,11 +16,6 @@ data:
         rate_limit:
           unit: minute
           requests_per_unit: 1
-      - key: path
-        value: "/path2"
-        rate_limit:
-          unit: minute
-          requests_per_unit: 2
       - key: user_id
         rate_limit:
           unit: minute
@@ -43,75 +38,81 @@ metadata:
   namespace: kgateway-system
 spec:
   selector:
-    app: redis
+    app: ratelimit-redis
   ports:
-  - port: 6379
+  - name: redis
+    port: 6379
+    protocol: TCP
     targetPort: 6379
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: redis
+  name: ratelimit-redis
+  labels:
+   app: ratelimit-redis
   namespace: kgateway-system
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: redis
+      app: ratelimit-redis
   template:
     metadata:
       labels:
-        app: redis
+        app: ratelimit-redis
     spec:
       containers:
       - name: redis
-        image: redis:alpine
-        ports:
-        - containerPort: 6379
+        image: redis:6.0.6
+        resources:
+          limits:
+            cpu: 1500m
+            memory: 512Mi
+          requests:
+            cpu: 200m
+            memory: 256Mi
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: ratelimit
+  name: ratelimit-demo-ratelimit
+  labels:
+   app: ratelimit-demo-rl
   namespace: kgateway-system
 spec:
   ports:
-  - port: 8081
-    name: grpc
+  - name: ratelimit-app
+    port: 42080
+    protocol: TCP
+    targetPort: 8080
+  - name: ratelimit-app-grpc
+    port: 42081
+    protocol: TCP
     targetPort: 8081
   selector:
-    app: ratelimit
+    app: ratelimit-demo-rl
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: ratelimit
+  name: ratelimit-demo-rl
   namespace: kgateway-system
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: ratelimit
+      app: ratelimit-demo-rl
   template:
     metadata:
       labels:
-        app: ratelimit
+        app: ratelimit-demo-rl
     spec:
       containers:
       - name: ratelimit
-        image: envoyproxy/ratelimit:master
+        image: envoyproxy/ratelimit:3e085e5b
         command: ["/bin/ratelimit"]
-        args: ["--config_path", "/data/ratelimit/config/config.yaml"]
-        ports:
-        - containerPort: 8081
-          name: grpc
-        - containerPort: 6070
-          name: debug
         env:
-        - name: USE_STATSD
-          value: "false"
-        - name: LOG_LEVEL
-          value: "debug"
         - name: RUNTIME_ROOT
           value: /data
         - name: RUNTIME_SUBDIRECTORY
@@ -120,10 +121,20 @@ spec:
           value: "tcp"
         - name: REDIS_URL
           value: "redis:6379"
+        - name: RUNTIME_WATCH_ROOT
+          value: "false"
         volumeMounts:
         - name: config-volume
           mountPath: /data/ratelimit/config
+        resources:
+         limits:
+           cpu: 1500m 
+           memory: 512Mi
+         requests:
+           cpu: 200m
+           memory: 256Mi
       volumes:
       - name: config-volume
         configMap:
+          defaultMode: 420
           name: ratelimit-config

@@ -37,3 +37,10 @@ spec:
         ports:
         - containerPort: 5678
           name: http
+        resources:
+          limits:
+            cpu: "500m"
+            memory: "256Mi"
+          requests:
+            cpu: "250m"
+            memory: "128Mi"

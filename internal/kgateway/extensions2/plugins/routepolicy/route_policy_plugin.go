@@ -128,7 +128,6 @@ type trafficPolicySpecIr struct {
 	extAuth                    *extAuthIR
 	localRateLimit             *localratelimitv3.LocalRateLimit
 	rateLimit                  *RateLimitIR
-	rateLimitActions           []*routev3.RateLimit
 	errors                     []error
 }
 
@@ -1244,13 +1243,6 @@ func rateLimitForSpec(
 		gwExtIR := krt.FetchOne(krtctx, gatewayExtensions, krt.FilterObjectName(nsName))
 		if gwExtIR == nil {
 			out.errors = append(out.errors, fmt.Errorf("rate limit extension %s/%s not found",
-				extensionNamespace, extensionName))
-			return
-		}
-
-		// Check if we found the extension
-		if gwExtIR == nil {
-			out.errors = append(out.errors, fmt.Errorf("rate limit extension %s/%s not found or inaccessible",
 				extensionNamespace, extensionName))
 			return
 		}

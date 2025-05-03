@@ -12,7 +12,7 @@ spec:
     kind: HTTPRoute
     name: test-route-2
   rateLimit:
-    local: {}  # Added required empty local configuration
+    # local: {} 
     global:
       descriptors:
       - entries:

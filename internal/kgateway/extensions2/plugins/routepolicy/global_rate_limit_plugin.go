@@ -199,7 +199,7 @@ func createRateLimitActions(descriptors []v1alpha1.RateLimitDescriptor) ([]*rout
 			}
 
 			// The final result is a slice of complete RateLimit objects
-			result = append(result, rateLimit.Actions...)
+			result = append(result, rateLimit.GetActions()...)
 		}
 	}
 

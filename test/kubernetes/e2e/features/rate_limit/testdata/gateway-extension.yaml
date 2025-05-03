@@ -13,4 +13,4 @@ spec:
         port: 8081
     domain: "api-gateway"
     timeout: "100ms"
-    failOpen: true  # Added failOpen setting for the fail-open test
+    failOpen: true

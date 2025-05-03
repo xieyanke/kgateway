@@ -1039,6 +1039,28 @@ var schemaYAML = typed.YAMLObject(`types:
 - name: com.github.kgateway-dev.kgateway.v2.api.v1alpha1.RateLimitDescriptor
   map:
     fields:
+    - name: entries
+      type:
+        list:
+          elementType:
+            namedType: com.github.kgateway-dev.kgateway.v2.api.v1alpha1.RateLimitDescriptorEntry
+          elementRelationship: atomic
+- name: com.github.kgateway-dev.kgateway.v2.api.v1alpha1.RateLimitDescriptorEntry
+  map:
+    fields:
+    - name: generic
+      type:
+        namedType: com.github.kgateway-dev.kgateway.v2.api.v1alpha1.RateLimitDescriptorEntryGeneric
+    - name: header
+      type:
+        scalar: string
+    - name: type
+      type:
+        scalar: string
+      default: ""
+- name: com.github.kgateway-dev.kgateway.v2.api.v1alpha1.RateLimitDescriptorEntryGeneric
+  map:
+    fields:
     - name: key
       type:
         scalar: string
@@ -1046,9 +1068,7 @@ var schemaYAML = typed.YAMLObject(`types:
     - name: value
       type:
         scalar: string
-    - name: valueFrom
-      type:
-        namedType: com.github.kgateway-dev.kgateway.v2.api.v1alpha1.RateLimitValueSource
+      default: ""
 - name: com.github.kgateway-dev.kgateway.v2.api.v1alpha1.RateLimitPolicy
   map:
     fields:
@@ -1058,16 +1078,9 @@ var schemaYAML = typed.YAMLObject(`types:
           elementType:
             namedType: com.github.kgateway-dev.kgateway.v2.api.v1alpha1.RateLimitDescriptor
           elementRelationship: atomic
-    - name: domain
-      type:
-        scalar: string
-      default: ""
     - name: extensionRef
       type:
         namedType: io.k8s.api.core.v1.LocalObjectReference
-    - name: failOpen
-      type:
-        scalar: boolean
 - name: com.github.kgateway-dev.kgateway.v2.api.v1alpha1.RateLimitProvider
   map:
     fields:
@@ -1084,18 +1097,6 @@ var schemaYAML = typed.YAMLObject(`types:
     - name: timeout
       type:
         scalar: string
-- name: com.github.kgateway-dev.kgateway.v2.api.v1alpha1.RateLimitValueSource
-  map:
-    fields:
-    - name: header
-      type:
-        scalar: string
-    - name: path
-      type:
-        scalar: boolean
-    - name: remoteAddress
-      type:
-        scalar: boolean
 - name: com.github.kgateway-dev.kgateway.v2.api.v1alpha1.Regex
   map:
     fields:

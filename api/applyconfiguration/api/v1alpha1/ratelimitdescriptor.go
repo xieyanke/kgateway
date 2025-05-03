@@ -5,9 +5,7 @@ package v1alpha1
 // RateLimitDescriptorApplyConfiguration represents a declarative configuration of the RateLimitDescriptor type for use
 // with apply.
 type RateLimitDescriptorApplyConfiguration struct {
-	Key       *string                                 `json:"key,omitempty"`
-	Value     *string                                 `json:"value,omitempty"`
-	ValueFrom *RateLimitValueSourceApplyConfiguration `json:"valueFrom,omitempty"`
+	Entries []RateLimitDescriptorEntryApplyConfiguration `json:"entries,omitempty"`
 }
 
 // RateLimitDescriptorApplyConfiguration constructs a declarative configuration of the RateLimitDescriptor type for use with
@@ -16,26 +14,15 @@ func RateLimitDescriptor() *RateLimitDescriptorApplyConfiguration {
 	return &RateLimitDescriptorApplyConfiguration{}
 }
 
-// WithKey sets the Key field in the declarative configuration to the given value
-// and returns the receiver, so that objects can be built by chaining "With" function invocations.
-// If called multiple times, the Key field is set to the value of the last call.
-func (b *RateLimitDescriptorApplyConfiguration) WithKey(value string) *RateLimitDescriptorApplyConfiguration {
-	b.Key = &value
-	return b
-}
-
-// WithValue sets the Value field in the declarative configuration to the given value
-// and returns the receiver, so that objects can be built by chaining "With" function invocations.
-// If called multiple times, the Value field is set to the value of the last call.
-func (b *RateLimitDescriptorApplyConfiguration) WithValue(value string) *RateLimitDescriptorApplyConfiguration {
-	b.Value = &value
-	return b
-}
-
-// WithValueFrom sets the ValueFrom field in the declarative configuration to the given value
-// and returns the receiver, so that objects can be built by chaining "With" function invocations.
-// If called multiple times, the ValueFrom field is set to the value of the last call.
-func (b *RateLimitDescriptorApplyConfiguration) WithValueFrom(value *RateLimitValueSourceApplyConfiguration) *RateLimitDescriptorApplyConfiguration {
-	b.ValueFrom = value
+// WithEntries adds the given value to the Entries field in the declarative configuration
+// and returns the receiver, so that objects can be build by chaining "With" function invocations.
+// If called multiple times, values provided by each call will be appended to the Entries field.
+func (b *RateLimitDescriptorApplyConfiguration) WithEntries(values ...*RateLimitDescriptorEntryApplyConfiguration) *RateLimitDescriptorApplyConfiguration {
+	for i := range values {
+		if values[i] == nil {
+			panic("nil value passed to WithEntries")
+		}
+		b.Entries = append(b.Entries, *values[i])
+	}
 	return b
 }

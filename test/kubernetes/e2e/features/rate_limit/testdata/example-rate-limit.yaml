@@ -1,35 +1,35 @@
-apiVersion: gateway.kgateway.dev/v1alpha1
-kind: TrafficPolicy
-metadata:
-  name: example-rate-limit
-  namespace: default
-spec:
-  targetRefs:
-  - group: gateway.networking.k8s.io
-    kind: HTTPRoute
-    name: example-route
-  rateLimit:
-    global:
-      # Define rate limit descriptors using the new structure
-      descriptors:
-      - entries:
-        # Remote address-based rate limiting
-        - type: RemoteAddress
+# apiVersion: gateway.kgateway.dev/v1alpha1
+# kind: TrafficPolicy
+# metadata:
+#   name: example-rate-limit
+#   namespace: default
+# spec:
+#   targetRefs:
+#   - group: gateway.networking.k8s.io
+#     kind: HTTPRoute
+#     name: example-route
+#   rateLimit:
+#     global:
+#       # Define rate limit descriptors using the new structure
+#       descriptors:
+#       - entries:
+#         # Remote address-based rate limiting
+#         - type: RemoteAddress
       
-      # Example of a descriptor with multiple entries (combined key)
-      - entries:
-        # Header-based rate limiting
-        - type: Header
-          header: "x-user-id"
-        # Path-based descriptor component
-        - type: Path
+#       # Example of a descriptor with multiple entries (combined key)
+#       - entries:
+#         # Header-based rate limiting
+#         - type: Header
+#           header: "x-user-id"
+#         # Path-based descriptor component
+#         - type: Path
       
-      # Example with generic key-value pair
-      - entries:
-        - type: Generic
-          generic:
-            key: "service"
-            value: "api"
+#       # Example with generic key-value pair
+#       - entries:
+#         - type: Generic
+#           generic:
+#             key: "service"
+#             value: "api"
             
-      extensionRef:
-        name: rate-limit-extension
+#       extensionRef:
+#         name: rate-limit-extension
