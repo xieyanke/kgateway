@@ -26,8 +26,6 @@ The global rate limiting feature consists of three components:
 2. **GatewayExtension** - References the rate limit service implementation
 3. **Rate Limit Service** - An external service that implements the Envoy Rate Limit protocol and contains the actual rate limit values
 
-> **Important**: A TrafficPolicy must be in the same namespace as any GatewayExtension it references. When a TrafficPolicy references a GatewayExtension via the `extensionRef` field, kgateway will look for that extension in the same namespace as the TrafficPolicy.
-
 ## Deployment
 
 ### 1. Deploy the Rate Limit Service
@@ -35,7 +33,7 @@ The global rate limiting feature consists of three components:
 kgateway integrates with any service that implements the Envoy Rate Limit gRPC protocol. For your convenience, we provide an example deployment using the official Envoy rate limit service in the [test/kubernetes/e2e/features/rate_limit/testdata](../test/kubernetes/e2e/features/rate_limit/testdata) directory.
 
 ```bash
-kubectl apply -f test/kubernetes/e2e/features/rate_limit/testdata/rate-limit-service.yaml
+kubectl apply -f test/kubernetes/e2e/features/rate_limit/testdata/rate-limit-server.yaml
 ```
 
 ### 2. Configure the Rate Limit Service
@@ -81,6 +79,7 @@ spec:
         port: 8081
     domain: "api-gateway"
     timeout: "100ms"  # Optional timeout for rate limit service calls
+    failOpen: false   # When true, requests are not limited if the service is unavailable
 ```
 
 ### 4. Create TrafficPolicies with Global Rate Limiting
@@ -100,14 +99,11 @@ spec:
     name: test-route-1
   rateLimit:
     global:
-      domain: "api-gateway"
       descriptors:
-      - key: "remote_address"
-        valueFrom:
-          remoteAddress: true
+      - entries:
+        - type: RemoteAddress
       extensionRef:
         name: global-ratelimit
-      failOpen: false
 ```
 
 ## Configuration Options
@@ -116,55 +112,42 @@ spec:
 
 | Field | Description | Required |
 |-------|-------------|----------|
-| domain | Identifies a rate limiting configuration domain | Yes |
 | descriptors | Define the dimensions for rate limiting | Yes |
 | extensionRef | Reference to a GatewayExtension for the rate limit service | Yes |
-| failOpen | When true, requests are not limited if the rate limit service is unavailable | No |
 
 ### Rate Limit Descriptors
 
-Descriptors define the dimensions for rate limiting. Each descriptor represents a key-value pair that helps categorize and count requests:
+Descriptors define the dimensions for rate limiting. Each descriptor consists of one or more entries that help categorize and count requests:
 
 ```yaml
 descriptors:
-- key: "remote_address"
-  valueFrom:
-    remoteAddress: true
-- key: "path"
-  valueFrom:
-    path: true
-- key: "user_id"
-  valueFrom:
-    header: "X-User-ID"
-- key: "service"
-  value: "premium-api"
+- entries:
+  - type: RemoteAddress
+  - type: Generic
+    generic:
+      key: "custom_key"
+      value: "custom_value"
+- entries:
+  - type: Header
+    header: "user-id"
+  - type: Path
 ```
+
+### Descriptor Entry Types
+
+| Type | Description | Additional Fields |
+|------|-------------|-------------------|
+| RemoteAddress | Uses the client's IP address as the descriptor value | None |
+| Path | Uses the request path as the descriptor value | None |
+| Header | Extracts the descriptor value from a request header | `header`: The name of the header to extract |
+| Generic | Uses a static key-value pair | `generic.key`: The descriptor key<br>`generic.value`: The static value |
 
 ## Examples
 
-The [test/kubernetes/e2e/features/rate_limit/testdata](../test/kubernetes/e2e/features/rate_limit/testdata) directory contains several examples:
+### Rate Limiting by IP Address
 
-1. **IP-based rate limiting** ([ip-rate-limit.yaml](../test/kubernetes/e2e/features/rate_limit/testdata/ip-rate-limit.yaml)): Limit requests based on client IP address
-2. **Path-based rate limiting** ([path-rate-limit.yaml](../test/kubernetes/e2e/features/rate_limit/testdata/path-rate-limit.yaml)): Apply different limits to specific paths
-3. **User-based rate limiting** ([user-rate-limit.yaml](../test/kubernetes/e2e/features/rate_limit/testdata/user-rate-limit.yaml)): Rate limit based on a user identifier header
-4. **Combined rate limiting** ([combined-rate-limit.yaml](../test/kubernetes/e2e/features/rate_limit/testdata/combined-rate-limit.yaml)): Use both global and local rate limiting together
-5. **Fail open rate limiting** ([fail-open-rate-limit.yaml](../test/kubernetes/e2e/features/rate_limit/testdata/fail-open-rate-limit.yaml)): Configure rate limiter to allow requests when service is unavailable
+Limit requests based on the client's IP address:
 
-## Example Configurations
-
-### Example 1: IP-Based Rate Limiting
-
-**Rate Limit Service Configuration:**
-```yaml
-domain: api-gateway
-descriptors:
-  - key: remote_address
-    rate_limit:
-      unit: minute
-      requests_per_unit: 1
-```
-
-**TrafficPolicy:**
 ```yaml
 apiVersion: gateway.kgateway.dev/v1alpha1
 kind: TrafficPolicy
@@ -178,72 +161,17 @@ spec:
     name: test-route-1
   rateLimit:
     global:
-      domain: "api-gateway"
       descriptors:
-      - key: "remote_address"
-        valueFrom:
-          remoteAddress: true
+      - entries:
+        - type: RemoteAddress
       extensionRef:
         name: global-ratelimit
 ```
 
-### Example 2: Path-Based Rate Limiting
+### Rate Limiting by User ID (from header)
 
-**Rate Limit Service Configuration:**
-```yaml
-domain: api-gateway
-descriptors:
-  - key: path
-    value: /path1
-    rate_limit:
-      unit: minute
-      requests_per_unit: 1
-  - key: path
-    value: /path2
-    rate_limit:
-      unit: minute
-      requests_per_unit: 5
-```
+Limit requests based on a user ID header:
 
-**TrafficPolicy:**
-```yaml
-apiVersion: gateway.kgateway.dev/v1alpha1
-kind: TrafficPolicy
-metadata:
-  name: path-rate-limit
-  namespace: kgateway-system
-spec:
-  targetRefs:
-  - group: gateway.networking.k8s.io
-    kind: HTTPRoute
-    name: test-route-1
-  - group: gateway.networking.k8s.io
-    kind: HTTPRoute
-    name: test-route-2
-  rateLimit:
-    global:
-      domain: "api-gateway"
-      descriptors:
-      - key: "path"
-        valueFrom:
-          path: true
-      extensionRef:
-        name: global-ratelimit
-```
-
-### Example 3: User-Based Rate Limiting
-
-**Rate Limit Service Configuration:**
-```yaml
-domain: api-gateway
-descriptors:
-  - key: user_id
-    rate_limit:
-      unit: minute
-      requests_per_unit: 1
-```
-
-**TrafficPolicy:**
 ```yaml
 apiVersion: gateway.kgateway.dev/v1alpha1
 kind: TrafficPolicy
@@ -257,19 +185,17 @@ spec:
     name: test-route-1
   rateLimit:
     global:
-      domain: "api-gateway"
       descriptors:
-      - key: "user_id"
-        valueFrom:
-          header: "X-User-ID"
+      - entries:
+        - type: Header
+          header: "user-id"
       extensionRef:
         name: global-ratelimit
-      failOpen: false
 ```
 
-### Example 4: Combined Rate Limiting
+### Combined Rate Limiting
 
-This example shows how to use both global and local rate limiting together:
+Apply different limits based on both path and user ID:
 
 ```yaml
 apiVersion: gateway.kgateway.dev/v1alpha1
@@ -284,42 +210,12 @@ spec:
     name: test-route-1
   rateLimit:
     global:
-      domain: "api-gateway"
       descriptors:
-      - key: "service"
-        value: "premium-api"
+      - entries:
+        - type: Path
+        - type: Header
+          header: "user-id"
       extensionRef:
         name: global-ratelimit
-    local:
-      tokenBucket:
-        maxTokens: 5
-        tokensPerFill: 1
-        fillInterval: "1s"
 ```
 
-### Example 5: Fail Open Rate Limiting
-
-This example configures the rate limiter to allow requests when the rate limit service is unavailable:
-
-```yaml
-apiVersion: gateway.kgateway.dev/v1alpha1
-kind: TrafficPolicy
-metadata:
-  name: fail-open-rate-limit
-  namespace: kgateway-system
-spec:
-  targetRefs:
-  - group: gateway.networking.k8s.io
-    kind: HTTPRoute
-    name: test-route-1
-  rateLimit:
-    global:
-      domain: "api-gateway"
-      descriptors:
-      - key: "remote_address"
-        valueFrom:
-          remoteAddress: true
-      extensionRef:
-        name: global-ratelimit
-      failOpen: true
-```
