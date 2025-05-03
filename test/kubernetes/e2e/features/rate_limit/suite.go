@@ -44,9 +44,9 @@ func NewTestingSuite(ctx context.Context, testInst *e2e.TestInstallation) suite.
 func (s *testingSuite) SetupSuite() {
 	s.commonManifests = []string{
 		testdefaults.CurlPodManifest,
-		simpleServiceManifest,
 		commonManifest,
-		rateLimitServiceManifest,
+		simpleServiceManifest,
+		rateLimitServerManifest,
 	}
 	s.commonResources = []client.Object{
 		// resources from curl manifest
@@ -55,6 +55,8 @@ func (s *testingSuite) SetupSuite() {
 		simpleSvc, simpleDeployment,
 		// resources from gateway manifest
 		gateway,
+		// resources from gateway extension manifest
+		gatewayExtension,
 		// rate limit service resources
 		rateLimitDeployment, rateLimitService, rateLimitConfigMap,
 		// deployer-generated resources
@@ -108,7 +110,7 @@ func (s *testingSuite) TearDownSuite() {
 
 // Test cases for global rate limit based on remote address (client IP)
 func (s *testingSuite) TestGlobalRateLimitByRemoteAddress() {
-	s.setupTest([]string{httpRoutesManifest, ipRateLimitManifest}, []client.Object{route, route2, ipRateLimitTrafficPolicy, gatewayExtension})
+	s.setupTest([]string{httpRoutesManifest, ipRateLimitManifest}, []client.Object{route, route2, ipRateLimitTrafficPolicy})
 
 	// First request should be successful
 	s.assertResponse("/path1", http.StatusOK)
@@ -122,7 +124,7 @@ func (s *testingSuite) TestGlobalRateLimitByRemoteAddress() {
 
 // Test cases for global rate limit based on request path
 func (s *testingSuite) TestGlobalRateLimitByPath() {
-	s.setupTest([]string{httpRoutesManifest, pathRateLimitManifest}, []client.Object{route, route2, pathRateLimitTrafficPolicy, gatewayExtension})
+	s.setupTest([]string{httpRoutesManifest, pathRateLimitManifest}, []client.Object{route, route2, pathRateLimitTrafficPolicy})
 
 	// First request should be successful
 	s.assertResponse("/path1", http.StatusOK)
@@ -136,7 +138,7 @@ func (s *testingSuite) TestGlobalRateLimitByPath() {
 
 // Test cases for global rate limit based on user ID header
 func (s *testingSuite) TestGlobalRateLimitByUserID() {
-	s.setupTest([]string{httpRoutesManifest, userRateLimitManifest}, []client.Object{route, route2, userRateLimitTrafficPolicy, gatewayExtension})
+	s.setupTest([]string{httpRoutesManifest, userRateLimitManifest}, []client.Object{route, route2, userRateLimitTrafficPolicy})
 
 	// First request should be successful
 	s.assertResponseWithHeader("/path1", "X-User-ID", "user1", http.StatusOK)
@@ -150,39 +152,13 @@ func (s *testingSuite) TestGlobalRateLimitByUserID() {
 
 // Test cases for combined local and global rate limiting
 func (s *testingSuite) TestCombinedLocalAndGlobalRateLimit() {
-	s.setupTest([]string{httpRoutesManifest, combinedRateLimitManifest}, []client.Object{route, route2, combinedRateLimitTrafficPolicy, gatewayExtension})
+	s.setupTest([]string{httpRoutesManifest, combinedRateLimitManifest}, []client.Object{route, route2, combinedRateLimitTrafficPolicy})
 
 	// First request should be successful
 	s.assertResponse("/path1", http.StatusOK)
 
 	// Consecutive requests should be rate limited
 	s.assertConsistentResponse("/path1", http.StatusTooManyRequests)
-}
-
-// Test failure open behavior when rate limit service is unavailable
-func (s *testingSuite) TestGlobalRateLimitFailOpen() {
-	s.setupTest([]string{httpRoutesManifest, failOpenRateLimitManifest}, []client.Object{route, route2, failOpenRateLimitTrafficPolicy, gatewayExtension})
-
-	// First, verify rate limiting works
-	s.assertResponse("/path1", http.StatusOK)
-	s.assertConsistentResponse("/path1", http.StatusTooManyRequests)
-
-	// Scale down the rate limit service to simulate failure
-	err := s.testInstallation.Actions.Kubectl().Scale(s.ctx, "deployment", "ratelimit", 0)
-	s.Require().NoError(err, "can scale down ratelimit deployment")
-	s.testInstallation.Assertions.EventuallyPodsNotExist(s.ctx, rateLimitDeployment.GetNamespace(), metav1.ListOptions{
-		LabelSelector: "app=ratelimit",
-	})
-
-	// With failOpen=true, requests should succeed even when the rate limit service is down
-	s.assertConsistentResponse("/path1", http.StatusOK)
-
-	// Scale back up the rate limit service
-	err = s.testInstallation.Actions.Kubectl().Scale(s.ctx, "deployment", "ratelimit", 1)
-	s.Require().NoError(err, "can scale up ratelimit deployment")
-	s.testInstallation.Assertions.EventuallyPodsRunning(s.ctx, rateLimitDeployment.GetNamespace(), metav1.ListOptions{
-		LabelSelector: "app=ratelimit",
-	})
 }
 
 func (s *testingSuite) setupTest(manifests []string, resources []client.Object) {

@@ -9,11 +9,10 @@ spec:
     kind: HTTPRoute
     name: test-route-1
   rateLimit:
-    # local: {}
     global:
       descriptors:
       - entries:
         - type: Header
-          header: "user_id"
+          header: "X-User-ID"
       extensionRef:
         name: global-ratelimit

@@ -17,3 +17,23 @@ spec:
     - name: backend-0
       namespace: kgateway-system
       port: 8080
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: test-route-2
+  namespace: kgateway-system
+spec:
+  parentRefs:
+  - name: http
+  hostnames:
+  - "example.com"
+  rules:
+  - matches:
+    - path:
+        type: PathPrefix
+        value: /path2
+    backendRefs:
+    - name: backend-0
+      namespace: kgateway-system
+      port: 8080

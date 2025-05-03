@@ -1,26 +1,26 @@
-# apiVersion: gateway.kgateway.dev/v1alpha1
-# kind: TrafficPolicy
-# metadata:
-#   name: combined-rate-limit
-#   namespace: kgateway-system
-# spec:
-#   targetRefs:
-#   - group: gateway.networking.k8s.io
-#     kind: HTTPRoute
-#     name: test-route-1
-#   rateLimit:
-#     # Local rate limit configuration
-#     local:
-#       tokenBucket:
-#         maxTokens: 10
-#         tokensPerFill: 1
-#         fillInterval: "1s"
-#     # Global rate limit configuration
-#     global:
-#       descriptors:
-#       - entries:
-#         - type: RemoteAddress
-#       - entries:
-#         - type: Path
-#       extensionRef:
-#         name: global-ratelimit
+apiVersion: gateway.kgateway.dev/v1alpha1
+kind: TrafficPolicy
+metadata:
+  name: combined-rate-limit
+  namespace: kgateway-system
+spec:
+  targetRefs:
+  - group: gateway.networking.k8s.io
+    kind: HTTPRoute
+    name: test-route-1
+  rateLimit:
+    # Local rate limit configuration
+    local:
+      tokenBucket:
+        maxTokens: 10
+        tokensPerFill: 1
+        fillInterval: "1s"
+    # Global rate limit configuration
+    global:
+      descriptors:
+      - entries:
+        - type: RemoteAddress
+      - entries:
+        - type: Path
+      extensionRef:
+        name: global-ratelimit

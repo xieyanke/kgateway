@@ -1,35 +1,300 @@
-# apiVersion: gateway.kgateway.dev/v1alpha1
-# kind: TrafficPolicy
-# metadata:
-#   name: example-rate-limit
-#   namespace: default
-# spec:
-#   targetRefs:
-#   - group: gateway.networking.k8s.io
-#     kind: HTTPRoute
-#     name: example-route
-#   rateLimit:
-#     global:
-#       # Define rate limit descriptors using the new structure
-#       descriptors:
-#       - entries:
-#         # Remote address-based rate limiting
-#         - type: RemoteAddress
-      
-#       # Example of a descriptor with multiple entries (combined key)
-#       - entries:
-#         # Header-based rate limiting
-#         - type: Header
-#           header: "x-user-id"
-#         # Path-based descriptor component
-#         - type: Path
-      
-#       # Example with generic key-value pair
-#       - entries:
-#         - type: Generic
-#           generic:
-#             key: "service"
-#             value: "api"
-            
-#       extensionRef:
-#         name: rate-limit-extension
+apiVersion: gateway.kgateway.dev/v1alpha1
+kind: GatewayExtension
+metadata:
+  name: global-ratelimit
+  namespace: kgateway-system
+spec:
+  type: RateLimit
+  rateLimit:
+    grpcService:
+      backendRef:
+        name: ratelimit
+        namespace: kgateway-system
+        port: 8081
+    domain: "api-gateway"
+    timeout: "100ms"
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: http
+  namespace: kgateway-system
+spec:
+  gatewayClassName: kgateway
+  listeners:
+  - protocol: HTTP
+    port: 8080
+    name: http
+    allowedRoutes:
+      namespaces:
+        from: All
+---
+apiVersion: gateway.kgateway.dev/v1alpha1
+kind: TrafficPolicy
+metadata:
+  name: ip-rate-limit
+  namespace: kgateway-system
+spec:
+  targetRefs:
+  - group: gateway.networking.k8s.io
+    kind: HTTPRoute
+    name: test-route-1
+  - group: gateway.networking.k8s.io
+    kind: HTTPRoute
+    name: test-route-2
+  rateLimit:
+    global:
+      descriptors:
+      - entries:
+        - type: RemoteAddress
+          key: remote_address
+      extensionRef:
+        name: global-ratelimit
+---
+apiVersion: gateway.kgateway.dev/v1alpha1
+kind: TrafficPolicy
+metadata:
+  name: path-rate-limit
+  namespace: kgateway-system
+spec:
+  targetRefs:
+  - group: gateway.networking.k8s.io
+    kind: HTTPRoute
+    name: test-route-1
+  rateLimit:
+    global:
+      descriptors:
+      - entries:
+        - type: Path
+      extensionRef:
+        name: global-ratelimit
+---
+apiVersion: gateway.kgateway.dev/v1alpha1
+kind: TrafficPolicy
+metadata:
+  name: user-rate-limit
+  namespace: kgateway-system
+spec:
+  targetRefs:
+  - group: gateway.networking.k8s.io
+    kind: HTTPRoute
+    name: test-route-1
+  rateLimit:
+    global:
+      descriptors:
+      - entries:
+        - type: Header
+          header: "X-User-ID"
+      extensionRef:
+        name: global-ratelimit
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ratelimit-config
+  namespace: kgateway-system
+data:
+  config.yaml: |
+    domain: api-gateway
+    descriptors:
+      - key: remote_address
+        rate_limit:
+          unit: minute
+          requests_per_unit: 1
+      - key: path
+        value: "/path1"
+        rate_limit:
+          unit: minute
+          requests_per_unit: 1
+      - key: path
+        value: "/path2"
+        rate_limit:
+          unit: minute
+          requests_per_unit: 2
+      - key: user_id
+        rate_limit:
+          unit: minute
+          requests_per_unit: 1
+      - key: user_id
+        value: user1
+        rate_limit:
+          unit: minute
+          requests_per_unit: 1
+      - key: service
+        value: premium-api
+        rate_limit:
+          unit: minute
+          requests_per_unit: 2
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis
+  namespace: kgateway-system
+spec:
+  selector:
+    app: redis
+  ports:
+  - port: 6379
+    targetPort: 6379
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis
+  namespace: kgateway-system
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: redis
+  template:
+    metadata:
+      labels:
+        app: redis
+    spec:
+      containers:
+      - name: redis
+        image: redis:7.4.3
+        ports:
+        - containerPort: 6379
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ratelimit
+  namespace: kgateway-system
+spec:
+  ports:
+  - port: 8081
+    name: grpc
+    targetPort: 8081
+  selector:
+    app: ratelimit
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ratelimit
+  namespace: kgateway-system
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ratelimit
+  template:
+    metadata:
+      labels:
+        app: ratelimit
+    spec:
+      containers:
+      - name: ratelimit
+        image: envoyproxy/ratelimit:ef13143c
+        command: ["/bin/ratelimit"]
+        args: ["--config_path", "/data/ratelimit/config/config.yaml"]
+        ports:
+        - containerPort: 8081
+          name: grpc
+        - containerPort: 6070
+          name: debug
+        env:
+        - name: USE_STATSD
+          value: "false"
+        - name: LOG_LEVEL
+          value: "debug"
+        - name: RUNTIME_ROOT
+          value: /data
+        - name: RUNTIME_SUBDIRECTORY
+          value: ratelimit
+        - name: REDIS_SOCKET_TYPE
+          value: "tcp"
+        - name: REDIS_URL
+          value: "redis:6379"
+        volumeMounts:
+        - name: config-volume
+          mountPath: /data/ratelimit/config
+      volumes:
+      - name: config-volume
+        configMap:
+          name: ratelimit-config 
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: test-route-1
+  namespace: kgateway-system
+spec:
+  parentRefs:
+  - name: http
+  hostnames:
+  - "example.com"
+  rules:
+  - matches:
+    - path:
+        type: PathPrefix
+        value: /path1
+    backendRefs:
+    - name: backend-0
+      namespace: kgateway-system
+      port: 8080
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: test-route-2
+  namespace: kgateway-system
+spec:
+  parentRefs:
+  - name: http
+  hostnames:
+  - "example.com"
+  rules:
+  - matches:
+    - path:
+        type: PathPrefix
+        value: /path2
+    backendRefs:
+    - name: backend-0
+      namespace: kgateway-system
+      port: 8080
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend-0
+  namespace: kgateway-system
+spec:
+  selector:
+    app: backend-0
+    version: v1
+  ports:
+  - port: 8080
+    name: http
+    targetPort: 5678
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend-0
+  namespace: kgateway-system
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: backend-0
+      version: v1
+  template:
+    metadata:
+      labels:
+        app: backend-0
+        version: v1
+    spec:
+      containers:
+      - name: echo
+        image: hashicorp/http-echo:latest
+        args:
+          - "-text=Hello from backend service"
+        ports:
+        - containerPort: 5678
+          name: http
+

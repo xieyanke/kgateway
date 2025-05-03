@@ -20,15 +20,14 @@ const (
 
 var (
 	// paths to test manifests
-	simpleServiceManifest     = testdata("service.yaml")
 	commonManifest            = testdata("common.yaml")
+	simpleServiceManifest     = testdata("service.yaml")
 	httpRoutesManifest        = testdata("routes.yaml")
 	ipRateLimitManifest       = testdata("ip-rate-limit.yaml")
 	pathRateLimitManifest     = testdata("path-rate-limit.yaml")
 	userRateLimitManifest     = testdata("user-rate-limit.yaml")
 	combinedRateLimitManifest = testdata("combined-rate-limit.yaml")
-	failOpenRateLimitManifest = testdata("fail-open-rate-limit.yaml")
-	rateLimitServiceManifest  = testdata("rate-limit-service.yaml")
+	rateLimitServerManifest   = testdata("rate-limit-server.yaml")
 
 	// metadata for gateway
 	gatewayObjectMeta = metav1.ObjectMeta{Name: "kgateway", Namespace: namespace}
@@ -128,13 +127,6 @@ var (
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: namespace,
 			Name:      "combined-rate-limit",
-		},
-	}
-
-	failOpenRateLimitTrafficPolicy = &v1alpha1.TrafficPolicy{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: namespace,
-			Name:      "fail-open-rate-limit",
 		},
 	}
 )

@@ -9,7 +9,6 @@ spec:
     kind: HTTPRoute
     name: test-route-1
   rateLimit:
-    # local: {} 
     global:
       descriptors:
       - entries:
