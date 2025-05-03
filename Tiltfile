@@ -228,8 +228,8 @@ def install_kgateway():
 
 def validate_registry() :
     usingLocalRegistry = str(local(kubectl_cmd + " get cm -n kube-public local-registry-hosting || true", quiet = True))
-    # if not usingLocalRegistry:
-    #     fail("default_registry is required when not using a local registry. create cluster using ctlptl.")
+    if not usingLocalRegistry:
+        fail("default_registry is required when not using a local registry. create cluster using ctlptl.")
 
 def install_metallb():
     if not settings["metal_lb"]:
