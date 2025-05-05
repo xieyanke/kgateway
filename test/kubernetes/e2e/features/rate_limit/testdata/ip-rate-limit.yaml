@@ -16,6 +16,5 @@ spec:
       descriptors:
       - entries:
         - type: RemoteAddress
-          key: remote_address
       extensionRef:
         name: global-ratelimit

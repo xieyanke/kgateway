@@ -206,10 +206,6 @@ func (r *RateLimitIR) Equals(other *RateLimitIR) bool {
 		}
 	}
 
-	if !proto.Equal(r.rateLimitConfig, other.rateLimitConfig) {
-		return false
-	}
-
 	if len(r.rateLimitActions) != len(other.rateLimitActions) {
 		return false
 	}
@@ -710,41 +706,40 @@ func (p *trafficPolicyPluginGwPass) ApplyForRoute(ctx context.Context, pCtx *ir.
 	p.handleExtProc(&pCtx.TypedFilterConfig, policy.spec.ExtProc)
 
 	// Apply rate limit configuration if present
-	if policy.spec.rateLimit != nil {
-		p.handleRateLimit(&pCtx.TypedFilterConfig, policy.spec.rateLimit.rateLimitConfig)
-	}
+	p.handleRateLimit(&pCtx.TypedFilterConfig, policy.spec.rateLimit)
 
 	return errors.Join(errs...)
 }
 
 // handleRateLimit adds rate limit configurations to routes
-func (p *trafficPolicyPluginGwPass) handleRateLimit(pCtxTypedFilterConfig *ir.TypedFilterConfigMap, rateLimit *ratev3.RateLimit) {
+func (p *trafficPolicyPluginGwPass) handleRateLimit(pCtxTypedFilterConfig *ir.TypedFilterConfigMap, rateLimit *RateLimitIR) {
 	if rateLimit == nil {
 		return
 	}
-
-	// For each provider in our map
-	for providerName, providerRateLimit := range p.rateLimitPerProvider {
-		// Skip providers that don't have a rate limit config
-		if providerRateLimit.provider == nil || providerRateLimit.provider.rateLimit == nil {
-			continue
-		}
-
-		// If this rate limit is from a route (not from a listener), we need to enable it at the route level
-		if !providerRateLimit.fromListener {
-			// Configure rate limit per route - enabling it for this specific route
-			rateLimitPerRoute := &ratev3.RateLimitPerRoute{
-				// Use the correct enum value instead of a boolean
-				VhRateLimits: ratev3.RateLimitPerRoute_INCLUDE,
-			}
-			pCtxTypedFilterConfig.AddTypedConfig(getRateLimitFilterName(providerName), rateLimitPerRoute)
-		}
+	if rateLimit.rateLimitActions == nil {
+		return
 	}
+
+	providerName := rateLimit.provider.ResourceName()
 
 	// Initialize the map if it doesn't exist yet
 	if p.rateLimitPerProvider == nil {
 		p.rateLimitPerProvider = make(map[string]providerWithFromListener)
 	}
+	if _, ok := p.rateLimitPerProvider[providerName]; !ok {
+		p.rateLimitPerProvider[providerName] = providerWithFromListener{
+			provider: rateLimit.provider,
+		}
+	}
+
+	// Configure rate limit per route - enabling it for this specific route
+	rateLimitPerRoute := &ratev3.RateLimitPerRoute{
+		// Use the correct enum value instead of a boolean
+		VhRateLimits: ratev3.RateLimitPerRoute_INCLUDE,
+		RateLimits:   rateLimit.rateLimitActions,
+	}
+	pCtxTypedFilterConfig.AddTypedConfig(getRateLimitFilterName(providerName), rateLimitPerRoute)
+
 }
 
 func (p *trafficPolicyPluginGwPass) ApplyForBackend(
@@ -1259,13 +1254,6 @@ func rateLimitForSpec(
 		provider = gwExtIR
 	}
 
-	// Get the filter config
-	rlFilterConfig, err := toRateLimitFilterConfig(globalPolicy, commoncol.GatewayExtensions, krtctx, policy)
-	if err != nil {
-		out.errors = append(out.errors, fmt.Errorf("failed to configure global rate limit: %w", err))
-		return
-	}
-
 	// Create rate limit actions for the route or vhost
 	actions, err := createRateLimitActions(globalPolicy.Descriptors)
 	if err != nil {
@@ -1275,8 +1263,7 @@ func rateLimitForSpec(
 
 	// Create route rate limits and store in the RateLimitIR struct
 	out.rateLimit = &RateLimitIR{
-		provider:        provider,
-		rateLimitConfig: rlFilterConfig,
+		provider: provider,
 		rateLimitActions: []*routev3.RateLimit{
 			{
 				Actions: actions,

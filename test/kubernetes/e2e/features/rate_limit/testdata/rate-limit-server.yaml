@@ -19,6 +19,7 @@ kind: ConfigMap
 metadata:
   name: ratelimit-config
   namespace: kgateway-test
+immutable: true
 data:
   config.yaml: |
     domain: api-gateway
@@ -95,6 +96,7 @@ spec:
   - port: 8081
     name: grpc
     targetPort: 8081
+    appProtocol: kubernetes.io/h2c
   selector:
     app: ratelimit
 ---
@@ -115,9 +117,8 @@ spec:
     spec:
       containers:
       - name: ratelimit
-        image: envoyproxy/ratelimit:ef13143c
+        image: docker.io/envoyproxy/ratelimit:3e085e5b
         command: ["/bin/ratelimit"]
-        args: ["--config_path", "/data/ratelimit/config/config.yaml"]
         ports:
         - containerPort: 8081
           name: grpc
@@ -132,6 +133,8 @@ spec:
           value: /data
         - name: RUNTIME_SUBDIRECTORY
           value: ratelimit
+        - name: RUNTIME_IGNOREDOTFILES
+          value: "true"
         - name: REDIS_SOCKET_TYPE
           value: "tcp"
         - name: REDIS_URL
@@ -142,4 +145,4 @@ spec:
       volumes:
       - name: config-volume
         configMap:
-          name: ratelimit-config 
+          name: ratelimit-config
