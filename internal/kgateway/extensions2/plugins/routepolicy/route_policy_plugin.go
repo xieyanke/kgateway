@@ -978,7 +978,7 @@ func (p *trafficPolicyPluginGwPass) HttpFilters(ctx context.Context, fcc ir.Filt
 		rateLimitName := getRateLimitFilterName(providerName)
 		stagedRateLimitFilter := plugins.MustNewStagedFilter(rateLimitName,
 			rateLimitFilter,
-			plugins.BeforeStage(plugins.AcceptedStage))
+			plugins.DuringStage(plugins.RateLimitStage))
 
 		// If this rate limit is not from a listener, disable it at the listener level
 		// so it can be enabled selectively at the route level

@@ -9,34 +9,35 @@ import (
 	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
 
 	v1alpha1 "github.com/kgateway-dev/kgateway/v2/api/v1alpha1"
+	"github.com/kgateway-dev/kgateway/v2/pkg/utils/fsutils"
 )
 
 const (
 	// test namespace for proxy resources
-	namespace = "kgateway-system"
+	namespace = "kgateway-test"
 	// test service name
 	serviceName = "backend-0"
 )
 
 var (
 	// paths to test manifests
-	commonManifest            = testdata("common.yaml")
-	simpleServiceManifest     = testdata("service.yaml")
-	httpRoutesManifest        = testdata("routes.yaml")
-	ipRateLimitManifest       = testdata("ip-rate-limit.yaml")
-	pathRateLimitManifest     = testdata("path-rate-limit.yaml")
-	userRateLimitManifest     = testdata("user-rate-limit.yaml")
-	combinedRateLimitManifest = testdata("combined-rate-limit.yaml")
-	rateLimitServerManifest   = testdata("rate-limit-server.yaml")
+	commonManifest            = getTestFile("common.yaml")
+	simpleServiceManifest     = getTestFile("service.yaml")
+	httpRoutesManifest        = getTestFile("routes.yaml")
+	ipRateLimitManifest       = getTestFile("ip-rate-limit.yaml")
+	pathRateLimitManifest     = getTestFile("path-rate-limit.yaml")
+	userRateLimitManifest     = getTestFile("user-rate-limit.yaml")
+	combinedRateLimitManifest = getTestFile("combined-rate-limit.yaml")
+	rateLimitServerManifest   = getTestFile("rate-limit-server.yaml")
 
-	// metadata for gateway
-	gatewayObjectMeta = metav1.ObjectMeta{Name: "kgateway", Namespace: namespace}
+	// metadata for gateway - matches the name "super-gateway" from common.yaml
+	gatewayObjectMeta = metav1.ObjectMeta{Name: "super-gateway", Namespace: namespace}
 	gateway           = &gwv1.Gateway{
 		ObjectMeta: gatewayObjectMeta,
 	}
 
 	// metadata for proxy resources
-	proxyObjectMeta = metav1.ObjectMeta{Name: "kgateway", Namespace: namespace}
+	proxyObjectMeta = metav1.ObjectMeta{Name: "super-gateway", Namespace: namespace}
 
 	proxyDeployment = &appsv1.Deployment{
 		ObjectMeta: proxyObjectMeta,
@@ -131,6 +132,6 @@ var (
 	}
 )
 
-func testdata(filename string) string {
-	return filepath.Join(".", "testdata", filename)
+func getTestFile(filename string) string {
+	return filepath.Join(fsutils.MustGetThisDir(), "testdata", filename)
 }

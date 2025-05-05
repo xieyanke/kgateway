@@ -2,14 +2,14 @@ apiVersion: gateway.kgateway.dev/v1alpha1
 kind: GatewayExtension
 metadata:
   name: global-ratelimit
-  namespace: kgateway-system
+  namespace: kgateway-test
 spec:
   type: RateLimit
   rateLimit:
     grpcService:
       backendRef:
         name: ratelimit
-        namespace: kgateway-system
+        namespace: kgateway-test
         port: 8081
     domain: "api-gateway"
     timeout: "100ms"
@@ -18,7 +18,7 @@ apiVersion: gateway.networking.k8s.io/v1
 kind: Gateway
 metadata:
   name: http
-  namespace: kgateway-system
+  namespace: kgateway-test
 spec:
   gatewayClassName: kgateway
   listeners:
@@ -33,7 +33,7 @@ apiVersion: gateway.kgateway.dev/v1alpha1
 kind: TrafficPolicy
 metadata:
   name: ip-rate-limit
-  namespace: kgateway-system
+  namespace: kgateway-test
 spec:
   targetRefs:
   - group: gateway.networking.k8s.io
@@ -55,7 +55,7 @@ apiVersion: gateway.kgateway.dev/v1alpha1
 kind: TrafficPolicy
 metadata:
   name: path-rate-limit
-  namespace: kgateway-system
+  namespace: kgateway-test
 spec:
   targetRefs:
   - group: gateway.networking.k8s.io
@@ -73,7 +73,7 @@ apiVersion: gateway.kgateway.dev/v1alpha1
 kind: TrafficPolicy
 metadata:
   name: user-rate-limit
-  namespace: kgateway-system
+  namespace: kgateway-test
 spec:
   targetRefs:
   - group: gateway.networking.k8s.io
@@ -92,7 +92,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: ratelimit-config
-  namespace: kgateway-system
+  namespace: kgateway-test
 data:
   config.yaml: |
     domain: api-gateway
@@ -130,7 +130,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: redis
-  namespace: kgateway-system
+  namespace: kgateway-test
 spec:
   selector:
     app: redis
@@ -142,7 +142,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: redis
-  namespace: kgateway-system
+  namespace: kgateway-test
 spec:
   replicas: 1
   selector:
@@ -163,7 +163,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: ratelimit
-  namespace: kgateway-system
+  namespace: kgateway-test
 spec:
   ports:
   - port: 8081
@@ -176,7 +176,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: ratelimit
-  namespace: kgateway-system
+  namespace: kgateway-test
 spec:
   replicas: 1
   selector:
@@ -222,7 +222,7 @@ apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
   name: test-route-1
-  namespace: kgateway-system
+  namespace: kgateway-test
 spec:
   parentRefs:
   - name: http
@@ -235,14 +235,14 @@ spec:
         value: /path1
     backendRefs:
     - name: backend-0
-      namespace: kgateway-system
+      namespace: kgateway-test
       port: 8080
 ---
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
   name: test-route-2
-  namespace: kgateway-system
+  namespace: kgateway-test
 spec:
   parentRefs:
   - name: http
@@ -255,14 +255,14 @@ spec:
         value: /path2
     backendRefs:
     - name: backend-0
-      namespace: kgateway-system
+      namespace: kgateway-test
       port: 8080
 ---
 apiVersion: v1
 kind: Service
 metadata:
   name: backend-0
-  namespace: kgateway-system
+  namespace: kgateway-test
 spec:
   selector:
     app: backend-0
@@ -276,7 +276,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: backend-0
-  namespace: kgateway-system
+  namespace: kgateway-test
 spec:
   replicas: 1
   selector:
