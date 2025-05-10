@@ -92,28 +92,6 @@ func (s *testingSuite) TearDownSuite() {
 // TestExtAuthPolicy tests the basic ExtAuth functionality with header-based allow/deny
 // Checks for gateay level auth with route level opt out
 func (s *testingSuite) TestDynamicForwardProxyBackend() {
-	//	manifests := []string{
-	//		securedGatewayPolicyManifest,
-	//		insecureRouteManifest,
-	//	}
-	//
-	//	resources := []client.Object{
-	//		gatewayAttachedTrafficPolicy,
-	//		insecureRoute,
-	//	}
-	//	s.T().Cleanup(func() {
-	//		for _, manifest := range manifests {
-	//			err := s.testInstallation.Actions.Kubectl().DeleteFileSafe(s.ctx, manifest)
-	//			s.Require().NoError(err)
-	//		}
-	//		s.testInstallation.Assertions.EventuallyObjectsNotExist(s.ctx, resources...)
-	//	})
-	//	// set up common resources once
-	//	for _, manifest := range manifests {
-	//		err := s.testInstallation.Actions.Kubectl().ApplyFile(s.ctx, manifest)
-	//		s.Require().NoError(err, "can apply "+manifest)
-	//	}
-	//	s.testInstallation.Assertions.EventuallyObjectsExist(s.ctx, resources...)
 
 	// Wait for pods to be running
 	s.ensureBasicRunning()

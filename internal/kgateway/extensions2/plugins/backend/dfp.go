@@ -33,8 +33,6 @@ func processDynamicForwardProxy(ctx context.Context, in *v1alpha1.DynamicForward
 		return err
 	}
 
-	// the upstream has a DNS name. We need Envoy to resolve the DNS name
-	// set the type to strict dns
 	out.ClusterDiscoveryType = &envoy_config_cluster_v3.Cluster_ClusterType{
 		ClusterType: &envoy_config_cluster_v3.Cluster_CustomClusterType{
 			Name:        "envoy.clusters.dynamic_forward_proxy",
