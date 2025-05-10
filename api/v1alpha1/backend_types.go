@@ -35,6 +35,8 @@ const (
 	BackendTypeAWS BackendType = "AWS"
 	// BackendTypeStatic is the type for static backends.
 	BackendTypeStatic BackendType = "Static"
+	// BackendTypeDynamicForwardProxy is the type for dynamic forward proxy backends.
+	BackendTypeDynamicForwardProxy BackendType = "DynamicForwardProxy"
 )
 
 // BackendSpec defines the desired state of Backend.
@@ -45,6 +47,8 @@ const (
 // +kubebuilder:validation:XValidation:message="aws backend must be specified when type is 'aws'",rule="!(!has(self.aws) && self.type == 'AWS')"
 // +kubebuilder:validation:XValidation:message="static backend must be nil if the type is not 'static'",rule="!(has(self.static) && self.type != 'Static')"
 // +kubebuilder:validation:XValidation:message="static backend must be specified when type is 'static'",rule="!(!has(self.static) && self.type == 'Static')"
+// +kubebuilder:validation:XValidation:message="dynamic forward proxy backend must be nil if the type is not 'dynamicforwardproxy'",rule="!(has(self.dynamicforwardproxy) && self.type != 'DynamicForwardProxy')"
+// +kubebuilder:validation:XValidation:message="dynamic forward proxy backend must be specified when type is 'dynamicforwardproxy'",rule="!(!has(self.dynamicforwardproxy) && self.type == 'DynamicForwardProxy')"
 type BackendSpec struct {
 	// Type indicates the type of the backend to be used.
 	// +unionDiscriminator
@@ -60,6 +64,13 @@ type BackendSpec struct {
 	// Static is the static backend configuration.
 	// +optional
 	Static *StaticBackend `json:"static,omitempty"`
+	// DynamicForwardProxy is the dynamic forward proxy backend configuration.
+	// +optional
+	DynamicForwardProxy *DynamicForwardProxyBackend `json:"dynamicForwardProxy,omitempty"`
+}
+
+// DynamicForwardProxyBackend is the dynamic forward proxy backend configuration.
+type DynamicForwardProxyBackend struct {
 }
 
 // AwsBackend is the AWS backend configuration.

@@ -6,10 +6,8 @@ import (
 
 	envoy_config_cluster_v3 "github.com/envoyproxy/go-control-plane/envoy/config/cluster/v3"
 	envoy_config_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
-	envoy_config_listener_v3 "github.com/envoyproxy/go-control-plane/envoy/config/listener/v3"
 	envoy_config_route_v3 "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
 	envoy_ext_proc_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/ext_proc/v3"
-	envoy_hcm "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/http_connection_manager/v3"
 	envoyauth "github.com/envoyproxy/go-control-plane/envoy/extensions/transport_sockets/tls/v3"
 	envoywellknown "github.com/envoyproxy/go-control-plane/pkg/wellknown"
 	"github.com/solo-io/go-utils/contextutils"
@@ -261,16 +259,16 @@ func processBackend(ctx context.Context, in ir.BackendObjectIR, out *envoy_confi
 	// TODO(tim): Bubble up error to Backend status once https://github.com/kgateway-dev/kgateway/issues/10555
 	// is resolved and add test cases for invalid endpoint URLs.
 	spec := up.Spec
-	switch {
-	case spec.Type == v1alpha1.BackendTypeStatic:
+	switch spec.Type {
+	case v1alpha1.BackendTypeStatic:
 		if err := processStatic(ctx, spec.Static, out); err != nil {
 			log.Error("failed to process static backend", "error", err)
 		}
-	case spec.Type == v1alpha1.BackendTypeAWS:
+	case v1alpha1.BackendTypeAWS:
 		if err := processAws(ctx, spec.Aws, ir.AwsIr, out); err != nil {
 			log.Error("failed to process aws backend", "error", err)
 		}
-	case spec.Type == v1alpha1.BackendTypeAI:
+	case v1alpha1.BackendTypeAI:
 		err := ai.ProcessAIBackend(ctx, spec.AI, ir.AIIr.AISecret, ir.AIIr.AIMultiSecret, out)
 		if err != nil {
 			log.Error(err)
@@ -278,6 +276,10 @@ func processBackend(ctx context.Context, in ir.BackendObjectIR, out *envoy_confi
 		err = ai.AddUpstreamClusterHttpFilters(out)
 		if err != nil {
 			log.Error(err)
+		}
+	case v1alpha1.BackendTypeDynamicForwardProxy:
+		if err := processDynamicForwardProxy(ctx, spec.DynamicForwardProxy, out); err != nil {
+			log.Error("failed to process dynamic forward proxy backend", "error", err)
 		}
 	}
 	return nil
@@ -308,6 +310,7 @@ func processEndpoints(up *v1alpha1.Backend) *ir.EndpointsForBackend {
 type backendPlugin struct {
 	ir.UnimplementedProxyTranslationPass
 	aiGatewayEnabled map[string]bool
+	neededDfpFilter  map[string]bool
 }
 
 func newPlug(ctx context.Context, tctx ir.GwTranslationCtx, reporter reports.Reporter) ir.ProxyTranslationPass {
@@ -316,20 +319,6 @@ func newPlug(ctx context.Context, tctx ir.GwTranslationCtx, reporter reports.Rep
 
 func (p *backendPlugin) Name() string {
 	return ExtensionName
-}
-
-func (p *backendPlugin) ApplyListenerPlugin(ctx context.Context, pCtx *ir.ListenerContext, out *envoy_config_listener_v3.Listener) {
-}
-
-func (p *backendPlugin) ApplyHCM(ctx context.Context, pCtx *ir.HcmContext, out *envoy_hcm.HttpConnectionManager) error { // no-op
-	return nil
-}
-
-func (p *backendPlugin) ApplyVhostPlugin(ctx context.Context, pCtx *ir.VirtualHostContext, out *envoy_config_route_v3.VirtualHost) {
-}
-
-func (p *backendPlugin) ApplyForRoute(ctx context.Context, pCtx *ir.RouteContext, outputRoute *envoy_config_route_v3.Route) error {
-	return nil
 }
 
 func (p *backendPlugin) ApplyForBackend(ctx context.Context, pCtx *ir.RouteBackendContext, in ir.HttpBackend, out *envoy_config_route_v3.Route) error {
@@ -356,6 +345,11 @@ func (p *backendPlugin) ApplyForBackend(ctx context.Context, pCtx *ir.RouteBacke
 			},
 		}
 		pCtx.TypedFilterConfig.AddTypedConfig(wellknown.AIExtProcFilterName, disabledExtprocSettings)
+	case v1alpha1.BackendTypeDynamicForwardProxy:
+		if p.neededDfpFilter == nil {
+			p.neededDfpFilter = make(map[string]bool)
+		}
+		p.neededDfpFilter[pCtx.FilterChainName] = true
 	}
 
 	return nil
@@ -382,6 +376,11 @@ func (p *backendPlugin) HttpFilters(ctx context.Context, fc ir.FilterChainCommon
 			errs = append(errs, err)
 		}
 		result = append(result, aiFilters...)
+	}
+	if p.neededDfpFilter[fc.FilterChainName] {
+		pluginStage := plugins.DuringStage(plugins.OutAuthStage)
+		f, _ := plugins.NewStagedFilter("envoy.filters.http.dynamic_forward_proxy", dfpFilterConfig, pluginStage)
+		result = append(result, f)
 	}
 	return result, errors.Join(errs...)
 }
