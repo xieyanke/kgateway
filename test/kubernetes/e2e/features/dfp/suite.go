@@ -1,4 +1,4 @@
-package extauth
+package dfp
 
 import (
 	"context"
@@ -45,9 +45,9 @@ func NewTestingSuite(ctx context.Context, testInst *e2e.TestInstallation) suite.
 
 func (s *testingSuite) SetupSuite() {
 	s.commonManifests = []string{
+		gatewayWithRouteManifest,
 		testdefaults.CurlPodManifest,
 		simpleServiceManifest,
-		gatewayWithRouteManifest,
 	}
 	s.commonResources = []client.Object{
 		// resources from curl manifest

@@ -273,6 +273,9 @@ var schemaYAML = typed.YAMLObject(`types:
     - name: aws
       type:
         namedType: com.github.kgateway-dev.kgateway.v2.api.v1alpha1.AwsBackend
+    - name: dynamicForwardProxy
+      type:
+        namedType: com.github.kgateway-dev.kgateway.v2.api.v1alpha1.DynamicForwardProxyBackend
     - name: static
       type:
         namedType: com.github.kgateway-dev.kgateway.v2.api.v1alpha1.StaticBackend
@@ -287,6 +290,8 @@ var schemaYAML = typed.YAMLObject(`types:
         discriminatorValue: AI
       - fieldName: aws
         discriminatorValue: Aws
+      - fieldName: dynamicForwardProxy
+        discriminatorValue: DynamicForwardProxy
       - fieldName: static
         discriminatorValue: Static
 - name: com.github.kgateway-dev.kgateway.v2.api.v1alpha1.BackendStatus
@@ -408,6 +413,18 @@ var schemaYAML = typed.YAMLObject(`types:
     - name: value
       type:
         scalar: numeric
+- name: com.github.kgateway-dev.kgateway.v2.api.v1alpha1.DynamicForwardProxyBackend
+  map:
+    elementType:
+      scalar: untyped
+      list:
+        elementType:
+          namedType: __untyped_atomic_
+        elementRelationship: atomic
+      map:
+        elementType:
+          namedType: __untyped_deduced_
+        elementRelationship: separable
 - name: com.github.kgateway-dev.kgateway.v2.api.v1alpha1.EnvoyBootstrap
   map:
     fields:

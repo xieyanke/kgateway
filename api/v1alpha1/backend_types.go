@@ -47,12 +47,12 @@ const (
 // +kubebuilder:validation:XValidation:message="aws backend must be specified when type is 'aws'",rule="!(!has(self.aws) && self.type == 'AWS')"
 // +kubebuilder:validation:XValidation:message="static backend must be nil if the type is not 'static'",rule="!(has(self.static) && self.type != 'Static')"
 // +kubebuilder:validation:XValidation:message="static backend must be specified when type is 'static'",rule="!(!has(self.static) && self.type == 'Static')"
-// +kubebuilder:validation:XValidation:message="dynamic forward proxy backend must be nil if the type is not 'dynamicforwardproxy'",rule="!(has(self.dynamicforwardproxy) && self.type != 'DynamicForwardProxy')"
-// +kubebuilder:validation:XValidation:message="dynamic forward proxy backend must be specified when type is 'dynamicforwardproxy'",rule="!(!has(self.dynamicforwardproxy) && self.type == 'DynamicForwardProxy')"
+// +kubebuilder:validation:XValidation:message="dynamic forward proxy backend must be nil if the type is not 'dynamicForwardProxy'",rule="!(has(self.dynamicForwardProxy) && self.type != 'DynamicForwardProxy')"
+// +kubebuilder:validation:XValidation:message="dynamic forward proxy backend must be specified when type is 'dynamicForwardProxy'",rule="!(!has(self.dynamicForwardProxy) && self.type == 'DynamicForwardProxy')"
 type BackendSpec struct {
 	// Type indicates the type of the backend to be used.
 	// +unionDiscriminator
-	// +kubebuilder:validation:Enum=AI;AWS;Static
+	// +kubebuilder:validation:Enum=AI;AWS;Static;DynamicForwardProxy
 	// +kubebuilder:validation:Required
 	Type BackendType `json:"type"`
 	// AI is the AI backend configuration.

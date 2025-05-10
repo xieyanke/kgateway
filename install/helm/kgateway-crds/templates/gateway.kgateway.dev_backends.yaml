@@ -519,6 +519,8 @@ spec:
                 required:
                 - accountId
                 type: object
+              dynamicForwardProxy:
+                type: object
               static:
                 properties:
                   hosts:
@@ -546,6 +548,7 @@ spec:
                 - AI
                 - AWS
                 - Static
+                - DynamicForwardProxy
                 type: string
             required:
             - type
@@ -563,6 +566,12 @@ spec:
               rule: '!(has(self.static) && self.type != ''Static'')'
             - message: static backend must be specified when type is 'static'
               rule: '!(!has(self.static) && self.type == ''Static'')'
+            - message: dynamic forward proxy backend must be nil if the type is not
+                'dynamicForwardProxy'
+              rule: '!(has(self.dynamicForwardProxy) && self.type != ''DynamicForwardProxy'')'
+            - message: dynamic forward proxy backend must be specified when type is
+                'dynamicForwardProxy'
+              rule: '!(!has(self.dynamicForwardProxy) && self.type == ''DynamicForwardProxy'')'
           status:
             properties:
               conditions:

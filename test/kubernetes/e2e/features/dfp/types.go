@@ -1,4 +1,4 @@
-package extauth
+package dfp
 
 import (
 	"path/filepath"
