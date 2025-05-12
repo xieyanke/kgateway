@@ -47,8 +47,9 @@ type ListenerIR struct {
 	BindPort         uint32
 	AttachedPolicies AttachedPolicies
 
-	HttpFilterChain []HttpFilterChainIR
-	TcpFilterChain  []TcpIR
+	DefaultHttpFilterChain HttpFilterChainIR
+	HttpFilterChain        []HttpFilterChainIR
+	TcpFilterChain         []TcpIR
 
 	PolicyAncestorRef gwv1.ParentReference
 }

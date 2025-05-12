@@ -15,6 +15,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/utils/ptr"
 	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
 
 	"github.com/kgateway-dev/kgateway/v2/internal/kgateway/extensions2/common"
@@ -38,6 +39,7 @@ type WaypointQueries interface {
 	// GetWaypointServices returns all Services that are marked as using the Gateway
 	// via istio.io/use-waypoint (and possibly istio.io/use-waypoint-namespace).
 	GetWaypointServices(kctx krt.HandlerContext, ctx context.Context, gw *gwv1.Gateway) []Service
+	GetSomething(kctx krt.HandlerContext) *ir.BackendObjectIR
 
 	// GetServiceWaypoint returns the waypoint for the given object (Service or ServiceEntry).
 	// Returns nil if no waypoint is found.
@@ -223,6 +225,21 @@ func (w *waypointQueries) GetWaypointServices(kctx krt.HandlerContext, ctx conte
 	return slices.Map(attached, func(e WaypointedService) Service {
 		return e.Service
 	})
+}
+
+func (w *waypointQueries) GetSomething(kctx krt.HandlerContext) *ir.BackendObjectIR {
+	ref := gwv1.BackendObjectReference{
+		Group:     ptr.To(gwv1.Group("gateway.kgateway.dev")),
+		Kind:      ptr.To(gwv1.Kind("Backend")),
+		Name:      gwv1.ObjectName("dfp-backend"),
+		Namespace: ptr.To(gwv1.Namespace("common-infrastructure")),
+	}
+	src := ir.ObjectSource{
+		Namespace: "common-infrastructure",
+		Name:      "dfp-backend",
+	}
+	backend, _ := w.commonCols.BackendIndex.GetBackendFromRef(kctx, src, ref)
+	return backend
 }
 
 func (w *waypointQueries) GetServiceWaypoint(kctx krt.HandlerContext, ctx context.Context, obj metav1.Object) *types.NamespacedName {

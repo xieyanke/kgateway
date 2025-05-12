@@ -112,6 +112,42 @@ func (w *waypointTranslator) Translate(
 		proxyListener.TcpFilterChain = append(proxyListener.TcpFilterChain, tcp...)
 	}
 
+	if true {
+		c := w.waypointQueries.GetSomething(kctx)
+		if c != nil {
+			virtualHost := &ir.VirtualHost{
+				// TODO for peering, this should be the _original_ name, not the effective name.
+				Name:     "dfp-fallback",
+				Hostname: "*",
+				Rules: []ir.HttpRouteRuleMatchIR{{
+					Backends: []ir.HttpBackend{{
+						Backend: ir.BackendRefIR{
+							ClusterName:   c.ClusterName(),
+							Weight:        1,
+							BackendObject: c,
+						},
+						AttachedPolicies: ir.AttachedPolicies{},
+					}},
+					MatchIndex: 0,
+					Match: gwv1.HTTPRouteMatch{
+						Path: &gwv1.HTTPPathMatch{
+							Type:  ptr.To(gwv1.PathMatchPathPrefix),
+							Value: ptr.To("/"),
+						},
+					},
+				}},
+			}
+			proxyListener.DefaultHttpFilterChain = ir.HttpFilterChainIR{
+				FilterChainCommon: ir.FilterChainCommon{
+					FilterChainName: "dfp-fallback",
+				},
+				Vhosts: []*ir.VirtualHost{
+					virtualHost,
+				},
+			}
+		}
+	}
+
 	// ensure consistent ordering in outputs
 	proxyListener.HttpFilterChain = slices.SortBy(proxyListener.HttpFilterChain, func(fc ir.HttpFilterChainIR) string {
 		return fc.FilterChainName

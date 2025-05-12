@@ -32,7 +32,8 @@ func processDynamicForwardProxy(ctx context.Context, in *v1alpha1.DynamicForward
 	if err != nil {
 		return err
 	}
-
+	// TODO: should settings set this always? if not, grab this value from settings.
+	out.DnsLookupFamily = envoy_config_cluster_v3.Cluster_V4_ONLY
 	out.ClusterDiscoveryType = &envoy_config_cluster_v3.Cluster_ClusterType{
 		ClusterType: &envoy_config_cluster_v3.Cluster_CustomClusterType{
 			Name:        "envoy.clusters.dynamic_forward_proxy",

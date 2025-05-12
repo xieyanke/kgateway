@@ -6,6 +6,10 @@ import (
 	"fmt"
 	"time"
 
+	envoy_tls_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/transport_sockets/tls/v3"
+	envoyauth "github.com/envoyproxy/go-control-plane/envoy/extensions/transport_sockets/tls/v3"
+	envoymatcher "github.com/envoyproxy/go-control-plane/envoy/type/matcher/v3"
+	eiutils "github.com/kgateway-dev/kgateway/v2/internal/envoyinit/pkg/utils"
 	"google.golang.org/protobuf/proto"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -13,6 +17,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/watch"
+	"k8s.io/utils/ptr"
 
 	clusterv3 "github.com/envoyproxy/go-control-plane/envoy/config/cluster/v3"
 	envoy_config_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
@@ -137,40 +142,85 @@ func buildTranslateFunc(
 			ct: policyCR.CreationTimestamp.Time,
 		}
 
-		if len(spec.Validation.CACertificateRefs) == 0 {
-			return &policyIr, nil
+		var tp *envoy_config_core_v3.TransportSocket
+
+		if ptr.Deref(spec.Validation.WellKnownCACertificates, "") == gwv1a3.WellKnownCACertificatesSystem {
+
+			validationContext := &envoy_tls_v3.CertificateValidationContext{}
+			sdsValidationCtx := &envoy_tls_v3.SdsSecretConfig{
+				Name: eiutils.SystemCaSecretName,
+			}
+
+			hostname := string(spec.Validation.Hostname)
+			if hostname != "" {
+				validationContext.MatchTypedSubjectAltNames = []*envoyauth.SubjectAltNameMatcher{
+					{
+						SanType: envoyauth.SubjectAltNameMatcher_DNS,
+						Matcher: &envoymatcher.StringMatcher{
+							MatchPattern: &envoymatcher.StringMatcher_Exact{Exact: hostname},
+						},
+					},
+				}
+			}
+
+			tlsContextDefault := &envoy_tls_v3.UpstreamTlsContext{
+				CommonTlsContext: &envoy_tls_v3.CommonTlsContext{
+					ValidationContextType: &envoy_tls_v3.CommonTlsContext_CombinedValidationContext{
+						CombinedValidationContext: &envoy_tls_v3.CommonTlsContext_CombinedCertificateValidationContext{
+							DefaultValidationContext:         validationContext,
+							ValidationContextSdsSecretConfig: sdsValidationCtx,
+						},
+					},
+				},
+				AutoHostSni: len(hostname) == 0,
+				Sni:         hostname,
+			}
+
+			typedConfig, _ := utils.MessageToAny(tlsContextDefault)
+			tp = &envoy_config_core_v3.TransportSocket{
+				Name: wellknown.TransportSocketTls,
+				ConfigType: &envoy_config_core_v3.TransportSocket_TypedConfig{
+					TypedConfig: typedConfig,
+				},
+			}
+		} else {
+			if len(spec.Validation.CACertificateRefs) == 0 {
+				return &policyIr, nil
+			} else {
+
+				certRef := spec.Validation.CACertificateRefs[0]
+				nn := types.NamespacedName{
+					Name:      string(certRef.Name),
+					Namespace: policyCR.Namespace,
+				}
+				cfgmap := krt.FetchOne(krtctx, cfgmaps, krt.FilterObjectName(nn))
+				if cfgmap == nil {
+					err := fmt.Errorf("%w: %v", ErrConfigMapNotFound, nn)
+					contextutils.LoggerFrom(ctx).Error(err)
+					return &policyIr, err
+				}
+
+				tlsCfg, err := ResolveUpstreamSslConfig(*cfgmap, string(spec.Validation.Hostname))
+				if err != nil {
+					perr := fmt.Errorf("%w: %v", ErrCreatingTLSConfig, err)
+					contextutils.LoggerFrom(ctx).Error(perr)
+					return &policyIr, perr
+				}
+				typedConfig, err := utils.MessageToAny(tlsCfg)
+				if err != nil {
+					contextutils.LoggerFrom(ctx).Error("error converting TLS config to proto: %v", err)
+					return &policyIr, ErrParsingTLSConfig
+				}
+				tp = &envoy_config_core_v3.TransportSocket{
+					Name: wellknown.TransportSocketTls,
+					ConfigType: &envoy_config_core_v3.TransportSocket_TypedConfig{
+						TypedConfig: typedConfig,
+					},
+				}
+			}
 		}
 
-		certRef := spec.Validation.CACertificateRefs[0]
-		nn := types.NamespacedName{
-			Name:      string(certRef.Name),
-			Namespace: policyCR.Namespace,
-		}
-		cfgmap := krt.FetchOne(krtctx, cfgmaps, krt.FilterObjectName(nn))
-		if cfgmap == nil {
-			err := fmt.Errorf("%w: %v", ErrConfigMapNotFound, nn)
-			contextutils.LoggerFrom(ctx).Error(err)
-			return &policyIr, err
-		}
-
-		tlsCfg, err := ResolveUpstreamSslConfig(*cfgmap, string(spec.Validation.Hostname))
-		if err != nil {
-			perr := fmt.Errorf("%w: %v", ErrCreatingTLSConfig, err)
-			contextutils.LoggerFrom(ctx).Error(perr)
-			return &policyIr, perr
-		}
-		typedConfig, err := utils.MessageToAny(tlsCfg)
-		if err != nil {
-			contextutils.LoggerFrom(ctx).Error("error converting TLS config to proto: %v", err)
-			return &policyIr, ErrParsingTLSConfig
-		}
-
-		policyIr.transportSocket = &envoy_config_core_v3.TransportSocket{
-			Name: wellknown.TransportSocketTls,
-			ConfigType: &envoy_config_core_v3.TransportSocket_TypedConfig{
-				TypedConfig: typedConfig,
-			},
-		}
+		policyIr.transportSocket = tp
 		return &policyIr, nil
 	}
 }

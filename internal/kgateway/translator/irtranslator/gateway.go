@@ -101,6 +101,43 @@ func (t *Translator) ComputeListener(
 		}
 	}
 
+	if lis.DefaultHttpFilterChain.FilterChainName != "" {
+		hfc := lis.DefaultHttpFilterChain
+		fct := filterChainTranslator{
+			listener:        lis,
+			gateway:         gw,
+			routeConfigName: hfc.FilterChainName,
+			PluginPass:      pass,
+		}
+
+		// compute routes
+		hr := httpRouteConfigurationTranslator{
+			gw:                       gw,
+			listener:                 lis,
+			routeConfigName:          hfc.FilterChainName,
+			fc:                       hfc.FilterChainCommon,
+			reporter:                 reporter,
+			requireTlsOnVirtualHosts: hfc.FilterChainCommon.TLS != nil,
+			PluginPass:               pass,
+		}
+		rc := hr.ComputeRouteConfiguration(ctx, hfc.Vhosts)
+		if rc != nil {
+			routes = append(routes, rc)
+		}
+
+		// compute chains
+
+		// TODO: make sure that all matchers are unique
+
+		rl := gwreporter.ListenerName(hfc.FilterChainName)
+		fc := fct.initFilterChain(ctx, hfc.FilterChainCommon, rl)
+		fc.Filters = fct.computeHttpFilters(ctx, hfc, rl)
+		ret.DefaultFilterChain = fc
+		if len(hfc.Matcher.SniDomains) > 0 {
+			hasTls = true
+		}
+	}
+
 	fct := filterChainTranslator{
 		listener:   lis,
 		gateway:    gw,
