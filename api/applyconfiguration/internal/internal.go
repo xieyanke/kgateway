@@ -415,16 +415,10 @@ var schemaYAML = typed.YAMLObject(`types:
         scalar: numeric
 - name: com.github.kgateway-dev.kgateway.v2.api.v1alpha1.DynamicForwardProxyBackend
   map:
-    elementType:
-      scalar: untyped
-      list:
-        elementType:
-          namedType: __untyped_atomic_
-        elementRelationship: atomic
-      map:
-        elementType:
-          namedType: __untyped_deduced_
-        elementRelationship: separable
+    fields:
+    - name: tls
+      type:
+        scalar: boolean
 - name: com.github.kgateway-dev.kgateway.v2.api.v1alpha1.EnvoyBootstrap
   map:
     fields:

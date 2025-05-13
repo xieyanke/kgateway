@@ -8,9 +8,10 @@ import (
 
 	envoy_tls_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/transport_sockets/tls/v3"
 	envoyauth "github.com/envoyproxy/go-control-plane/envoy/extensions/transport_sockets/tls/v3"
+	envoy_http_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/upstreams/http/v3"
 	envoymatcher "github.com/envoyproxy/go-control-plane/envoy/type/matcher/v3"
-	eiutils "github.com/kgateway-dev/kgateway/v2/internal/envoyinit/pkg/utils"
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/anypb"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -18,6 +19,8 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/utils/ptr"
+
+	eiutils "github.com/kgateway-dev/kgateway/v2/internal/envoyinit/pkg/utils"
 
 	clusterv3 "github.com/envoyproxy/go-control-plane/envoy/config/cluster/v3"
 	envoy_config_core_v3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
@@ -54,6 +57,7 @@ var (
 type backendTlsPolicy struct {
 	ct              time.Time
 	transportSocket *envoy_config_core_v3.TransportSocket
+	sni             string
 }
 
 var _ ir.PolicyIR = &backendTlsPolicy{}
@@ -130,6 +134,20 @@ func processBackend(ctx context.Context, polir ir.PolicyIR, in ir.BackendObjectI
 		return
 	}
 	out.TransportSocket = tlsPol.transportSocket
+	if out.GetTypedExtensionProtocolOptions() == nil {
+		out.TypedExtensionProtocolOptions = map[string]*anypb.Any{}
+	}
+	opts, _ := utils.MessageToAny(&envoy_http_v3.HttpProtocolOptions{
+		UpstreamHttpProtocolOptions: &envoy_config_core_v3.UpstreamHttpProtocolOptions{
+			AutoSni:           len(tlsPol.sni) == 0,
+			AutoSanValidation: len(tlsPol.sni) == 0,
+		},
+		UpstreamProtocolOptions: &envoy_http_v3.HttpProtocolOptions_AutoConfig{
+			AutoConfig: &envoy_http_v3.HttpProtocolOptions_AutoHttpConfig{},
+		},
+	})
+	out.GetTypedExtensionProtocolOptions()["envoy.extensions.upstreams.http.v3.HttpProtocolOptions"] = opts
+	out.UpstreamHttpProtocolOptions = &envoy_config_core_v3.UpstreamHttpProtocolOptions{}
 }
 
 func buildTranslateFunc(
@@ -163,6 +181,25 @@ func buildTranslateFunc(
 				}
 			}
 
+			for _, san := range spec.Validation.SubjectAltNames {
+				switch san.Type {
+				case gwv1a3.HostnameSubjectAltNameType:
+					validationContext.MatchTypedSubjectAltNames = append(validationContext.GetMatchTypedSubjectAltNames(), &envoyauth.SubjectAltNameMatcher{
+						SanType: envoyauth.SubjectAltNameMatcher_DNS,
+						Matcher: &envoymatcher.StringMatcher{
+							MatchPattern: &envoymatcher.StringMatcher_Exact{Exact: string(san.Hostname)},
+						},
+					})
+				case gwv1a3.URISubjectAltNameType:
+					validationContext.MatchTypedSubjectAltNames = append(validationContext.GetMatchTypedSubjectAltNames(), &envoyauth.SubjectAltNameMatcher{
+						SanType: envoyauth.SubjectAltNameMatcher_URI,
+						Matcher: &envoymatcher.StringMatcher{
+							MatchPattern: &envoymatcher.StringMatcher_Exact{Exact: string(san.URI)},
+						},
+					})
+				}
+			}
+
 			tlsContextDefault := &envoy_tls_v3.UpstreamTlsContext{
 				CommonTlsContext: &envoy_tls_v3.CommonTlsContext{
 					ValidationContextType: &envoy_tls_v3.CommonTlsContext_CombinedValidationContext{
@@ -172,9 +209,9 @@ func buildTranslateFunc(
 						},
 					},
 				},
-				AutoHostSni: len(hostname) == 0,
-				Sni:         hostname,
+				Sni: hostname,
 			}
+			policyIr.sni = hostname
 
 			typedConfig, _ := utils.MessageToAny(tlsContextDefault)
 			tp = &envoy_config_core_v3.TransportSocket{

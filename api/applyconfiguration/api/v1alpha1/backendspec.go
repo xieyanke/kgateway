@@ -9,11 +9,11 @@ import (
 // BackendSpecApplyConfiguration represents a declarative configuration of the BackendSpec type for use
 // with apply.
 type BackendSpecApplyConfiguration struct {
-	Type                *apiv1alpha1.BackendType                `json:"type,omitempty"`
-	AI                  *AIBackendApplyConfiguration            `json:"ai,omitempty"`
-	Aws                 *AwsBackendApplyConfiguration           `json:"aws,omitempty"`
-	Static              *StaticBackendApplyConfiguration        `json:"static,omitempty"`
-	DynamicForwardProxy *apiv1alpha1.DynamicForwardProxyBackend `json:"dynamicForwardProxy,omitempty"`
+	Type                *apiv1alpha1.BackendType                      `json:"type,omitempty"`
+	AI                  *AIBackendApplyConfiguration                  `json:"ai,omitempty"`
+	Aws                 *AwsBackendApplyConfiguration                 `json:"aws,omitempty"`
+	Static              *StaticBackendApplyConfiguration              `json:"static,omitempty"`
+	DynamicForwardProxy *DynamicForwardProxyBackendApplyConfiguration `json:"dynamicForwardProxy,omitempty"`
 }
 
 // BackendSpecApplyConfiguration constructs a declarative configuration of the BackendSpec type for use with
@@ -57,7 +57,7 @@ func (b *BackendSpecApplyConfiguration) WithStatic(value *StaticBackendApplyConf
 // WithDynamicForwardProxy sets the DynamicForwardProxy field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the DynamicForwardProxy field is set to the value of the last call.
-func (b *BackendSpecApplyConfiguration) WithDynamicForwardProxy(value apiv1alpha1.DynamicForwardProxyBackend) *BackendSpecApplyConfiguration {
-	b.DynamicForwardProxy = &value
+func (b *BackendSpecApplyConfiguration) WithDynamicForwardProxy(value *DynamicForwardProxyBackendApplyConfiguration) *BackendSpecApplyConfiguration {
+	b.DynamicForwardProxy = value
 	return b
 }
