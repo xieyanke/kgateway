@@ -951,6 +951,10 @@ func (p *trafficPolicyPluginGwPass) HttpFilters(ctx context.Context, fcc ir.Filt
 		if extAuthFilter == nil {
 			continue
 		}
+		if true {
+			extAuthFilter = proto.Clone(extAuthFilter).(*envoy_ext_authz_v3.ExtAuthz)
+			extAuthFilter.MetadataContextNamespaces = []string{"envoy.filters.listener.proxy_protocol"}
+		}
 
 		// add the specific auth filter
 		extauthName := extAuthFilterName(providerName)
