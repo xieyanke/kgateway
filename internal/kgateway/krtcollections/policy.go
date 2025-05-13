@@ -552,6 +552,7 @@ func (c RouteWrapper) Equals(in RouteWrapper) bool {
 type RoutesIndex struct {
 	routes         krt.Collection[RouteWrapper]
 	httpRoutes     krt.Collection[ir.HttpRouteIR]
+	HttpRoutes     krt.Collection[ir.HttpRouteIR]
 	httpBySelector krt.Index[HTTPRouteSelector, ir.HttpRouteIR]
 	byParentRef    krt.Index[targetRefIndexKey, RouteWrapper]
 
@@ -584,6 +585,7 @@ func NewRoutesIndex(
 	h := &RoutesIndex{policies: policies, refgrants: refgrants, backends: backends}
 	h.hasSyncedFuncs = append(h.hasSyncedFuncs, httproutes.HasSynced, grpcroutes.HasSynced, tcproutes.HasSynced, tlsroutes.HasSynced)
 	h.httpRoutes = krt.NewCollection(httproutes, h.transformHttpRoute, krtopts.ToOptions("http-routes-with-policy")...)
+	h.HttpRoutes = h.httpRoutes
 	httpRouteCollection := krt.NewCollection(h.httpRoutes, func(kctx krt.HandlerContext, i ir.HttpRouteIR) *RouteWrapper {
 		return &RouteWrapper{Route: &i}
 	}, krtopts.ToOptions("routes-http-routes-with-policy")...)

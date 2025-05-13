@@ -97,7 +97,7 @@ func (w *waypointTranslator) Translate(
 	waypointFor := waypointquery.GetWaypointFor(gateway.Obj)
 
 	if waypointFor.ForService() {
-		http, tcp := w.buildServiceChains(
+		http, tcp, fallbackHttpChain := w.buildServiceChains(
 			kctx,
 			ctx,
 			logger,
@@ -110,44 +110,13 @@ func (w *waypointTranslator) Translate(
 		)
 		proxyListener.HttpFilterChain = append(proxyListener.HttpFilterChain, http...)
 		proxyListener.TcpFilterChain = append(proxyListener.TcpFilterChain, tcp...)
-	}
 
-	if true {
-		c := w.waypointQueries.GetSomething(kctx)
-		if c != nil {
-			virtualHost := &ir.VirtualHost{
-				// TODO for peering, this should be the _original_ name, not the effective name.
-				Name:     "dfp-fallback",
-				Hostname: "*",
-				Rules: []ir.HttpRouteRuleMatchIR{{
-					Backends: []ir.HttpBackend{{
-						Backend: ir.BackendRefIR{
-							ClusterName:   c.ClusterName(),
-							Weight:        1,
-							BackendObject: c,
-						},
-						AttachedPolicies: ir.AttachedPolicies{},
-					}},
-					MatchIndex: 0,
-					Match: gwv1.HTTPRouteMatch{
-						Path: &gwv1.HTTPPathMatch{
-							Type:  ptr.To(gwv1.PathMatchPathPrefix),
-							Value: ptr.To("/"),
-						},
-					},
-				}},
-			}
-			proxyListener.DefaultHttpFilterChain = ir.HttpFilterChainIR{
-				FilterChainCommon: ir.FilterChainCommon{
-					FilterChainName: "dfp-fallback",
-				},
-				Vhosts: []*ir.VirtualHost{
-					virtualHost,
-				},
-			}
+		if fallbackHttpChain != nil {
+			fallbackHttpChain.FilterChainName = "dfp-fallback"
+			proxyListener.DefaultHttpFilterChain = *fallbackHttpChain
 		}
-	}
 
+	}
 	// ensure consistent ordering in outputs
 	proxyListener.HttpFilterChain = slices.SortBy(proxyListener.HttpFilterChain, func(fc ir.HttpFilterChainIR) string {
 		return fc.FilterChainName
@@ -288,9 +257,10 @@ func (t *waypointTranslator) buildServiceChains(
 	gwListener *ir.Listener,
 	attachedRoutes sets.Set[types.NamespacedName],
 	rootNamespace string,
-) ([]ir.HttpFilterChainIR, []ir.TcpIR) {
+) ([]ir.HttpFilterChainIR, []ir.TcpIR, *ir.HttpFilterChainIR) {
 	var httpOut []ir.HttpFilterChainIR
 	var tcpOut []ir.TcpIR
+	var fallbackHttpChain *ir.HttpFilterChainIR
 	// get attached services (istio.io/use-waypoint)
 	services := t.waypointQueries.GetWaypointServices(kctx, ctx, gw.Obj)
 	logger.Debugw("attaching waypoint services", "gateway", namespacedName(gw).String(), "services", len(services))
@@ -326,12 +296,18 @@ func (t *waypointTranslator) buildServiceChains(
 
 		// get Service-specific routes
 		httpRoutes := gwRoutes
-		svcRoutes := t.waypointQueries.GetHTTPRoutesForService(kctx, ctx, &svc)
-		for _, r := range svcRoutes {
-			attachedRoutes.Insert(namespacedName(r))
-			httpRoutes = append(httpRoutes, &r)
+		switch obj := svc.Object.(type) {
+		case *ir.HttpRouteIR:
+			httpRoutes = append(httpRoutes, &query.RouteInfo{
+				Object: obj,
+			})
+		default:
+			svcRoutes := t.waypointQueries.GetHTTPRoutesForService(kctx, ctx, &svc)
+			for _, r := range svcRoutes {
+				attachedRoutes.Insert(namespacedName(r))
+				httpRoutes = append(httpRoutes, &r)
+			}
 		}
-
 		// build a single virtual host from HTTPRoutes
 		// HTTPRoutes apply at the Service level, not the port
 		// level so we don't need to generate this multiple times
@@ -368,7 +344,12 @@ func (t *waypointTranslator) buildServiceChains(
 
 				// Apply HTTP RBAC filters to this HTTP filter chain
 				applyHTTPRBACFilters(&httpChain, httpRBAC)
-				httpOut = append(httpOut, httpChain)
+
+				if httpChain.FilterChainCommon.Matcher.DestinationPort == nil {
+					fallbackHttpChain = &httpChain
+				} else {
+					httpOut = append(httpOut, httpChain)
+				}
 			} else {
 				tcpChain := ir.TcpIR{
 					FilterChainCommon: filterChain,
@@ -381,7 +362,7 @@ func (t *waypointTranslator) buildServiceChains(
 			}
 		}
 	}
-	return httpOut, tcpOut
+	return httpOut, tcpOut, fallbackHttpChain
 }
 
 func filterChainName(
@@ -405,9 +386,13 @@ func initServiceChain(
 	if err != nil {
 		return ir.FilterChainCommon{}, err
 	}
+	var destinationPort *wrapperspb.UInt32Value
+	if port.Port != 0 {
+		destinationPort = &wrapperspb.UInt32Value{Value: uint32(port.Port)}
+	}
 	match := ir.FilterChainMatch{
 		PrefixRanges:    prefixRanges,
-		DestinationPort: &wrapperspb.UInt32Value{Value: uint32(port.Port)},
+		DestinationPort: destinationPort,
 	}
 
 	fcCommon := ir.FilterChainCommon{

@@ -26,6 +26,22 @@ func (c ObjectSource) GetGroupKind() schema.GroupKind {
 		Kind:  c.Kind,
 	}
 }
+func (c ObjectSource) GetObjectKind() schema.ObjectKind {
+	return c
+}
+
+func (c ObjectSource) SetGroupVersionKind(kind schema.GroupVersionKind) {}
+
+// GroupVersionKind returns the stored group, version, and kind of an object, or an empty struct
+// if the object does not expose or provide these fields.
+
+func (c ObjectSource) GroupVersionKind() schema.GroupVersionKind {
+	return schema.GroupVersionKind{
+		Group:   c.Group,
+		Version: "",
+		Kind:    c.Kind,
+	}
+}
 
 // GetName returns the name of the route.
 func (c ObjectSource) GetName() string {

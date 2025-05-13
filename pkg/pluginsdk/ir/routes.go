@@ -31,6 +31,9 @@ type HttpRouteIR struct {
 	Rules            []HttpRouteRuleIR
 }
 
+func (c *HttpRouteIR) GetLabels() map[string]string {
+	return c.SourceObject.GetLabels()
+}
 func (c *HttpRouteIR) GetParentRefs() []gwv1.ParentReference {
 	return c.ParentRefs
 }

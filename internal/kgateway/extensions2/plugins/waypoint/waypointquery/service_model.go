@@ -31,9 +31,16 @@ import (
 // If we see this, there is a bug and we're converting a non-Service type into Service.
 var ErrUnsupportedServiceType = eris.New("unsupported service type")
 
+type Object interface {
+	GetObjectKind() schema.ObjectKind
+	GetNamespace() string
+	GetName() string
+	GetLabels() map[string]string
+}
+
 // Service is a common type to use between Service and ServiceEntry
 type Service struct {
-	client.Object
+	Object
 	GroupKind schema.GroupKind
 	Addresses []string
 	Ports     []ServicePort
@@ -56,11 +63,11 @@ func (s Service) Kind() string {
 }
 
 func (s Service) String() string {
-	return serviceKey(s.Kind(), s.GetNamespace(), s.GetName())
+	return serviceKey(s.Kind(), s.Object.GetNamespace(), s.Object.GetName())
 }
 
 func (s Service) DefaultVHostName(port ServicePort) string {
-	name := "vh_http_" + strconv.Itoa(int(port.Port)) + "_" + s.GetName() + "_" + s.GetNamespace()
+	name := "vh_http_" + strconv.Itoa(int(port.Port)) + "_" + s.Object.GetName() + "_" + s.Object.GetNamespace()
 	if s.GroupKind.Kind == wellknown.ServiceEntryGVK.Kind {
 		// ServiceEntry
 		name += "_" + s.Hostname()
@@ -89,7 +96,7 @@ func (s Service) BackendObject(port uint32) ir.BackendObjectIR {
 		// If we do (2) that means attaching DR to foo.com, but sending traffic to bar.com (both the same SE) will still apply the DR.
 		hostname = s.Hostnames[0]
 	} else {
-		hostname = fqdn(s.GetName(), s.GetNamespace())
+		hostname = fqdn(s.Object.GetName(), s.Object.GetNamespace())
 	}
 
 	protocol := ""
@@ -110,20 +117,21 @@ func (s Service) BackendObject(port uint32) ir.BackendObjectIR {
 		)
 	case *corev1.Service:
 		return kubernetes.BuildServiceBackendObjectIR(obj, int32(port), protocol)
+
 	}
 
 	// fallback: assume k8s
 	return ir.BackendObjectIR{
 		ObjectSource: ir.ObjectSource{
-			Group:     s.GetObjectKind().GroupVersionKind().Group,
-			Kind:      s.GetObjectKind().GroupVersionKind().Kind,
-			Namespace: s.GetNamespace(),
-			Name:      s.GetName(),
+			Group:     s.Object.GetObjectKind().GroupVersionKind().Group,
+			Kind:      s.Object.GetObjectKind().GroupVersionKind().Kind,
+			Namespace: s.Object.GetNamespace(),
+			Name:      s.Object.GetName(),
 		},
 		Port:              int32(port),
 		GvPrefix:          kubernetes.BackendClusterPrefix,
 		CanonicalHostname: hostname,
-		Obj:               s.Object,
+		Obj:               s.Object.(metav1.Object),
 		ObjIr:             nil, // TODO currently
 		AttachedPolicies:  ir.AttachedPolicies{},
 	}
@@ -132,7 +140,7 @@ func (s Service) BackendObject(port uint32) ir.BackendObjectIR {
 // TODO remove this when we support multiple hostnames
 func (s Service) Hostname() string {
 	if len(s.Hostnames) == 0 {
-		return fqdn(s.GetName(), s.GetNamespace())
+		return fqdn(s.Object.GetName(), s.Object.GetNamespace())
 	}
 	return s.Hostnames[0]
 }
@@ -250,6 +258,15 @@ func FromServiceEntry(se *networkingclient.ServiceEntry) Service {
 				TargetPort: int32(p.TargetPort),
 			}
 		}),
+	}
+}
+
+func FromHttpRoute(hr *ir.HttpRouteIR) Service {
+	return Service{
+		Object:    hr,
+		GroupKind: wellknown.HTTPRouteGVK.GroupKind(),
+		Addresses: []string{"0.0.0.0/0", "::/0"},
+		Ports:     []ServicePort{{Port: 0, Protocol: "http"}},
 	}
 }
 

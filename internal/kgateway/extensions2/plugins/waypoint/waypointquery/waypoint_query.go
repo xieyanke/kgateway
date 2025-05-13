@@ -39,7 +39,7 @@ type WaypointQueries interface {
 	// GetWaypointServices returns all Services that are marked as using the Gateway
 	// via istio.io/use-waypoint (and possibly istio.io/use-waypoint-namespace).
 	GetWaypointServices(kctx krt.HandlerContext, ctx context.Context, gw *gwv1.Gateway) []Service
-	GetSomething(kctx krt.HandlerContext) *ir.BackendObjectIR
+	GetSomething(kctx krt.HandlerContext, namespace string) *ir.BackendObjectIR
 
 	// GetServiceWaypoint returns the waypoint for the given object (Service or ServiceEntry).
 	// Returns nil if no waypoint is found.
@@ -222,12 +222,24 @@ func (w *waypointQueries) GetWaypointServices(kctx krt.HandlerContext, ctx conte
 		Name:      gw.GetName(),
 		Namespace: gw.GetNamespace(),
 	}))
-	return slices.Map(attached, func(e WaypointedService) Service {
+
+	svcs := slices.Map(attached, func(e WaypointedService) Service {
 		return e.Service
 	})
+	fallbacksrc := ir.ObjectSource{
+		Namespace: gw.Namespace,
+		Name:      "fallback",
+		Group:     "gateway.networking.k8s.io",
+		Kind:      "HTTPRoute",
+	}
+	fallbackSvc := krt.FetchOne(kctx, w.commonCols.Routes.HttpRoutes, krt.FilterKey(fallbacksrc.ResourceName()))
+	if fallbackSvc != nil {
+		svcs = append(svcs, FromHttpRoute(fallbackSvc))
+	}
+	return svcs
 }
 
-func (w *waypointQueries) GetSomething(kctx krt.HandlerContext) *ir.BackendObjectIR {
+func (w *waypointQueries) GetSomething(kctx krt.HandlerContext, namespace string) *ir.BackendObjectIR {
 	ref := gwv1.BackendObjectReference{
 		Group:     ptr.To(gwv1.Group("gateway.kgateway.dev")),
 		Kind:      ptr.To(gwv1.Kind("Backend")),
