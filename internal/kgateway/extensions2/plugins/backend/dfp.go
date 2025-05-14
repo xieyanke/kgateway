@@ -25,6 +25,10 @@ var (
 )
 
 func processDynamicForwardProxy(ctx context.Context, in *v1alpha1.DynamicForwardProxyBackend, out *envoy_config_cluster_v3.Cluster) error {
+	if in == nil {
+		return nil
+	}
+
 	out.LbPolicy = envoy_config_cluster_v3.Cluster_CLUSTER_PROVIDED
 	c := &envoy_dfp_cluster.ClusterConfig{
 		ClusterImplementationSpecifier: &envoy_dfp_cluster.ClusterConfig_SubClustersConfig{
