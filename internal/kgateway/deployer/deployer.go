@@ -18,6 +18,8 @@ import (
 	"helm.sh/helm/v3/pkg/storage/driver"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
+	"k8s.io/apimachinery/pkg/api/equality"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -558,6 +560,31 @@ func (d *Deployer) GetEndpointPickerObjs(pool *infextv1a2.InferencePool) ([]clie
 func (d *Deployer) DeployObjs(ctx context.Context, objs []client.Object) error {
 	logger := log.FromContext(ctx)
 	for _, obj := range objs {
+
+		// Get the existing object from the cache to check if it needs to be updated
+		existing := obj.DeepCopyObject().(client.Object)
+		err := d.cli.Get(ctx, client.ObjectKey{Namespace: obj.GetNamespace(), Name: obj.GetName()}, existing)
+
+		// If the object doesn't exist or there's an error other than "not found", proceed with patching
+		if err != nil {
+			if !apierrors.IsNotFound(err) {
+				logger.V(1).Info("error getting existing object, will apply anyway",
+					"kind", obj.GetObjectKind().GroupVersionKind().String(),
+					"namespace", obj.GetNamespace(),
+					"name", obj.GetName(),
+					"error", err)
+			}
+		} else {
+			// Check if the objects are equal - if they are, skip the patch
+			if equality.Semantic.DeepEqual(obj, existing) {
+				logger.V(1).Info("object unchanged, skipping apply",
+					"kind", obj.GetObjectKind().GroupVersionKind().String(),
+					"namespace", obj.GetNamespace(),
+					"name", obj.GetName())
+				continue
+			}
+		}
+
 		logger.V(1).Info("deploying object", "kind", obj.GetObjectKind(), "namespace", obj.GetNamespace(), "name", obj.GetName())
 		if err := d.cli.Patch(ctx, obj, client.Apply, client.ForceOwnership, client.FieldOwner(d.inputs.ControllerName)); err != nil {
 			return fmt.Errorf("failed to apply object %s %s: %w", obj.GetObjectKind().GroupVersionKind().String(), obj.GetName(), err)
