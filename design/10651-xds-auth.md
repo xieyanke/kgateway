@@ -113,7 +113,7 @@ Envoy's bootstrap config will be updated to:
 
 1. Using mTLS for authentication:
    - We will need to distribute the client certs, a problem that k8s solves for us. so we 
-     get exrta complexity with no additional value.
+     get extra complexity with no additional value.
 
 2. Custom token issuance:
    - Pros: Could simplify auth flow by creating a JWT with the gateway name as a claim.
