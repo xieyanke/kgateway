@@ -13,6 +13,7 @@ Name|Version|License
 [ghodss/yaml](https://github.com/ghodss/yaml)|v1.0.1-0.20190212211648-25d852aebe32|MIT License
 [go-logr/logr](https://github.com/go-logr/logr)|v1.4.2|Apache License 2.0
 [go-logr/zapr](https://github.com/go-logr/zapr)|v1.3.0|Apache License 2.0
+[golang/protobuf](https://github.com/golang/protobuf)|v1.5.4|BSD 3-clause "New" or "Revised" License
 [google/go-cmp](https://github.com/google/go-cmp)|v0.7.0|BSD 3-clause "New" or "Revised" License
 [grpc-ecosystem/go-grpc-middleware](https://github.com/grpc-ecosystem/go-grpc-middleware)|v1.4.0|Apache License 2.0
 [kelseyhightower/envconfig](https://github.com/kelseyhightower/envconfig)|v1.4.0|MIT License
@@ -25,6 +26,7 @@ Name|Version|License
 [spf13/cobra](https://github.com/spf13/cobra)|v1.9.1|Apache License 2.0
 [stretchr/testify](https://github.com/stretchr/testify)|v1.10.0|MIT License
 [go.opencensus.io](https://go.opencensus.io)|v0.24.0|Apache License 2.0
+[proto/otlp](https://go.opentelemetry.io/proto/otlp)|v1.6.0|Apache License 2.0
 [go.uber.org/zap](https://go.uber.org/zap)|v1.27.0|MIT License
 [x/exp](https://golang.org/x/exp)|v0.0.0-20241215155358-4a5509556b9e|BSD 3-clause "New" or "Revised" License
 [x/net](https://golang.org/x/net)|v0.40.0|BSD 3-clause "New" or "Revised" License
