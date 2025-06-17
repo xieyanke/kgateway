@@ -1582,7 +1582,7 @@ var schemaYAML = typed.YAMLObject(`types:
 - name: com.github.kgateway-dev.kgateway.v2.api.v1alpha1.Provider
   map:
     fields:
-    - name: openTelemetryConfig
+    - name: openTelemetry
       type:
         namedType: com.github.kgateway-dev.kgateway.v2.api.v1alpha1.OpenTelemetryTracingConfig
 - name: com.github.kgateway-dev.kgateway.v2.api.v1alpha1.ProxyDeployment

@@ -4988,7 +4988,7 @@ func schema_kgateway_v2_api_v1alpha1_Provider(ref common.ReferenceCallback) comm
 			SchemaProps: spec.SchemaProps{
 				Type: []string{"object"},
 				Properties: map[string]spec.Schema{
-					"openTelemetryConfig": {
+					"openTelemetry": {
 						SchemaProps: spec.SchemaProps{
 							Description: "This could be wrapped in a provider struct if future configs need to be added or use cel validation to ensure only one provider can be selected. Tracing contains various settings for Envoy's OTel tracer.",
 							Ref:         ref("github.com/kgateway-dev/kgateway/v2/api/v1alpha1.OpenTelemetryTracingConfig"),

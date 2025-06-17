@@ -479,7 +479,7 @@ type Provider struct {
 	// This could be wrapped in a provider struct if future configs need to be added or use cel validation to ensure only one provider can be selected.
 	// Tracing contains various settings for Envoy's OTel tracer.
 	// +kubebuilder:validation:Required
-	OpenTelemetryConfig *OpenTelemetryTracingConfig `json:"openTelemetryConfig,omitempty"`
+	OpenTelemetry *OpenTelemetryTracingConfig `json:"openTelemetry,omitempty"`
 }
 
 // OpenTelemetryTracingConfig represents the top-level Envoy's OpenTelemetry tracer.

@@ -5,7 +5,7 @@ package v1alpha1
 // ProviderApplyConfiguration represents a declarative configuration of the Provider type for use
 // with apply.
 type ProviderApplyConfiguration struct {
-	OpenTelemetryConfig *OpenTelemetryTracingConfigApplyConfiguration `json:"openTelemetryConfig,omitempty"`
+	OpenTelemetry *OpenTelemetryTracingConfigApplyConfiguration `json:"openTelemetry,omitempty"`
 }
 
 // ProviderApplyConfiguration constructs a declarative configuration of the Provider type for use with
@@ -14,10 +14,10 @@ func Provider() *ProviderApplyConfiguration {
 	return &ProviderApplyConfiguration{}
 }
 
-// WithOpenTelemetryConfig sets the OpenTelemetryConfig field in the declarative configuration to the given value
+// WithOpenTelemetry sets the OpenTelemetry field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
-// If called multiple times, the OpenTelemetryConfig field is set to the value of the last call.
-func (b *ProviderApplyConfiguration) WithOpenTelemetryConfig(value *OpenTelemetryTracingConfigApplyConfiguration) *ProviderApplyConfiguration {
-	b.OpenTelemetryConfig = value
+// If called multiple times, the OpenTelemetry field is set to the value of the last call.
+func (b *ProviderApplyConfiguration) WithOpenTelemetry(value *OpenTelemetryTracingConfigApplyConfiguration) *ProviderApplyConfiguration {
+	b.OpenTelemetry = value
 	return b
 }

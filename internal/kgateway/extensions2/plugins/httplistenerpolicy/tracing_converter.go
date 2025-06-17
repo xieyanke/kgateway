@@ -33,8 +33,8 @@ func convertTracingConfig(
 
 	var provider *tracev3.Tracing_Http
 	var err error
-	if config.Provider.OpenTelemetryConfig != nil {
-		provider, err = convertOTelTracingConfig(ctx, config.Provider.OpenTelemetryConfig, commoncol, krtctx, parentSrc)
+	if config.Provider.OpenTelemetry != nil {
+		provider, err = convertOTelTracingConfig(ctx, config.Provider.OpenTelemetry, commoncol, krtctx, parentSrc)
 		if err != nil {
 			return nil, err
 		}

@@ -714,7 +714,7 @@ spec:
                     maxProperties: 1
                     minProperties: 1
                     properties:
-                      openTelemetryConfig:
+                      openTelemetry:
                         properties:
                           grpcService:
                             properties:
@@ -819,7 +819,7 @@ spec:
                         - serviceName
                         type: object
                     required:
-                    - openTelemetryConfig
+                    - openTelemetry
                     type: object
                   randomSampling:
                     format: int32
