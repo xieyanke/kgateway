@@ -9,6 +9,7 @@ type HTTPListenerPolicySpecApplyConfiguration struct {
 	TargetSelectors []LocalPolicyTargetSelectorApplyConfiguration  `json:"targetSelectors,omitempty"`
 	AccessLog       []AccessLogApplyConfiguration                  `json:"accessLog,omitempty"`
 	UpgradeConfig   *UpgradeConfigApplyConfiguration               `json:"upgradeConfig,omitempty"`
+	Tracing         *TracingApplyConfiguration                     `json:"tracing,omitempty"`
 }
 
 // HTTPListenerPolicySpecApplyConfiguration constructs a declarative configuration of the HTTPListenerPolicySpec type for use with
@@ -61,5 +62,13 @@ func (b *HTTPListenerPolicySpecApplyConfiguration) WithAccessLog(values ...*Acce
 // If called multiple times, the UpgradeConfig field is set to the value of the last call.
 func (b *HTTPListenerPolicySpecApplyConfiguration) WithUpgradeConfig(value *UpgradeConfigApplyConfiguration) *HTTPListenerPolicySpecApplyConfiguration {
 	b.UpgradeConfig = value
+	return b
+}
+
+// WithTracing sets the Tracing field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the Tracing field is set to the value of the last call.
+func (b *HTTPListenerPolicySpecApplyConfiguration) WithTracing(value *TracingApplyConfiguration) *HTTPListenerPolicySpecApplyConfiguration {
+	b.Tracing = value
 	return b
 }

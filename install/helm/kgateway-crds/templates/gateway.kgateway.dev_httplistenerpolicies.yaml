@@ -411,6 +411,8 @@ spec:
                           items:
                             type: string
                           type: array
+                        authority:
+                          type: string
                         backendRef:
                           properties:
                             group:
@@ -451,11 +453,136 @@ spec:
                           - message: Must have port for Service reference
                             rule: '(size(self.group) == 0 && self.kind == ''Service'')
                               ? has(self.port) : true'
+                        initialMetadata:
+                          items:
+                            properties:
+                              key:
+                                type: string
+                              value:
+                                type: string
+                            required:
+                            - key
+                            type: object
+                          type: array
                         logName:
+                          type: string
+                        maxReceiveMessageLength:
+                          format: int32
+                          type: integer
+                        retryPolicy:
+                          properties:
+                            numRetries:
+                              format: int32
+                              type: integer
+                            retryBackOff:
+                              properties:
+                                baseInterval:
+                                  type: string
+                                maxInterval:
+                                  type: string
+                              required:
+                              - baseInterval
+                              type: object
+                          type: object
+                        skipEnvoyHeaders:
+                          type: boolean
+                        timeout:
                           type: string
                       required:
                       - backendRef
                       - logName
+                      type: object
+                    openTelemetry:
+                      properties:
+                        body:
+                          type: string
+                        disableBuiltinLabels:
+                          type: boolean
+                        grpcService:
+                          properties:
+                            authority:
+                              type: string
+                            backendRef:
+                              properties:
+                                group:
+                                  default: ""
+                                  maxLength: 253
+                                  pattern: ^$|^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
+                                  type: string
+                                kind:
+                                  default: Service
+                                  maxLength: 63
+                                  minLength: 1
+                                  pattern: ^[a-zA-Z]([-a-zA-Z0-9]*[a-zA-Z0-9])?$
+                                  type: string
+                                name:
+                                  maxLength: 253
+                                  minLength: 1
+                                  type: string
+                                namespace:
+                                  maxLength: 63
+                                  minLength: 1
+                                  pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
+                                  type: string
+                                port:
+                                  format: int32
+                                  maximum: 65535
+                                  minimum: 1
+                                  type: integer
+                                weight:
+                                  default: 1
+                                  format: int32
+                                  maximum: 1000000
+                                  minimum: 0
+                                  type: integer
+                              required:
+                              - name
+                              type: object
+                              x-kubernetes-validations:
+                              - message: Must have port for Service reference
+                                rule: '(size(self.group) == 0 && self.kind == ''Service'')
+                                  ? has(self.port) : true'
+                            initialMetadata:
+                              items:
+                                properties:
+                                  key:
+                                    type: string
+                                  value:
+                                    type: string
+                                required:
+                                - key
+                                type: object
+                              type: array
+                            logName:
+                              type: string
+                            maxReceiveMessageLength:
+                              format: int32
+                              type: integer
+                            retryPolicy:
+                              properties:
+                                numRetries:
+                                  format: int32
+                                  type: integer
+                                retryBackOff:
+                                  properties:
+                                    baseInterval:
+                                      type: string
+                                    maxInterval:
+                                      type: string
+                                  required:
+                                  - baseInterval
+                                  type: object
+                              type: object
+                            skipEnvoyHeaders:
+                              type: boolean
+                            timeout:
+                              type: string
+                          required:
+                          - backendRef
+                          - logName
+                          type: object
+                      required:
+                      - grpcService
                       type: object
                   type: object
                 type: array
@@ -505,6 +632,207 @@ spec:
                   - matchLabels
                   type: object
                 type: array
+              tracing:
+                properties:
+                  clientSampling:
+                    format: int32
+                    maximum: 100
+                    minimum: 0
+                    type: integer
+                  customTags:
+                    items:
+                      properties:
+                        RequestHeader:
+                          properties:
+                            defaultValue:
+                              type: string
+                            name:
+                              type: string
+                          required:
+                          - name
+                          type: object
+                        environment:
+                          properties:
+                            defaultValue:
+                              type: string
+                            name:
+                              type: string
+                          required:
+                          - name
+                          type: object
+                        literal:
+                          properties:
+                            value:
+                              type: string
+                          required:
+                          - value
+                          type: object
+                        metadata:
+                          properties:
+                            defaultValue:
+                              type: string
+                            kind:
+                              enum:
+                              - Request
+                              - Route
+                              - Cluster
+                              - Host
+                              type: string
+                            metadataKey:
+                              properties:
+                                key:
+                                  type: string
+                                path:
+                                  items:
+                                    properties:
+                                      key:
+                                        type: string
+                                    required:
+                                    - key
+                                    type: object
+                                  type: array
+                              required:
+                              - key
+                              - path
+                              type: object
+                          type: object
+                        tag:
+                          type: string
+                      required:
+                      - tag
+                      type: object
+                    type: array
+                  maxPathTagLength:
+                    format: int32
+                    type: integer
+                  overallSampling:
+                    format: int32
+                    maximum: 100
+                    minimum: 0
+                    type: integer
+                  provider:
+                    maxProperties: 1
+                    minProperties: 1
+                    properties:
+                      openTelemetryConfig:
+                        properties:
+                          grpcService:
+                            properties:
+                              authority:
+                                type: string
+                              backendRef:
+                                properties:
+                                  group:
+                                    default: ""
+                                    maxLength: 253
+                                    pattern: ^$|^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
+                                    type: string
+                                  kind:
+                                    default: Service
+                                    maxLength: 63
+                                    minLength: 1
+                                    pattern: ^[a-zA-Z]([-a-zA-Z0-9]*[a-zA-Z0-9])?$
+                                    type: string
+                                  name:
+                                    maxLength: 253
+                                    minLength: 1
+                                    type: string
+                                  namespace:
+                                    maxLength: 63
+                                    minLength: 1
+                                    pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
+                                    type: string
+                                  port:
+                                    format: int32
+                                    maximum: 65535
+                                    minimum: 1
+                                    type: integer
+                                  weight:
+                                    default: 1
+                                    format: int32
+                                    maximum: 1000000
+                                    minimum: 0
+                                    type: integer
+                                required:
+                                - name
+                                type: object
+                                x-kubernetes-validations:
+                                - message: Must have port for Service reference
+                                  rule: '(size(self.group) == 0 && self.kind == ''Service'')
+                                    ? has(self.port) : true'
+                              initialMetadata:
+                                items:
+                                  properties:
+                                    key:
+                                      type: string
+                                    value:
+                                      type: string
+                                  required:
+                                  - key
+                                  type: object
+                                type: array
+                              maxReceiveMessageLength:
+                                format: int32
+                                type: integer
+                              retryPolicy:
+                                properties:
+                                  numRetries:
+                                    format: int32
+                                    type: integer
+                                  retryBackOff:
+                                    properties:
+                                      baseInterval:
+                                        type: string
+                                      maxInterval:
+                                        type: string
+                                    required:
+                                    - baseInterval
+                                    type: object
+                                type: object
+                              skipEnvoyHeaders:
+                                type: boolean
+                              timeout:
+                                type: string
+                            required:
+                            - backendRef
+                            type: object
+                          resourceDetectors:
+                            items:
+                              maxProperties: 1
+                              minProperties: 1
+                              properties:
+                                environmentResourceDetector:
+                                  type: object
+                              type: object
+                            type: array
+                          sampler:
+                            maxProperties: 1
+                            minProperties: 1
+                            properties:
+                              alwaysOnConfig:
+                                type: object
+                            type: object
+                          serviceName:
+                            type: string
+                        required:
+                        - grpcService
+                        - serviceName
+                        type: object
+                    required:
+                    - openTelemetryConfig
+                    type: object
+                  randomSampling:
+                    format: int32
+                    maximum: 100
+                    minimum: 0
+                    type: integer
+                  spawnUpstreamSpan:
+                    type: boolean
+                  verbose:
+                    type: boolean
+                required:
+                - provider
+                type: object
               upgradeConfig:
                 properties:
                   enabledUpgrades:
