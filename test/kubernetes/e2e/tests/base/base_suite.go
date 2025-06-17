@@ -8,6 +8,7 @@ import (
 
 	"github.com/onsi/gomega"
 	"github.com/stretchr/testify/suite"
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -168,6 +169,17 @@ func (s *BaseTestingSuite) BeforeTest(suiteName, testName string) {
 			s.TestInstallation.Assertions.EventuallyPodsRunning(s.Ctx, pod.Namespace, metav1.ListOptions{
 				LabelSelector: fmt.Sprintf("app.kubernetes.io/name=%s", pod.Name),
 			})
+		}
+		if deployment, ok := resource.(*appsv1.Deployment); ok {
+			if len(deployment.Labels) != 0 {
+				s.TestInstallation.Assertions.EventuallyPodsRunning(s.Ctx, deployment.Namespace, metav1.ListOptions{
+					LabelSelector: fmt.Sprintf("app=%s", deployment.Name),
+				})
+			} else {
+				s.TestInstallation.Assertions.EventuallyPodsRunning(s.Ctx, deployment.Namespace, metav1.ListOptions{
+					LabelSelector: fmt.Sprintf("app.kubernetes.io/name=%s", deployment.Name),
+				})
+			}
 		}
 	}
 }
