@@ -101,13 +101,17 @@ func TestConvertJsonFormat_EdgeCases(t *testing.T) {
 				name: "GRPCAdditionalHeaders",
 				config: []v1alpha1.AccessLog{
 					{
-						GrpcService: &v1alpha1.GrpcService{
-							BackendRef: &gwv1.BackendRef{
-								BackendObjectReference: gwv1.BackendObjectReference{
-									Name: "test-service",
+						GrpcService: &v1alpha1.AccessLogGrpcService{
+							CommonAccessLogGrpcService: &v1alpha1.CommonAccessLogGrpcService{
+								CommonGrpcService: &v1alpha1.CommonGrpcService{
+									BackendRef: &gwv1.BackendRef{
+										BackendObjectReference: gwv1.BackendObjectReference{
+											Name: "test-service",
+										},
+									},
 								},
+								LogName: "grpc-log",
 							},
-							LogName:                         "grpc-log",
 							AdditionalRequestHeadersToLog:   []string{"x-request-id"},
 							AdditionalResponseHeadersToLog:  []string{"x-response-id"},
 							AdditionalResponseTrailersToLog: []string{"x-trailer"},
@@ -272,13 +276,17 @@ func TestConvertJsonFormat_EdgeCases(t *testing.T) {
 				name: "GrpcServiceConfig",
 				config: []v1alpha1.AccessLog{
 					{
-						GrpcService: &v1alpha1.GrpcService{
-							BackendRef: &gwv1.BackendRef{
-								BackendObjectReference: gwv1.BackendObjectReference{
-									Name: "test-service",
+						GrpcService: &v1alpha1.AccessLogGrpcService{
+							CommonAccessLogGrpcService: &v1alpha1.CommonAccessLogGrpcService{
+								CommonGrpcService: &v1alpha1.CommonGrpcService{
+									BackendRef: &gwv1.BackendRef{
+										BackendObjectReference: gwv1.BackendObjectReference{
+											Name: "test-service",
+										},
+									},
 								},
+								LogName: "grpc-log",
 							},
-							LogName: "grpc-log",
 						},
 					},
 				},

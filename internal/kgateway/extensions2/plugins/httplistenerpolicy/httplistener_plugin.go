@@ -33,6 +33,7 @@ var logger = logging.New("plugin/httplistenerpolicy")
 type httpListenerPolicy struct {
 	ct             time.Time
 	accessLog      []*envoyaccesslog.AccessLog
+	tracing        *envoy_hcm.HttpConnectionManager_Tracing
 	upgradeConfigs []*envoy_hcm.HttpConnectionManager_UpgradeConfig
 }
 
@@ -105,6 +106,11 @@ func NewPlugin(ctx context.Context, commoncol *common.CommonCollections) extensi
 			logger.Error("error translating access log", "error", err)
 			errs = append(errs, err)
 		}
+		tracing, err := convertTracingConfig(ctx, i, commoncol, krtctx, objSrc)
+		if err != nil {
+			logger.Error("error translating tracing", "error", err)
+			errs = append(errs, err)
+		}
 
 		upgradeConfigs := convertUpgradeConfig(i)
 
@@ -114,6 +120,7 @@ func NewPlugin(ctx context.Context, commoncol *common.CommonCollections) extensi
 			PolicyIR: &httpListenerPolicy{
 				ct:             i.CreationTimestamp.Time,
 				accessLog:      accessLog,
+				tracing:        tracing,
 				upgradeConfigs: upgradeConfigs,
 			},
 			TargetRefs: pluginutils.TargetRefsToPolicyRefs(i.Spec.TargetRefs, i.Spec.TargetSelectors),
@@ -156,8 +163,8 @@ func (p *httpListenerPolicyPluginGwPass) ApplyHCM(
 		return fmt.Errorf("internal error: expected httplistener policy, got %T", pCtx.Policy)
 	}
 
-	// translate access logging configuration
 	out.AccessLog = append(out.GetAccessLog(), policy.accessLog...)
+	out.Tracing = policy.tracing
 
 	// translate upgrade configuration
 	if policy.upgradeConfigs != nil {
