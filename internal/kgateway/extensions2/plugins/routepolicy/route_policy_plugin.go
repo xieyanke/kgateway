@@ -14,6 +14,7 @@ import (
 	localratelimitv3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/local_ratelimit/v3"
 	envoyhttp "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/http_connection_manager/v3"
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/wrapperspb"
 	skubeclient "istio.io/istio/pkg/config/schema/kubeclient"
 	"istio.io/istio/pkg/kube/kclient"
 	"istio.io/istio/pkg/kube/krt"
@@ -684,19 +685,32 @@ func (p *trafficPolicyPluginGwPass) HttpFilters(ctx context.Context, fcc ir.Filt
 		// TODO(nfuden/yuvalk): how to do route level correctly probably contribute to dynamic module upstream
 		// smash together configuration
 		filterRouteHashConfig := map[string]string{}
+		topLevel, ok := p.rustformationStash[""]
+
+		if topLevel == "" {
+			topLevel = "}"
+		} else {
+			topLevel = "," + topLevel[1:]
+		}
+		if ok {
+			delete(p.rustformationStash, "")
+		}
 
 		for k, v := range p.rustformationStash {
 			filterRouteHashConfig[k] = v
 		}
 
 		filterConfig, _ := json.Marshal(filterRouteHashConfig)
+		msg, _ := utils.MessageToAny(&wrapperspb.StringValue{
+			Value: fmt.Sprintf(`{"route_specific": %s%s`, string(filterConfig), topLevel),
+		})
 
 		rustCfg := dynamicmodulesv3.DynamicModuleFilter{
 			DynamicModuleConfig: &exteniondynamicmodulev3.DynamicModuleConfig{
 				Name: "rust_module",
 			},
 			FilterName:   "http_simple_mutations",
-			FilterConfig: fmt.Sprintf(`{"route_specific": %s}`, string(filterConfig)),
+			FilterConfig: msg,
 		}
 
 		filters = append(filters, plugins.MustNewStagedFilter(rustformationFilterNamePrefix,
