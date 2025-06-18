@@ -74,7 +74,6 @@ func ToEnvoyGrpc(in *v1alpha1.CommonGrpcService, backend *ir.BackendObjectIR) (*
 		grpcService.RetryPolicy = retryPolicy
 	}
 	return grpcService, nil
-
 }
 
 // DurationToProto converts a go Duration to a protobuf Duration.

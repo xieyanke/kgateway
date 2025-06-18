@@ -66,7 +66,7 @@ var (
 		"TestOTelTracing": {
 			SimpleTestCase: base.SimpleTestCase{
 				Manifests: []string{otelCollectorManifest, policyManifest},
-				Resources: []client.Object{otelCollectorDeployment},
+				Resources: []client.Object{otelCollectorDeployment, tracingPolicy},
 			},
 		},
 	}
