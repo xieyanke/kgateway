@@ -16,7 +16,6 @@ import (
 	"github.com/kgateway-dev/kgateway/v2/test/gomega/matchers"
 	"github.com/kgateway-dev/kgateway/v2/test/kubernetes/e2e"
 	"github.com/kgateway-dev/kgateway/v2/test/kubernetes/e2e/defaults"
-	testdefaults "github.com/kgateway-dev/kgateway/v2/test/kubernetes/e2e/defaults"
 	"github.com/kgateway-dev/kgateway/v2/test/kubernetes/e2e/tests/base"
 )
 
@@ -81,7 +80,7 @@ func (s *testingSuite) TestAccessLogWithOTelSink() {
 		`"log_name":"test-otel-accesslog-service"`,
 		`"body":"\"GET /status/200 200 \"www.example.com\" \"kube_httpbin_httpbin_8000\"\\n'"`,
 	})
-	// query the exporter to verify the trace was generated
+	// query the exporter to verify the access log was generated
 	s.TestInstallation.Assertions.AssertEventualCurlResponse(
 		s.Ctx,
 		defaults.CurlPodExecOpt,
@@ -102,7 +101,7 @@ func (s *testingSuite) TestAccessLogWithOTelSink() {
 func (s *testingSuite) sendTestRequest() {
 	s.TestInstallation.Assertions.AssertEventualCurlResponse(
 		s.Ctx,
-		testdefaults.CurlPodExecOpt,
+		defaults.CurlPodExecOpt,
 		[]curl.Option{
 			curl.WithHost(kubeutils.ServiceFQDN(gatewayService.ObjectMeta)),
 			curl.VerboseOutput(),
@@ -124,7 +123,7 @@ func (s *testingSuite) getPods(label string) []string {
 			LabelSelector: label,
 		},
 	)
-	// check access log
+
 	pods, err := s.TestInstallation.Actions.Kubectl().GetPodsInNsWithLabel(
 		s.Ctx,
 		accessLoggerDeployment.ObjectMeta.GetNamespace(),
@@ -132,6 +131,5 @@ func (s *testingSuite) getPods(label string) []string {
 	)
 	s.Require().NoError(err)
 	s.Require().Len(pods, 1)
-
 	return pods
 }

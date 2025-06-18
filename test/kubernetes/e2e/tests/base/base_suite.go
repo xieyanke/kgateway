@@ -168,17 +168,20 @@ func (s *BaseTestingSuite) BeforeTest(suiteName, testName string) {
 		if pod, ok := resource.(*corev1.Pod); ok {
 			s.TestInstallation.Assertions.EventuallyPodsRunning(s.Ctx, pod.Namespace, metav1.ListOptions{
 				LabelSelector: fmt.Sprintf("app.kubernetes.io/name=%s", pod.Name),
-			})
+				// Provide a longer timeout as the pod needs to be pulled and pass HCs
+			}, time.Second*60, time.Second*2)
 		}
 		if deployment, ok := resource.(*appsv1.Deployment); ok {
 			if len(deployment.Labels) != 0 {
 				s.TestInstallation.Assertions.EventuallyPodsRunning(s.Ctx, deployment.Namespace, metav1.ListOptions{
 					LabelSelector: fmt.Sprintf("app=%s", deployment.Name),
-				})
+					// Provide a longer timeout as the pod needs to be pulled and pass HCs
+				}, time.Second*60, time.Second*2)
 			} else {
 				s.TestInstallation.Assertions.EventuallyPodsRunning(s.Ctx, deployment.Namespace, metav1.ListOptions{
 					LabelSelector: fmt.Sprintf("app.kubernetes.io/name=%s", deployment.Name),
-				})
+					// Provide a longer timeout as the pod needs to be pulled and pass HCs
+				}, time.Second*60, time.Second*2)
 			}
 		}
 	}
