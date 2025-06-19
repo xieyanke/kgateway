@@ -201,7 +201,7 @@ type OpenTelemetryAccessLogService struct {
 
 	// If specified, Envoy will not generate built-in resource labels like log_name, zone_name, cluster_name, node_name.
 	// +kubebuilder:validation:Optional
-	DisableBuiltinLabels bool `json:"disableBuiltinLabels,omitempty"`
+	DisableBuiltinLabels *bool `json:"disableBuiltinLabels,omitempty"`
 
 	// Additional attributes that describe the specific event occurrence.
 	// +kubebuilder:validation:Optional

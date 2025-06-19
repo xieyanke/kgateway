@@ -31,13 +31,33 @@ func convertTracingConfig(
 		return nil, nil
 	}
 
-	var provider *tracev3.Tracing_Http
-	var err error
-	if config.Provider.OpenTelemetry != nil {
-		provider, err = convertOTelTracingConfig(ctx, config.Provider.OpenTelemetry, commoncol, krtctx, parentSrc)
-		if err != nil {
-			return nil, err
-		}
+	if config.Provider.OpenTelemetry == nil || config.Provider.OpenTelemetry.GrpcService == nil || config.Provider.OpenTelemetry.GrpcService.BackendRef == nil {
+		return nil, fmt.Errorf("Tracing.OpenTelemetryConfig.GrpcService.BackendRef must be specified")
+	}
+
+	backend, err := commoncol.BackendIndex.GetBackendFromRef(krtctx, parentSrc, config.Provider.OpenTelemetry.GrpcService.BackendRef.BackendObjectReference)
+	if err != nil {
+		return nil, fmt.Errorf("%w: %v", ErrUnresolvedBackendRef, err)
+	}
+
+	return translateTracing(config, backend)
+}
+
+func translateTracing(
+	config *v1alpha1.Tracing,
+	backend *ir.BackendObjectIR,
+) (*envoy_hcm.HttpConnectionManager_Tracing, error) {
+	if config == nil || config.Provider == nil {
+		return nil, nil
+	}
+
+	if config.Provider.OpenTelemetry == nil || config.Provider.OpenTelemetry.GrpcService == nil || config.Provider.OpenTelemetry.GrpcService.BackendRef == nil {
+		return nil, fmt.Errorf("Tracing.OpenTelemetryConfig.GrpcService.BackendRef must be specified")
+	}
+
+	provider, err := convertOTelTracingConfig(config.Provider.OpenTelemetry, backend)
+	if err != nil {
+		return nil, err
 	}
 
 	tracingConfig := &envoy_hcm.HttpConnectionManager_Tracing{
@@ -45,61 +65,43 @@ func convertTracingConfig(
 	}
 	if config.ClientSampling != nil {
 		tracingConfig.ClientSampling = &typev3.Percent{
-			Value: intToPercent(*config.ClientSampling),
+			Value: float64(*config.ClientSampling),
 		}
+	}
+	if config.RandomSampling != nil {
+		tracingConfig.RandomSampling = &typev3.Percent{
+			Value: float64(*config.RandomSampling),
+		}
+	}
+	if config.OverallSampling != nil {
+		tracingConfig.OverallSampling = &typev3.Percent{
+			Value: float64(*config.OverallSampling),
+		}
+	}
+	if config.Verbose != nil {
+		tracingConfig.Verbose = *config.Verbose
 	}
 	if config.MaxPathTagLength != nil {
 		tracingConfig.MaxPathTagLength = &wrapperspb.UInt32Value{
 			Value: *config.MaxPathTagLength,
 		}
 	}
-	if config.OverallSampling != nil {
-		tracingConfig.OverallSampling = &typev3.Percent{
-			Value: intToPercent(*config.OverallSampling),
-		}
-	}
-	if config.RandomSampling != nil {
-		tracingConfig.RandomSampling = &typev3.Percent{
-			Value: intToPercent(*config.RandomSampling),
-		}
-	}
+	// TODO: Custom tags
 	if config.SpawnUpstreamSpan != nil {
 		tracingConfig.SpawnUpstreamSpan = &wrapperspb.BoolValue{
 			Value: *config.SpawnUpstreamSpan,
 		}
 	}
-	if config.Verbose != nil {
-		tracingConfig.Verbose = *config.Verbose
-	}
 
 	return tracingConfig, nil
 }
 
-func intToPercent(in uint32) float64 {
-	return float64(in) / 100
-}
-
 func convertOTelTracingConfig(
-	ctx context.Context,
 	config *v1alpha1.OpenTelemetryTracingConfig,
-	commoncol *common.CommonCollections,
-	krtctx krt.HandlerContext,
-	parentSrc ir.ObjectSource,
+	backend *ir.BackendObjectIR,
 ) (*tracev3.Tracing_Http, error) {
 	if config == nil {
 		return nil, nil
-	}
-	if config.GrpcService == nil || config.GrpcService.BackendRef == nil {
-		return nil, fmt.Errorf("Tracing.OpenTelemetryConfig.GrpcService.BackendRef must be specified")
-	}
-
-	var backend *ir.BackendObjectIR
-	var err error
-	if config.GrpcService != nil && config.GrpcService.BackendRef != nil {
-		backend, err = commoncol.BackendIndex.GetBackendFromRef(krtctx, parentSrc, config.GrpcService.BackendRef.BackendObjectReference)
-		if err != nil {
-			return nil, fmt.Errorf("%w: %v", ErrUnresolvedBackendRef, err)
-		}
 	}
 
 	envoyGrpcService, err := ToEnvoyGrpc(config.GrpcService, backend)
@@ -114,13 +116,13 @@ func convertOTelTracingConfig(
 
 	if len(config.ResourceDetectors) != 0 {
 		translatedResourceDetectors := make([]*corev3.TypedExtensionConfig, len(config.ResourceDetectors))
-		for _, rd := range config.ResourceDetectors {
+		for i, rd := range config.ResourceDetectors {
 			if rd.EnvironmentResourceDetector != nil {
 				detector, _ := utils.MessageToAny(&resource_detectorsv3.EnvironmentResourceDetectorConfig{})
-				translatedResourceDetectors = append(translatedResourceDetectors, &corev3.TypedExtensionConfig{
+				translatedResourceDetectors[i] = &corev3.TypedExtensionConfig{
 					Name:        "envoy.tracers.opentelemetry.resource_detectors.environment",
 					TypedConfig: detector,
-				})
+				}
 			}
 		}
 		tracingCfg.ResourceDetectors = translatedResourceDetectors
@@ -136,8 +138,10 @@ func convertOTelTracingConfig(
 		}
 	}
 
-	otelCfg, _ := utils.MessageToAny(tracingCfg)
-	fmt.Println("======== otelCfg", otelCfg)
+	otelCfg, err := utils.MessageToAny(tracingCfg)
+	if err != nil {
+		return nil, err
+	}
 
 	return &tracev3.Tracing_Http{
 		Name: "envoy.tracers.opentelemetry",

@@ -33,9 +33,7 @@ func ToEnvoyGrpc(in *v1alpha1.CommonGrpcService, backend *ir.BackendObjectIR) (*
 	}
 	grpcService := &envoycore.GrpcService{
 		TargetSpecifier: &envoycore.GrpcService_EnvoyGrpc_{
-			EnvoyGrpc: &envoycore.GrpcService_EnvoyGrpc{
-				ClusterName: backend.ClusterName(),
-			},
+			EnvoyGrpc: envoyGrpcService,
 		},
 	}
 
@@ -44,11 +42,11 @@ func ToEnvoyGrpc(in *v1alpha1.CommonGrpcService, backend *ir.BackendObjectIR) (*
 	}
 	if in.InitialMetadata != nil {
 		grpcService.InitialMetadata = make([]*envoycore.HeaderValue, len(in.InitialMetadata))
-		for _, metadata := range in.InitialMetadata {
-			grpcService.InitialMetadata = append(grpcService.GetInitialMetadata(), &envoycore.HeaderValue{
+		for i, metadata := range in.InitialMetadata {
+			grpcService.InitialMetadata[i] = &envoycore.HeaderValue{
 				Key:   metadata.Key,
 				Value: metadata.Value,
-			})
+			}
 		}
 	}
 	if in.RetryPolicy != nil {
@@ -64,8 +62,7 @@ func ToEnvoyGrpc(in *v1alpha1.CommonGrpcService, backend *ir.BackendObjectIR) (*
 			}
 			if in.RetryPolicy.RetryBackOff.MaxInterval != nil {
 				if in.RetryPolicy.RetryBackOff.MaxInterval.Duration.Nanoseconds() < in.RetryPolicy.RetryBackOff.BaseInterval.Duration.Nanoseconds() {
-					// error out
-					panic("error in base and max interval")
+					logger.Error("RetryPolicy.RetryBackOff.MaxInterval is lesser than RetryPolicy.RetryBackOff.MaxInterval. Ignoring MaxInterval", "MaxInterval", in.RetryPolicy.RetryBackOff.MaxInterval.Duration.Seconds(), "BaseInterval", in.RetryPolicy.RetryBackOff.BaseInterval.Duration.Seconds())
 				} else {
 					retryPolicy.GetRetryBackOff().MaxInterval = DurationToProto(in.RetryPolicy.RetryBackOff.MaxInterval.Duration)
 				}

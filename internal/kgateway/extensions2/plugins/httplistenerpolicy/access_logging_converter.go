@@ -458,7 +458,9 @@ func copyOTelSettings(cfg *envoy_open_telemetry.OpenTelemetryAccessLogConfig, ot
 			},
 		}
 	}
-	cfg.DisableBuiltinLabels = otelService.DisableBuiltinLabels
+	if otelService.DisableBuiltinLabels != nil {
+		cfg.DisableBuiltinLabels = *otelService.DisableBuiltinLabels
+	}
 
 	return cfg.Validate()
 }

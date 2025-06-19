@@ -1,0 +1,162 @@
+package httplistenerpolicy
+
+import (
+	"context"
+	"testing"
+
+	corev3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
+	tracev3 "github.com/envoyproxy/go-control-plane/envoy/config/trace/v3"
+	envoy_hcm "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/http_connection_manager/v3"
+	resource_detectorsv3 "github.com/envoyproxy/go-control-plane/envoy/extensions/tracers/opentelemetry/resource_detectors/v3"
+	samplersv3 "github.com/envoyproxy/go-control-plane/envoy/extensions/tracers/opentelemetry/samplers/v3"
+	typev3 "github.com/envoyproxy/go-control-plane/envoy/type/v3"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/wrapperspb"
+	"k8s.io/utils/pointer"
+	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
+	v1 "sigs.k8s.io/gateway-api/apis/v1"
+
+	"github.com/kgateway-dev/kgateway/v2/api/v1alpha1"
+	"github.com/kgateway-dev/kgateway/v2/internal/kgateway/ir"
+)
+
+func TestTracingConverter(t *testing.T) {
+	t.Run("Tracing Conversion", func(t *testing.T) {
+		testCases := []struct {
+			name     string
+			config   *v1alpha1.Tracing
+			expected *envoy_hcm.HttpConnectionManager_Tracing
+		}{
+			{
+				name:     "NilConfig",
+				config:   nil,
+				expected: nil,
+			},
+			{
+				name:     "EmptyTracing",
+				config:   &v1alpha1.Tracing{},
+				expected: nil,
+			},
+			{
+				name: "OTel Tracing minimal config",
+				config: &v1alpha1.Tracing{
+					Provider: &v1alpha1.Provider{
+						OpenTelemetry: &v1alpha1.OpenTelemetryTracingConfig{
+							GrpcService: &v1alpha1.CommonGrpcService{
+								BackendRef: &v1.BackendRef{
+									BackendObjectReference: gwv1.BackendObjectReference{
+										Name: "test-service",
+									},
+								},
+							},
+							ServiceName: "my:service",
+						},
+					},
+				},
+				expected: &envoy_hcm.HttpConnectionManager_Tracing{
+					Provider: &tracev3.Tracing_Http{
+						Name: "envoy.tracers.opentelemetry",
+						ConfigType: &tracev3.Tracing_Http_TypedConfig{
+							TypedConfig: mustMessageToAny(t, &tracev3.OpenTelemetryConfig{
+								GrpcService: &corev3.GrpcService{
+									TargetSpecifier: &corev3.GrpcService_EnvoyGrpc_{
+										EnvoyGrpc: &corev3.GrpcService_EnvoyGrpc{
+											ClusterName: "backend_default_test-service_0",
+										},
+									},
+								},
+								ServiceName: "my:service",
+							}),
+						},
+					},
+				},
+			},
+			{
+				name: "OTel Tracing full config",
+				config: &v1alpha1.Tracing{
+					Provider: &v1alpha1.Provider{
+						OpenTelemetry: &v1alpha1.OpenTelemetryTracingConfig{
+							GrpcService: &v1alpha1.CommonGrpcService{
+								BackendRef: &v1.BackendRef{
+									BackendObjectReference: gwv1.BackendObjectReference{
+										Name: "test-service",
+									},
+								},
+							},
+							ServiceName: "my:service",
+							ResourceDetectors: []*v1alpha1.ResourceDetector{{
+								EnvironmentResourceDetector: &v1alpha1.EnvironmentResourceDetectorConfig{},
+							}},
+							Sampler: &v1alpha1.Sampler{
+								AlwaysOn: &v1alpha1.AlwaysOnConfig{},
+							},
+						},
+					},
+					ClientSampling:   pointer.Uint32(45),
+					RandomSampling:   pointer.Uint32(55),
+					OverallSampling:  pointer.Uint32(65),
+					Verbose:          pointer.Bool(true),
+					MaxPathTagLength: pointer.Uint32(127),
+					// TODO: Custom tags
+					SpawnUpstreamSpan: pointer.Bool(true),
+				},
+				expected: &envoy_hcm.HttpConnectionManager_Tracing{
+					Provider: &tracev3.Tracing_Http{
+						Name: "envoy.tracers.opentelemetry",
+						ConfigType: &tracev3.Tracing_Http_TypedConfig{
+							TypedConfig: mustMessageToAny(t, &tracev3.OpenTelemetryConfig{
+								GrpcService: &corev3.GrpcService{
+									TargetSpecifier: &corev3.GrpcService_EnvoyGrpc_{
+										EnvoyGrpc: &corev3.GrpcService_EnvoyGrpc{
+											ClusterName: "backend_default_test-service_0",
+										},
+									},
+								},
+								ServiceName: "my:service",
+								ResourceDetectors: []*corev3.TypedExtensionConfig{{
+									Name:        "envoy.tracers.opentelemetry.resource_detectors.environment",
+									TypedConfig: mustMessageToAny(t, &resource_detectorsv3.EnvironmentResourceDetectorConfig{}),
+								}},
+								Sampler: &corev3.TypedExtensionConfig{
+									Name:        "envoy.tracers.opentelemetry.samplers.always_on",
+									TypedConfig: mustMessageToAny(t, &samplersv3.AlwaysOnSamplerConfig{}),
+								},
+							}),
+						},
+					},
+					ClientSampling:   &typev3.Percent{Value: 45},
+					RandomSampling:   &typev3.Percent{Value: 55},
+					OverallSampling:  &typev3.Percent{Value: 65},
+					Verbose:          true,
+					MaxPathTagLength: &wrapperspb.UInt32Value{Value: 127},
+					// TODO: Custom tags
+					SpawnUpstreamSpan: &wrapperspb.BoolValue{Value: true},
+				},
+			},
+		}
+		for _, tc := range testCases {
+			_, cancel := context.WithCancel(context.Background())
+			t.Cleanup(cancel)
+
+			t.Run(tc.name, func(t *testing.T) {
+				result, err := translateTracing(
+					tc.config,
+					&ir.BackendObjectIR{
+						ObjectSource: ir.ObjectSource{
+							Kind:      "Backend",
+							Name:      "test-service",
+							Namespace: "default",
+						},
+					},
+				)
+				require.NoError(t, err, "failed to convert access log config")
+				if tc.expected != nil {
+					assert.True(t, proto.Equal(tc.expected, result),
+						"Tracing config mismatch\n %v\n %v\n", tc.expected, result)
+				}
+			})
+		}
+	})
+}
