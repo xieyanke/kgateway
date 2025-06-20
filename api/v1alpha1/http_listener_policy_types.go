@@ -226,19 +226,17 @@ type KeyAnyValue struct {
 }
 
 // AnyValue is used to represent any type of attribute value. AnyValue may contain a primitive value such as a string or integer or it may contain an arbitrary nested object containing arrays, key-value lists and primitives.
+// This is limited to string and nested values as OTel only supports them
 // +kubebuilder:validation:MaxProperties=1
 // +kubebuilder:validation:MinProperties=1
 type AnyValue struct {
-	BoolValue *bool `json:"boolValue,omitempty"`
-	// +kubebuilder:validation:Format=numerical
-	DoubleValue *string `json:"doubleValue,omitempty"`
-	IntValue    *int64  `json:"intValue,omitempty"`
 	StringValue *string `json:"stringValue,omitempty"`
-	BytesValue  []byte  `json:"bytesValue,omitempty"`
 	// TODO: Add support for ArrayValue && KvListValue
 	// +kubebuilder:validation:items:Type=object
+	// +kubebuilder:validation:items:XPreserveUnknownFields
 	ArrayValue []AnyValue `json:"arrayValue,omitempty"`
 	// +kubebuilder:validation:Type=object
+	// +kubebuilder:validation:XPreserveUnknownFields
 	KvListValue *KeyAnyValueList `json:"kvListValue,omitempty"`
 }
 

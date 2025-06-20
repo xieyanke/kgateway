@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"strconv"
 
 	envoyaccesslog "github.com/envoyproxy/go-control-plane/envoy/config/accesslog/v3"
 	envoycore "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
@@ -487,42 +486,10 @@ func ToOTelAnyValue(in *v1alpha1.AnyValue) *otelv1.AnyValue {
 	if in == nil {
 		return nil
 	}
-	if in.BoolValue != nil {
-		return &otelv1.AnyValue{
-			Value: &otelv1.AnyValue_BoolValue{
-				BoolValue: *in.BoolValue,
-			},
-		}
-	}
-	if in.DoubleValue != nil {
-		fl, err := strconv.ParseFloat(*in.DoubleValue, 64)
-		if err != nil {
-			logger.Error("error converting DoubleValue", "double_value", *in.DoubleValue, "error", err)
-		}
-		return &otelv1.AnyValue{
-			Value: &otelv1.AnyValue_DoubleValue{
-				DoubleValue: fl,
-			},
-		}
-	}
-	if in.IntValue != nil {
-		return &otelv1.AnyValue{
-			Value: &otelv1.AnyValue_IntValue{
-				IntValue: *in.IntValue,
-			},
-		}
-	}
 	if in.StringValue != nil {
 		return &otelv1.AnyValue{
 			Value: &otelv1.AnyValue_StringValue{
 				StringValue: *in.StringValue,
-			},
-		}
-	}
-	if in.BytesValue != nil {
-		return &otelv1.AnyValue{
-			Value: &otelv1.AnyValue_BytesValue{
-				BytesValue: in.BytesValue,
 			},
 		}
 	}

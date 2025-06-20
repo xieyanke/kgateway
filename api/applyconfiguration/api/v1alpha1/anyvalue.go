@@ -5,11 +5,7 @@ package v1alpha1
 // AnyValueApplyConfiguration represents a declarative configuration of the AnyValue type for use
 // with apply.
 type AnyValueApplyConfiguration struct {
-	BoolValue   *bool                              `json:"boolValue,omitempty"`
-	DoubleValue *string                            `json:"doubleValue,omitempty"`
-	IntValue    *int64                             `json:"intValue,omitempty"`
 	StringValue *string                            `json:"stringValue,omitempty"`
-	BytesValue  []byte                             `json:"bytesValue,omitempty"`
 	ArrayValue  []AnyValueApplyConfiguration       `json:"arrayValue,omitempty"`
 	KvListValue *KeyAnyValueListApplyConfiguration `json:"kvListValue,omitempty"`
 }
@@ -20,45 +16,11 @@ func AnyValue() *AnyValueApplyConfiguration {
 	return &AnyValueApplyConfiguration{}
 }
 
-// WithBoolValue sets the BoolValue field in the declarative configuration to the given value
-// and returns the receiver, so that objects can be built by chaining "With" function invocations.
-// If called multiple times, the BoolValue field is set to the value of the last call.
-func (b *AnyValueApplyConfiguration) WithBoolValue(value bool) *AnyValueApplyConfiguration {
-	b.BoolValue = &value
-	return b
-}
-
-// WithDoubleValue sets the DoubleValue field in the declarative configuration to the given value
-// and returns the receiver, so that objects can be built by chaining "With" function invocations.
-// If called multiple times, the DoubleValue field is set to the value of the last call.
-func (b *AnyValueApplyConfiguration) WithDoubleValue(value string) *AnyValueApplyConfiguration {
-	b.DoubleValue = &value
-	return b
-}
-
-// WithIntValue sets the IntValue field in the declarative configuration to the given value
-// and returns the receiver, so that objects can be built by chaining "With" function invocations.
-// If called multiple times, the IntValue field is set to the value of the last call.
-func (b *AnyValueApplyConfiguration) WithIntValue(value int64) *AnyValueApplyConfiguration {
-	b.IntValue = &value
-	return b
-}
-
 // WithStringValue sets the StringValue field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the StringValue field is set to the value of the last call.
 func (b *AnyValueApplyConfiguration) WithStringValue(value string) *AnyValueApplyConfiguration {
 	b.StringValue = &value
-	return b
-}
-
-// WithBytesValue adds the given value to the BytesValue field in the declarative configuration
-// and returns the receiver, so that objects can be build by chaining "With" function invocations.
-// If called multiple times, values provided by each call will be appended to the BytesValue field.
-func (b *AnyValueApplyConfiguration) WithBytesValue(values ...byte) *AnyValueApplyConfiguration {
-	for i := range values {
-		b.BytesValue = append(b.BytesValue, values[i])
-	}
 	return b
 }
 

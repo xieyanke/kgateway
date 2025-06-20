@@ -508,20 +508,11 @@ spec:
                                       arrayValue:
                                         items:
                                           type: object
+                                          x-kubernetes-preserve-unknown-fields: true
                                         type: array
-                                      boolValue:
-                                        type: boolean
-                                      bytesValue:
-                                        format: byte
-                                        type: string
-                                      doubleValue:
-                                        format: numerical
-                                        type: string
-                                      intValue:
-                                        format: int64
-                                        type: integer
                                       kvListValue:
                                         type: object
+                                        x-kubernetes-preserve-unknown-fields: true
                                       stringValue:
                                         type: string
                                     type: object

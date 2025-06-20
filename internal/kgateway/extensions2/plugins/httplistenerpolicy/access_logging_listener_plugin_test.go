@@ -816,33 +816,9 @@ func TestConvertJsonFormat_EdgeCases(t *testing.T) {
 							Attributes: &v1alpha1.KeyAnyValueList{
 								Values: []v1alpha1.KeyAnyValue{
 									{
-										Key: "bool-key",
+										Key: "string-key-1",
 										Value: v1alpha1.AnyValue{
-											BoolValue: pointer.Bool(true),
-										},
-									},
-									{
-										Key: "double-key",
-										Value: v1alpha1.AnyValue{
-											DoubleValue: pointer.String("1.23"),
-										},
-									},
-									{
-										Key: "int-key",
-										Value: v1alpha1.AnyValue{
-											IntValue: pointer.Int64(123),
-										},
-									},
-									{
-										Key: "string-key",
-										Value: v1alpha1.AnyValue{
-											StringValue: pointer.String("string-value"),
-										},
-									},
-									{
-										Key: "bytes-key",
-										Value: v1alpha1.AnyValue{
-											BytesValue: []byte{1, 2, 3},
+											StringValue: pointer.String("string-value-1"),
 										},
 									},
 									{
@@ -850,10 +826,10 @@ func TestConvertJsonFormat_EdgeCases(t *testing.T) {
 										Value: v1alpha1.AnyValue{
 											ArrayValue: []v1alpha1.AnyValue{
 												{
-													BoolValue: pointer.Bool(true),
+													StringValue: pointer.String("1-string-value"),
 												},
 												{
-													IntValue: pointer.Int64(123),
+													StringValue: pointer.String("2-string-value"),
 												},
 											},
 										},
@@ -864,33 +840,9 @@ func TestConvertJsonFormat_EdgeCases(t *testing.T) {
 											KvListValue: &v1alpha1.KeyAnyValueList{
 												Values: []v1alpha1.KeyAnyValue{
 													{
-														Key: "bool-key",
+														Key: "string-key-2",
 														Value: v1alpha1.AnyValue{
-															BoolValue: pointer.Bool(true),
-														},
-													},
-													{
-														Key: "double-key",
-														Value: v1alpha1.AnyValue{
-															DoubleValue: pointer.String("1.23"),
-														},
-													},
-													{
-														Key: "int-key",
-														Value: v1alpha1.AnyValue{
-															IntValue: pointer.Int64(123),
-														},
-													},
-													{
-														Key: "string-key",
-														Value: v1alpha1.AnyValue{
-															StringValue: pointer.String("string-value"),
-														},
-													},
-													{
-														Key: "bytes-key",
-														Value: v1alpha1.AnyValue{
-															BytesValue: []byte{1, 2, 3},
+															StringValue: pointer.String("string-value-2"),
 														},
 													},
 													{
@@ -898,10 +850,10 @@ func TestConvertJsonFormat_EdgeCases(t *testing.T) {
 														Value: v1alpha1.AnyValue{
 															ArrayValue: []v1alpha1.AnyValue{
 																{
-																	BoolValue: pointer.Bool(true),
+																	StringValue: pointer.String("3-string-value"),
 																},
 																{
-																	IntValue: pointer.Int64(123),
+																	StringValue: pointer.String("4-string-value"),
 																},
 															},
 														},
@@ -912,15 +864,15 @@ func TestConvertJsonFormat_EdgeCases(t *testing.T) {
 															KvListValue: &v1alpha1.KeyAnyValueList{
 																Values: []v1alpha1.KeyAnyValue{
 																	{
-																		Key: "bool-key",
+																		Key: "string-key-3",
 																		Value: v1alpha1.AnyValue{
-																			BoolValue: pointer.Bool(true),
+																			StringValue: pointer.String("string-value-3"),
 																		},
 																	},
 																	{
-																		Key: "double-key",
+																		Key: "string-key-4",
 																		Value: v1alpha1.AnyValue{
-																			DoubleValue: pointer.String("1.23"),
+																			StringValue: pointer.String("string-value-4"),
 																		},
 																	},
 																},
@@ -961,42 +913,10 @@ func TestConvertJsonFormat_EdgeCases(t *testing.T) {
 								Attributes: &otelv1.KeyValueList{
 									Values: []*otelv1.KeyValue{
 										{
-											Key: "bool-key",
-											Value: &otelv1.AnyValue{
-												Value: &otelv1.AnyValue_BoolValue{
-													BoolValue: true,
-												},
-											},
-										},
-										{
-											Key: "double-key",
-											Value: &otelv1.AnyValue{
-												Value: &otelv1.AnyValue_DoubleValue{
-													DoubleValue: 1.23,
-												},
-											},
-										},
-										{
-											Key: "int-key",
-											Value: &otelv1.AnyValue{
-												Value: &otelv1.AnyValue_IntValue{
-													IntValue: 123,
-												},
-											},
-										},
-										{
-											Key: "string-key",
+											Key: "string-key-1",
 											Value: &otelv1.AnyValue{
 												Value: &otelv1.AnyValue_StringValue{
-													StringValue: "string-value",
-												},
-											},
-										},
-										{
-											Key: "bytes-key",
-											Value: &otelv1.AnyValue{
-												Value: &otelv1.AnyValue_BytesValue{
-													BytesValue: []byte{1, 2, 3},
+													StringValue: "string-value-1",
 												},
 											},
 										},
@@ -1007,13 +927,13 @@ func TestConvertJsonFormat_EdgeCases(t *testing.T) {
 													ArrayValue: &otelv1.ArrayValue{
 														Values: []*otelv1.AnyValue{
 															{
-																Value: &otelv1.AnyValue_BoolValue{
-																	BoolValue: true,
+																Value: &otelv1.AnyValue_StringValue{
+																	StringValue: "1-string-value",
 																},
 															},
 															{
-																Value: &otelv1.AnyValue_IntValue{
-																	IntValue: 123,
+																Value: &otelv1.AnyValue_StringValue{
+																	StringValue: "2-string-value",
 																},
 															},
 														},
@@ -1028,42 +948,10 @@ func TestConvertJsonFormat_EdgeCases(t *testing.T) {
 													KvlistValue: &otelv1.KeyValueList{
 														Values: []*otelv1.KeyValue{
 															{
-																Key: "bool-key",
-																Value: &otelv1.AnyValue{
-																	Value: &otelv1.AnyValue_BoolValue{
-																		BoolValue: true,
-																	},
-																},
-															},
-															{
-																Key: "double-key",
-																Value: &otelv1.AnyValue{
-																	Value: &otelv1.AnyValue_DoubleValue{
-																		DoubleValue: 1.23,
-																	},
-																},
-															},
-															{
-																Key: "int-key",
-																Value: &otelv1.AnyValue{
-																	Value: &otelv1.AnyValue_IntValue{
-																		IntValue: 123,
-																	},
-																},
-															},
-															{
-																Key: "string-key",
+																Key: "string-key-2",
 																Value: &otelv1.AnyValue{
 																	Value: &otelv1.AnyValue_StringValue{
-																		StringValue: "string-value",
-																	},
-																},
-															},
-															{
-																Key: "bytes-key",
-																Value: &otelv1.AnyValue{
-																	Value: &otelv1.AnyValue_BytesValue{
-																		BytesValue: []byte{1, 2, 3},
+																		StringValue: "string-value-2",
 																	},
 																},
 															},
@@ -1074,13 +962,13 @@ func TestConvertJsonFormat_EdgeCases(t *testing.T) {
 																		ArrayValue: &otelv1.ArrayValue{
 																			Values: []*otelv1.AnyValue{
 																				{
-																					Value: &otelv1.AnyValue_BoolValue{
-																						BoolValue: true,
+																					Value: &otelv1.AnyValue_StringValue{
+																						StringValue: "3-string-value",
 																					},
 																				},
 																				{
-																					Value: &otelv1.AnyValue_IntValue{
-																						IntValue: 123,
+																					Value: &otelv1.AnyValue_StringValue{
+																						StringValue: "4-string-value",
 																					},
 																				},
 																			},
@@ -1095,18 +983,18 @@ func TestConvertJsonFormat_EdgeCases(t *testing.T) {
 																		KvlistValue: &otelv1.KeyValueList{
 																			Values: []*otelv1.KeyValue{
 																				{
-																					Key: "bool-key",
+																					Key: "string-key-3",
 																					Value: &otelv1.AnyValue{
-																						Value: &otelv1.AnyValue_BoolValue{
-																							BoolValue: true,
+																						Value: &otelv1.AnyValue_StringValue{
+																							StringValue: "string-value-3",
 																						},
 																					},
 																				},
 																				{
-																					Key: "double-key",
+																					Key: "string-key-4",
 																					Value: &otelv1.AnyValue{
-																						Value: &otelv1.AnyValue_DoubleValue{
-																							DoubleValue: 1.23,
+																						Value: &otelv1.AnyValue_StringValue{
+																							StringValue: "string-value-4",
 																						},
 																					},
 																				},

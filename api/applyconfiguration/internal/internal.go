@@ -259,18 +259,6 @@ var schemaYAML = typed.YAMLObject(`types:
           elementType:
             namedType: com.github.kgateway-dev.kgateway.v2.api.v1alpha1.AnyValue
           elementRelationship: atomic
-    - name: boolValue
-      type:
-        scalar: boolean
-    - name: bytesValue
-      type:
-        scalar: string
-    - name: doubleValue
-      type:
-        scalar: string
-    - name: intValue
-      type:
-        scalar: numeric
     - name: kvListValue
       type:
         namedType: com.github.kgateway-dev.kgateway.v2.api.v1alpha1.KeyAnyValueList

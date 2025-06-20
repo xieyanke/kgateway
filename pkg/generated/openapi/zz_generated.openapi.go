@@ -1119,37 +1119,13 @@ func schema_kgateway_v2_api_v1alpha1_AnyValue(ref common.ReferenceCallback) comm
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
-				Description: "AnyValue is used to represent any type of attribute value. AnyValue may contain a primitive value such as a string or integer or it may contain an arbitrary nested object containing arrays, key-value lists and primitives.",
+				Description: "AnyValue is used to represent any type of attribute value. AnyValue may contain a primitive value such as a string or integer or it may contain an arbitrary nested object containing arrays, key-value lists and primitives. This is limited to string and nested values as OTel only supports them",
 				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
-					"boolValue": {
-						SchemaProps: spec.SchemaProps{
-							Type:   []string{"boolean"},
-							Format: "",
-						},
-					},
-					"doubleValue": {
-						SchemaProps: spec.SchemaProps{
-							Type:   []string{"string"},
-							Format: "",
-						},
-					},
-					"intValue": {
-						SchemaProps: spec.SchemaProps{
-							Type:   []string{"integer"},
-							Format: "int64",
-						},
-					},
 					"stringValue": {
 						SchemaProps: spec.SchemaProps{
 							Type:   []string{"string"},
 							Format: "",
-						},
-					},
-					"bytesValue": {
-						SchemaProps: spec.SchemaProps{
-							Type:   []string{"string"},
-							Format: "byte",
 						},
 					},
 					"arrayValue": {
