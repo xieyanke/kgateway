@@ -17,7 +17,7 @@ import (
 var (
 	// manifests
 	setupManifest         = filepath.Join(fsutils.MustGetThisDir(), "testdata", "setup.yaml")
-	otelCollectorManifest = filepath.Join(fsutils.MustGetThisDir(), "testdata", "otlpeek.yaml")
+	otelCollectorManifest = filepath.Join(fsutils.MustGetThisDir(), "testdata", "otel-collector.yaml")
 	policyManifest        = filepath.Join(fsutils.MustGetThisDir(), "testdata", "tracing-policy.yaml")
 
 	// setup objects
@@ -42,9 +42,9 @@ var (
 	}
 
 	// otelCollector objects
-	otelCollectorDeployment = &appsv1.Deployment{
+	otelCollectorPod = &corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "otlpeek",
+			Name:      "otel-collector",
 			Namespace: "default",
 		},
 	}
@@ -66,7 +66,7 @@ var (
 		"TestOTelTracing": {
 			SimpleTestCase: base.SimpleTestCase{
 				Manifests: []string{otelCollectorManifest, policyManifest},
-				Resources: []client.Object{otelCollectorDeployment, tracingPolicy},
+				Resources: []client.Object{otelCollectorPod, tracingPolicy},
 			},
 		},
 	}
