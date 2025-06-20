@@ -2,7 +2,6 @@ package assertions
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"time"
 
@@ -64,9 +63,6 @@ func (p *Provider) EventuallyPodsMatches(
 		g.Expect(err).NotTo(gomega.HaveOccurred(), "Failed to list pods")
 		g.Expect(pods.Items).NotTo(gomega.BeEmpty(), "No pods found")
 		for _, pod := range pods.Items {
-			b, _ := json.Marshal(pod)
-			fmt.Println(string(b))
-			fmt.Println(p.clusterContext.Cli.Execute(ctx, []string{"-n", pod.GetNamespace(), "describe", "pod", pod.GetName()}...))
 			g.Expect(pod).To(matcher)
 		}
 	}).

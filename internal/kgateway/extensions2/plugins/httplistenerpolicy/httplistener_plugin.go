@@ -163,7 +163,10 @@ func (p *httpListenerPolicyPluginGwPass) ApplyHCM(
 		return fmt.Errorf("internal error: expected httplistener policy, got %T", pCtx.Policy)
 	}
 
+	// translate access logging configuration
 	out.AccessLog = append(out.GetAccessLog(), policy.accessLog...)
+
+	// translate tracing configuration
 	out.Tracing = policy.tracing
 
 	// translate upgrade configuration

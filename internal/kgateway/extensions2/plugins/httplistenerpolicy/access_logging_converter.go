@@ -497,8 +497,7 @@ func ToOTelAnyValue(in *v1alpha1.AnyValue) *otelv1.AnyValue {
 	if in.DoubleValue != nil {
 		fl, err := strconv.ParseFloat(*in.DoubleValue, 64)
 		if err != nil {
-			logger.Error("error converting DoubleValue", "doubleValue", *in.DoubleValue, "error", err)
-
+			logger.Error("error converting DoubleValue", "double_value", *in.DoubleValue, "error", err)
 		}
 		return &otelv1.AnyValue{
 			Value: &otelv1.AnyValue_DoubleValue{

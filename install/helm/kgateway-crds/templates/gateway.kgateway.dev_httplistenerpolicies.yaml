@@ -506,7 +506,8 @@ spec:
                                     minProperties: 1
                                     properties:
                                       arrayValue:
-                                        items: {}
+                                        items:
+                                          type: object
                                         type: array
                                       boolValue:
                                         type: boolean
@@ -519,7 +520,8 @@ spec:
                                       intValue:
                                         format: int64
                                         type: integer
-                                      kvListValue: {}
+                                      kvListValue:
+                                        type: object
                                       stringValue:
                                         type: string
                                     type: object
@@ -528,8 +530,6 @@ spec:
                                 - value
                                 type: object
                               type: array
-                          required:
-                          - values
                           type: object
                         body:
                           type: string

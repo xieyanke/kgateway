@@ -211,7 +211,7 @@ type OpenTelemetryAccessLogService struct {
 // A list of key-value pair that is used to store Span attributes, Link attributes, etc.
 type KeyAnyValueList struct {
 	// A collection of key/value pairs of key-value pairs.
-	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:items:Type=object
 	Values []KeyAnyValue `json:"values,omitempty"`
 }
 
@@ -231,11 +231,14 @@ type KeyAnyValue struct {
 type AnyValue struct {
 	BoolValue *bool `json:"boolValue,omitempty"`
 	// +kubebuilder:validation:Format=numerical
-	DoubleValue *string          `json:"doubleValue,omitempty"`
-	IntValue    *int64           `json:"intValue,omitempty"`
-	StringValue *string          `json:"stringValue,omitempty"`
-	BytesValue  []byte           `json:"bytesValue,omitempty"`
-	ArrayValue  []AnyValue       `json:"arrayValue,omitempty"`
+	DoubleValue *string `json:"doubleValue,omitempty"`
+	IntValue    *int64  `json:"intValue,omitempty"`
+	StringValue *string `json:"stringValue,omitempty"`
+	BytesValue  []byte  `json:"bytesValue,omitempty"`
+	// TODO: Add support for ArrayValue && KvListValue
+	// +kubebuilder:validation:items:Type=object
+	ArrayValue []AnyValue `json:"arrayValue,omitempty"`
+	// +kubebuilder:validation:Type=object
 	KvListValue *KeyAnyValueList `json:"kvListValue,omitempty"`
 }
 
