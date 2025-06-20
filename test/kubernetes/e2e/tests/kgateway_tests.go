@@ -2,7 +2,7 @@ package tests
 
 import (
 	"github.com/kgateway-dev/kgateway/v2/test/kubernetes/e2e"
-	"github.com/kgateway-dev/kgateway/v2/test/kubernetes/e2e/features/acesslog"
+	"github.com/kgateway-dev/kgateway/v2/test/kubernetes/e2e/features/accesslog"
 	"github.com/kgateway-dev/kgateway/v2/test/kubernetes/e2e/features/backendconfigpolicy"
 	"github.com/kgateway-dev/kgateway/v2/test/kubernetes/e2e/features/backends"
 	"github.com/kgateway-dev/kgateway/v2/test/kubernetes/e2e/features/backendtls"
@@ -39,7 +39,7 @@ import (
 func KubeGatewaySuiteRunner() e2e.SuiteRunner {
 	kubeGatewaySuiteRunner := e2e.NewSuiteRunner(false)
 	kubeGatewaySuiteRunner.Register("ExtAuth", extauth.NewTestingSuite)
-	kubeGatewaySuiteRunner.Register("AccessLog", acesslog.NewTestingSuite)
+	kubeGatewaySuiteRunner.Register("AccessLog", accesslog.NewTestingSuite)
 	kubeGatewaySuiteRunner.Register("Backends", backends.NewTestingSuite)
 	kubeGatewaySuiteRunner.Register("BackendTLSPolicies", backendtls.NewTestingSuite)
 	kubeGatewaySuiteRunner.Register("BasicRouting", basicrouting.NewTestingSuite)

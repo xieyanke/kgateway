@@ -13,6 +13,13 @@ spec:
         serviceName: "my:service"
         grpcService:
           backendRef:
-            name: otlpeek
+            name: otel-collector
             namespace: default
             port: 4317
+    customTags:
+      - tag: custom
+        literal:
+          value: literal
+      - tag: request
+        requestHeader:
+          name: x-header-tag

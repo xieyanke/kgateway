@@ -1,4 +1,4 @@
-package acesslog
+package accesslog
 
 import (
 	"path/filepath"
@@ -19,7 +19,7 @@ var (
 	setupManifest       = filepath.Join(fsutils.MustGetThisDir(), "testdata", "setup.yaml")
 	fileSinkManifest    = filepath.Join(fsutils.MustGetThisDir(), "testdata", "filesink.yaml")
 	grpcServiceManifest = filepath.Join(fsutils.MustGetThisDir(), "testdata", "grpc.yaml")
-	OTelManifest        = filepath.Join(fsutils.MustGetThisDir(), "testdata", "otel.yaml")
+	oTelManifest        = filepath.Join(fsutils.MustGetThisDir(), "testdata", "otel.yaml")
 
 	// Core infrastructure objects that we need to track
 	gatewayObjectMeta = metav1.ObjectMeta{
@@ -52,9 +52,9 @@ var (
 	accessLoggerService    = &corev1.Service{ObjectMeta: accessLoggerObjectMeta}
 
 	// TestAccessLogWithOTelSink
-	otelCollectorDeployment = &appsv1.Deployment{
+	otelCollectorPod = &corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "otlpeek",
+			Name:      "otel-collector",
 			Namespace: "default",
 		},
 	}
@@ -80,8 +80,8 @@ var (
 		},
 		"TestAccessLogWithOTelSink": {
 			SimpleTestCase: base.SimpleTestCase{
-				Manifests: []string{OTelManifest},
-				Resources: []client.Object{otelCollectorDeployment},
+				Manifests: []string{oTelManifest},
+				Resources: []client.Object{otelCollectorPod},
 			},
 		},
 	}
