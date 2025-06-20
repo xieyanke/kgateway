@@ -23,7 +23,7 @@ import (
 	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/structpb"
 	"google.golang.org/protobuf/types/known/wrapperspb"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/utils/pointer"
 	"k8s.io/utils/ptr"
@@ -332,8 +332,8 @@ func TestConvertJsonFormat_EdgeCases(t *testing.T) {
 									},
 									RetryPolicy: &v1alpha1.RetryPolicy{
 										RetryBackOff: &v1alpha1.BackoffStrategy{
-											BaseInterval: v1.Duration{Duration: 5 * time.Second},
-											MaxInterval:  &v1.Duration{Duration: 1 * time.Second},
+											BaseInterval: metav1.Duration{Duration: 5 * time.Second},
+											MaxInterval:  &metav1.Duration{Duration: 1 * time.Second},
 										},
 									},
 								},
@@ -383,15 +383,15 @@ func TestConvertJsonFormat_EdgeCases(t *testing.T) {
 									Authority:               pointer.String("www.example.com"),
 									MaxReceiveMessageLength: pointer.Uint32(127),
 									SkipEnvoyHeaders:        pointer.Bool(true),
-									Timeout:                 &v1.Duration{Duration: 10 * time.Second},
+									Timeout:                 &metav1.Duration{Duration: 10 * time.Second},
 									InitialMetadata: []v1alpha1.HeaderValue{{
 										Key:   "key",
 										Value: "value",
 									}},
 									RetryPolicy: &v1alpha1.RetryPolicy{
 										RetryBackOff: &v1alpha1.BackoffStrategy{
-											BaseInterval: v1.Duration{Duration: 5 * time.Second},
-											MaxInterval:  &v1.Duration{Duration: 10 * time.Second},
+											BaseInterval: metav1.Duration{Duration: 5 * time.Second},
+											MaxInterval:  &metav1.Duration{Duration: 10 * time.Second},
 										},
 										NumRetries: pointer.Uint32(3),
 									},
