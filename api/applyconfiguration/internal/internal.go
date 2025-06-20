@@ -250,6 +250,33 @@ var schemaYAML = typed.YAMLObject(`types:
     - name: model
       type:
         scalar: string
+- name: com.github.kgateway-dev.kgateway.v2.api.v1alpha1.AnyValue
+  map:
+    fields:
+    - name: arrayValue
+      type:
+        list:
+          elementType:
+            namedType: com.github.kgateway-dev.kgateway.v2.api.v1alpha1.AnyValue
+          elementRelationship: atomic
+    - name: boolValue
+      type:
+        scalar: boolean
+    - name: bytesValue
+      type:
+        scalar: string
+    - name: doubleValue
+      type:
+        scalar: string
+    - name: intValue
+      type:
+        scalar: numeric
+    - name: kvListValue
+      type:
+        namedType: com.github.kgateway-dev.kgateway.v2.api.v1alpha1.KeyAnyValueList
+    - name: stringValue
+      type:
+        scalar: string
 - name: com.github.kgateway-dev.kgateway.v2.api.v1alpha1.AuthHeaderOverride
   map:
     fields:
@@ -1166,6 +1193,25 @@ var schemaYAML = typed.YAMLObject(`types:
     - name: istioProxyContainer
       type:
         namedType: com.github.kgateway-dev.kgateway.v2.api.v1alpha1.IstioContainer
+- name: com.github.kgateway-dev.kgateway.v2.api.v1alpha1.KeyAnyValue
+  map:
+    fields:
+    - name: key
+      type:
+        scalar: string
+    - name: value
+      type:
+        namedType: com.github.kgateway-dev.kgateway.v2.api.v1alpha1.AnyValue
+      default: {}
+- name: com.github.kgateway-dev.kgateway.v2.api.v1alpha1.KeyAnyValueList
+  map:
+    fields:
+    - name: values
+      type:
+        list:
+          elementType:
+            namedType: com.github.kgateway-dev.kgateway.v2.api.v1alpha1.KeyAnyValue
+          elementRelationship: atomic
 - name: com.github.kgateway-dev.kgateway.v2.api.v1alpha1.KubernetesProxyConfig
   map:
     fields:
@@ -1413,6 +1459,9 @@ var schemaYAML = typed.YAMLObject(`types:
 - name: com.github.kgateway-dev.kgateway.v2.api.v1alpha1.OpenTelemetryAccessLogService
   map:
     fields:
+    - name: attributes
+      type:
+        namedType: com.github.kgateway-dev.kgateway.v2.api.v1alpha1.KeyAnyValueList
     - name: body
       type:
         scalar: string
@@ -1579,12 +1628,6 @@ var schemaYAML = typed.YAMLObject(`types:
     - name: webhook
       type:
         namedType: com.github.kgateway-dev.kgateway.v2.api.v1alpha1.Webhook
-- name: com.github.kgateway-dev.kgateway.v2.api.v1alpha1.Provider
-  map:
-    fields:
-    - name: openTelemetry
-      type:
-        namedType: com.github.kgateway-dev.kgateway.v2.api.v1alpha1.OpenTelemetryTracingConfig
 - name: com.github.kgateway-dev.kgateway.v2.api.v1alpha1.ProxyDeployment
   map:
     fields:
@@ -1981,7 +2024,7 @@ var schemaYAML = typed.YAMLObject(`types:
         scalar: numeric
     - name: provider
       type:
-        namedType: com.github.kgateway-dev.kgateway.v2.api.v1alpha1.Provider
+        namedType: com.github.kgateway-dev.kgateway.v2.api.v1alpha1.TracingProvider
     - name: randomSampling
       type:
         scalar: numeric
@@ -1991,6 +2034,12 @@ var schemaYAML = typed.YAMLObject(`types:
     - name: verbose
       type:
         scalar: boolean
+- name: com.github.kgateway-dev.kgateway.v2.api.v1alpha1.TracingProvider
+  map:
+    fields:
+    - name: openTelemetry
+      type:
+        namedType: com.github.kgateway-dev.kgateway.v2.api.v1alpha1.OpenTelemetryTracingConfig
 - name: com.github.kgateway-dev.kgateway.v2.api.v1alpha1.TrafficPolicy
   map:
     fields:

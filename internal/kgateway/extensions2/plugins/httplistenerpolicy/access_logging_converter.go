@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strconv"
 
 	envoyaccesslog "github.com/envoyproxy/go-control-plane/envoy/config/accesslog/v3"
 	envoycore "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
@@ -461,8 +462,92 @@ func copyOTelSettings(cfg *envoy_open_telemetry.OpenTelemetryAccessLogConfig, ot
 	if otelService.DisableBuiltinLabels != nil {
 		cfg.DisableBuiltinLabels = *otelService.DisableBuiltinLabels
 	}
+	if otelService.Attributes != nil {
+		cfg.Attributes = ToOTelKeyValueList(otelService.Attributes)
+	}
 
 	return cfg.Validate()
+}
+
+func ToOTelKeyValueList(in *v1alpha1.KeyAnyValueList) *otelv1.KeyValueList {
+	kvList := make([]*otelv1.KeyValue, len(in.Values))
+	ret := &otelv1.KeyValueList{
+		Values: kvList,
+	}
+	for i, value := range in.Values {
+		ret.GetValues()[i] = &otelv1.KeyValue{
+			Key:   value.Key,
+			Value: ToOTelAnyValue(&value.Value),
+		}
+	}
+	return ret
+}
+
+func ToOTelAnyValue(in *v1alpha1.AnyValue) *otelv1.AnyValue {
+	if in == nil {
+		return nil
+	}
+	if in.BoolValue != nil {
+		return &otelv1.AnyValue{
+			Value: &otelv1.AnyValue_BoolValue{
+				BoolValue: *in.BoolValue,
+			},
+		}
+	}
+	if in.DoubleValue != nil {
+		fl, err := strconv.ParseFloat(*in.DoubleValue, 64)
+		if err != nil {
+			logger.Error("error converting DoubleValue", "doubleValue", *in.DoubleValue, "error", err)
+
+		}
+		return &otelv1.AnyValue{
+			Value: &otelv1.AnyValue_DoubleValue{
+				DoubleValue: fl,
+			},
+		}
+	}
+	if in.IntValue != nil {
+		return &otelv1.AnyValue{
+			Value: &otelv1.AnyValue_IntValue{
+				IntValue: *in.IntValue,
+			},
+		}
+	}
+	if in.StringValue != nil {
+		return &otelv1.AnyValue{
+			Value: &otelv1.AnyValue_StringValue{
+				StringValue: *in.StringValue,
+			},
+		}
+	}
+	if in.BytesValue != nil {
+		return &otelv1.AnyValue{
+			Value: &otelv1.AnyValue_BytesValue{
+				BytesValue: in.BytesValue,
+			},
+		}
+	}
+	if in.ArrayValue != nil {
+		arrayValue := &otelv1.AnyValue_ArrayValue{
+			ArrayValue: &otelv1.ArrayValue{
+				Values: make([]*otelv1.AnyValue, len(in.ArrayValue)),
+			},
+		}
+		for i, value := range in.ArrayValue {
+			arrayValue.ArrayValue.GetValues()[i] = ToOTelAnyValue(&value)
+		}
+		return &otelv1.AnyValue{
+			Value: arrayValue,
+		}
+	}
+	if in.KvListValue != nil {
+		return &otelv1.AnyValue{
+			Value: &otelv1.AnyValue_KvlistValue{
+				KvlistValue: ToOTelKeyValueList(in.KvListValue),
+			},
+		}
+	}
+	return nil
 }
 
 func getFormatterExtensions() ([]*envoycore.TypedExtensionConfig, error) {

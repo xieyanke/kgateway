@@ -384,7 +384,7 @@ func TestConvertJsonFormat_EdgeCases(t *testing.T) {
 									MaxReceiveMessageLength: pointer.Uint32(127),
 									SkipEnvoyHeaders:        pointer.Bool(true),
 									Timeout:                 &v1.Duration{Duration: 10 * time.Second},
-									InitialMetadata: []*v1alpha1.HeaderValue{{
+									InitialMetadata: []v1alpha1.HeaderValue{{
 										Key:   "key",
 										Value: "value",
 									}},
@@ -813,6 +813,126 @@ func TestConvertJsonFormat_EdgeCases(t *testing.T) {
 							},
 							Body:                 pointer.String(`"%REQ(:METHOD)% %REQ(X-ENVOY-ORIGINAL-PATH?:PATH)% %RESPONSE_CODE% "%REQ(:AUTHORITY)%" "%UPSTREAM_CLUSTER%"\n'`),
 							DisableBuiltinLabels: pointer.Bool(true),
+							Attributes: &v1alpha1.KeyAnyValueList{
+								Values: []v1alpha1.KeyAnyValue{
+									{
+										Key: "bool-key",
+										Value: v1alpha1.AnyValue{
+											BoolValue: pointer.Bool(true),
+										},
+									},
+									{
+										Key: "double-key",
+										Value: v1alpha1.AnyValue{
+											DoubleValue: pointer.String("1.23"),
+										},
+									},
+									{
+										Key: "int-key",
+										Value: v1alpha1.AnyValue{
+											IntValue: pointer.Int64(123),
+										},
+									},
+									{
+										Key: "string-key",
+										Value: v1alpha1.AnyValue{
+											StringValue: pointer.String("string-value"),
+										},
+									},
+									{
+										Key: "bytes-key",
+										Value: v1alpha1.AnyValue{
+											BytesValue: []byte{1, 2, 3},
+										},
+									},
+									{
+										Key: "array-key",
+										Value: v1alpha1.AnyValue{
+											ArrayValue: []v1alpha1.AnyValue{
+												{
+													BoolValue: pointer.Bool(true),
+												},
+												{
+													IntValue: pointer.Int64(123),
+												},
+											},
+										},
+									},
+									{
+										Key: "kvlist-key",
+										Value: v1alpha1.AnyValue{
+											KvListValue: &v1alpha1.KeyAnyValueList{
+												Values: []v1alpha1.KeyAnyValue{
+													{
+														Key: "bool-key",
+														Value: v1alpha1.AnyValue{
+															BoolValue: pointer.Bool(true),
+														},
+													},
+													{
+														Key: "double-key",
+														Value: v1alpha1.AnyValue{
+															DoubleValue: pointer.String("1.23"),
+														},
+													},
+													{
+														Key: "int-key",
+														Value: v1alpha1.AnyValue{
+															IntValue: pointer.Int64(123),
+														},
+													},
+													{
+														Key: "string-key",
+														Value: v1alpha1.AnyValue{
+															StringValue: pointer.String("string-value"),
+														},
+													},
+													{
+														Key: "bytes-key",
+														Value: v1alpha1.AnyValue{
+															BytesValue: []byte{1, 2, 3},
+														},
+													},
+													{
+														Key: "array-key",
+														Value: v1alpha1.AnyValue{
+															ArrayValue: []v1alpha1.AnyValue{
+																{
+																	BoolValue: pointer.Bool(true),
+																},
+																{
+																	IntValue: pointer.Int64(123),
+																},
+															},
+														},
+													},
+													{
+														Key: "kvlist-key",
+														Value: v1alpha1.AnyValue{
+															KvListValue: &v1alpha1.KeyAnyValueList{
+																Values: []v1alpha1.KeyAnyValue{
+																	{
+																		Key: "bool-key",
+																		Value: v1alpha1.AnyValue{
+																			BoolValue: pointer.Bool(true),
+																		},
+																	},
+																	{
+																		Key: "double-key",
+																		Value: v1alpha1.AnyValue{
+																			DoubleValue: pointer.String("1.23"),
+																		},
+																	},
+																},
+															},
+														},
+													},
+												},
+											},
+										},
+									},
+								},
+							},
 						},
 					},
 				},
@@ -838,6 +958,170 @@ func TestConvertJsonFormat_EdgeCases(t *testing.T) {
 									},
 								},
 								DisableBuiltinLabels: true,
+								Attributes: &otelv1.KeyValueList{
+									Values: []*otelv1.KeyValue{
+										{
+											Key: "bool-key",
+											Value: &otelv1.AnyValue{
+												Value: &otelv1.AnyValue_BoolValue{
+													BoolValue: true,
+												},
+											},
+										},
+										{
+											Key: "double-key",
+											Value: &otelv1.AnyValue{
+												Value: &otelv1.AnyValue_DoubleValue{
+													DoubleValue: 1.23,
+												},
+											},
+										},
+										{
+											Key: "int-key",
+											Value: &otelv1.AnyValue{
+												Value: &otelv1.AnyValue_IntValue{
+													IntValue: 123,
+												},
+											},
+										},
+										{
+											Key: "string-key",
+											Value: &otelv1.AnyValue{
+												Value: &otelv1.AnyValue_StringValue{
+													StringValue: "string-value",
+												},
+											},
+										},
+										{
+											Key: "bytes-key",
+											Value: &otelv1.AnyValue{
+												Value: &otelv1.AnyValue_BytesValue{
+													BytesValue: []byte{1, 2, 3},
+												},
+											},
+										},
+										{
+											Key: "array-key",
+											Value: &otelv1.AnyValue{
+												Value: &otelv1.AnyValue_ArrayValue{
+													ArrayValue: &otelv1.ArrayValue{
+														Values: []*otelv1.AnyValue{
+															{
+																Value: &otelv1.AnyValue_BoolValue{
+																	BoolValue: true,
+																},
+															},
+															{
+																Value: &otelv1.AnyValue_IntValue{
+																	IntValue: 123,
+																},
+															},
+														},
+													},
+												},
+											},
+										},
+										{
+											Key: "kvlist-key",
+											Value: &otelv1.AnyValue{
+												Value: &otelv1.AnyValue_KvlistValue{
+													KvlistValue: &otelv1.KeyValueList{
+														Values: []*otelv1.KeyValue{
+															{
+																Key: "bool-key",
+																Value: &otelv1.AnyValue{
+																	Value: &otelv1.AnyValue_BoolValue{
+																		BoolValue: true,
+																	},
+																},
+															},
+															{
+																Key: "double-key",
+																Value: &otelv1.AnyValue{
+																	Value: &otelv1.AnyValue_DoubleValue{
+																		DoubleValue: 1.23,
+																	},
+																},
+															},
+															{
+																Key: "int-key",
+																Value: &otelv1.AnyValue{
+																	Value: &otelv1.AnyValue_IntValue{
+																		IntValue: 123,
+																	},
+																},
+															},
+															{
+																Key: "string-key",
+																Value: &otelv1.AnyValue{
+																	Value: &otelv1.AnyValue_StringValue{
+																		StringValue: "string-value",
+																	},
+																},
+															},
+															{
+																Key: "bytes-key",
+																Value: &otelv1.AnyValue{
+																	Value: &otelv1.AnyValue_BytesValue{
+																		BytesValue: []byte{1, 2, 3},
+																	},
+																},
+															},
+															{
+																Key: "array-key",
+																Value: &otelv1.AnyValue{
+																	Value: &otelv1.AnyValue_ArrayValue{
+																		ArrayValue: &otelv1.ArrayValue{
+																			Values: []*otelv1.AnyValue{
+																				{
+																					Value: &otelv1.AnyValue_BoolValue{
+																						BoolValue: true,
+																					},
+																				},
+																				{
+																					Value: &otelv1.AnyValue_IntValue{
+																						IntValue: 123,
+																					},
+																				},
+																			},
+																		},
+																	},
+																},
+															},
+															{
+																Key: "kvlist-key",
+																Value: &otelv1.AnyValue{
+																	Value: &otelv1.AnyValue_KvlistValue{
+																		KvlistValue: &otelv1.KeyValueList{
+																			Values: []*otelv1.KeyValue{
+																				{
+																					Key: "bool-key",
+																					Value: &otelv1.AnyValue{
+																						Value: &otelv1.AnyValue_BoolValue{
+																							BoolValue: true,
+																						},
+																					},
+																				},
+																				{
+																					Key: "double-key",
+																					Value: &otelv1.AnyValue{
+																						Value: &otelv1.AnyValue_DoubleValue{
+																							DoubleValue: 1.23,
+																						},
+																					},
+																				},
+																			},
+																		},
+																	},
+																},
+															},
+														},
+													},
+												},
+											},
+										},
+									},
+								},
 							}),
 						},
 					},

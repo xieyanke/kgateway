@@ -2,21 +2,17 @@
 
 package v1alpha1
 
-import (
-	apiv1alpha1 "github.com/kgateway-dev/kgateway/v2/api/v1alpha1"
-)
-
 // TracingApplyConfiguration represents a declarative configuration of the Tracing type for use
 // with apply.
 type TracingApplyConfiguration struct {
-	Provider          *ProviderApplyConfiguration `json:"provider,omitempty"`
-	ClientSampling    *uint32                     `json:"clientSampling,omitempty"`
-	RandomSampling    *uint32                     `json:"randomSampling,omitempty"`
-	OverallSampling   *uint32                     `json:"overallSampling,omitempty"`
-	Verbose           *bool                       `json:"verbose,omitempty"`
-	MaxPathTagLength  *uint32                     `json:"maxPathTagLength,omitempty"`
-	CustomTags        []*apiv1alpha1.CustomTag    `json:"customTags,omitempty"`
-	SpawnUpstreamSpan *bool                       `json:"spawnUpstreamSpan,omitempty"`
+	Provider          *TracingProviderApplyConfiguration `json:"provider,omitempty"`
+	ClientSampling    *uint32                            `json:"clientSampling,omitempty"`
+	RandomSampling    *uint32                            `json:"randomSampling,omitempty"`
+	OverallSampling   *uint32                            `json:"overallSampling,omitempty"`
+	Verbose           *bool                              `json:"verbose,omitempty"`
+	MaxPathTagLength  *uint32                            `json:"maxPathTagLength,omitempty"`
+	CustomTags        []CustomTagApplyConfiguration      `json:"customTags,omitempty"`
+	SpawnUpstreamSpan *bool                              `json:"spawnUpstreamSpan,omitempty"`
 }
 
 // TracingApplyConfiguration constructs a declarative configuration of the Tracing type for use with
@@ -28,7 +24,7 @@ func Tracing() *TracingApplyConfiguration {
 // WithProvider sets the Provider field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the Provider field is set to the value of the last call.
-func (b *TracingApplyConfiguration) WithProvider(value *ProviderApplyConfiguration) *TracingApplyConfiguration {
+func (b *TracingApplyConfiguration) WithProvider(value *TracingProviderApplyConfiguration) *TracingApplyConfiguration {
 	b.Provider = value
 	return b
 }
@@ -76,7 +72,7 @@ func (b *TracingApplyConfiguration) WithMaxPathTagLength(value uint32) *TracingA
 // WithCustomTags adds the given value to the CustomTags field in the declarative configuration
 // and returns the receiver, so that objects can be build by chaining "With" function invocations.
 // If called multiple times, values provided by each call will be appended to the CustomTags field.
-func (b *TracingApplyConfiguration) WithCustomTags(values ...**apiv1alpha1.CustomTag) *TracingApplyConfiguration {
+func (b *TracingApplyConfiguration) WithCustomTags(values ...*CustomTagApplyConfiguration) *TracingApplyConfiguration {
 	for i := range values {
 		if values[i] == nil {
 			panic("nil value passed to WithCustomTags")

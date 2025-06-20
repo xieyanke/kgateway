@@ -494,6 +494,43 @@ spec:
                       type: object
                     openTelemetry:
                       properties:
+                        attributes:
+                          properties:
+                            values:
+                              items:
+                                properties:
+                                  key:
+                                    type: string
+                                  value:
+                                    maxProperties: 1
+                                    minProperties: 1
+                                    properties:
+                                      arrayValue:
+                                        items: {}
+                                        type: array
+                                      boolValue:
+                                        type: boolean
+                                      bytesValue:
+                                        format: byte
+                                        type: string
+                                      doubleValue:
+                                        format: numerical
+                                        type: string
+                                      intValue:
+                                        format: int64
+                                        type: integer
+                                      kvListValue: {}
+                                      stringValue:
+                                        type: string
+                                    type: object
+                                required:
+                                - key
+                                - value
+                                type: object
+                              type: array
+                          required:
+                          - values
+                          type: object
                         body:
                           type: string
                         disableBuiltinLabels:
@@ -641,6 +678,8 @@ spec:
                     type: integer
                   customTags:
                     items:
+                      maxProperties: 2
+                      minProperties: 1
                       properties:
                         RequestHeader:
                           properties:
@@ -695,6 +734,8 @@ spec:
                               - key
                               - path
                               type: object
+                          required:
+                          - metadataKey
                           type: object
                         tag:
                           type: string

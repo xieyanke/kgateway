@@ -9,6 +9,8 @@ import (
 	envoy_hcm "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/http_connection_manager/v3"
 	resource_detectorsv3 "github.com/envoyproxy/go-control-plane/envoy/extensions/tracers/opentelemetry/resource_detectors/v3"
 	samplersv3 "github.com/envoyproxy/go-control-plane/envoy/extensions/tracers/opentelemetry/samplers/v3"
+	metadatav3 "github.com/envoyproxy/go-control-plane/envoy/type/metadata/v3"
+	tracingv3 "github.com/envoyproxy/go-control-plane/envoy/type/tracing/v3"
 	typev3 "github.com/envoyproxy/go-control-plane/envoy/type/v3"
 	"google.golang.org/protobuf/types/known/wrapperspb"
 	"istio.io/istio/pkg/kube/krt"
@@ -86,7 +88,115 @@ func translateTracing(
 			Value: *config.MaxPathTagLength,
 		}
 	}
-	// TODO: Custom tags
+	if len(config.CustomTags) != 0 {
+		tracingConfig.CustomTags = make([]*tracingv3.CustomTag, len(config.CustomTags))
+		for i, ct := range config.CustomTags {
+			if ct.Literal != nil {
+				tracingConfig.GetCustomTags()[i] = &tracingv3.CustomTag{
+					Tag: ct.Tag,
+					Type: &tracingv3.CustomTag_Literal_{
+						Literal: &tracingv3.CustomTag_Literal{
+							Value: ct.Literal.Value,
+						},
+					},
+				}
+				continue
+			}
+
+			if ct.Environment != nil {
+				tagType := &tracingv3.CustomTag_Environment_{
+					Environment: &tracingv3.CustomTag_Environment{
+						Name: ct.Environment.Name,
+					},
+				}
+				if ct.Environment.DefaultValue != nil {
+					tagType.Environment.DefaultValue = *ct.Environment.DefaultValue
+				}
+
+				tracingConfig.GetCustomTags()[i] = &tracingv3.CustomTag{
+					Tag:  ct.Tag,
+					Type: tagType,
+				}
+				continue
+			}
+
+			if ct.RequestHeader != nil {
+				tagType := &tracingv3.CustomTag_RequestHeader{
+					RequestHeader: &tracingv3.CustomTag_Header{
+						Name: ct.RequestHeader.Name,
+					},
+				}
+				if ct.RequestHeader.DefaultValue != nil {
+					tagType.RequestHeader.DefaultValue = *ct.RequestHeader.DefaultValue
+				}
+
+				tracingConfig.GetCustomTags()[i] = &tracingv3.CustomTag{
+					Tag:  ct.Tag,
+					Type: tagType,
+				}
+				continue
+			}
+
+			if ct.Metadata != nil && ct.Metadata.MetadataKey != nil {
+				tagType := &tracingv3.CustomTag_Metadata_{
+					Metadata: &tracingv3.CustomTag_Metadata{
+						MetadataKey: &metadatav3.MetadataKey{
+							Key: ct.Metadata.MetadataKey.Key,
+						},
+					},
+				}
+
+				if len(ct.Metadata.MetadataKey.Path) != 0 {
+					paths := make([]*metadatav3.MetadataKey_PathSegment, len(ct.Metadata.MetadataKey.Path))
+					for i, p := range ct.Metadata.MetadataKey.Path {
+						paths[i] = &metadatav3.MetadataKey_PathSegment{
+							Segment: &metadatav3.MetadataKey_PathSegment_Key{
+								Key: p.Key,
+							},
+						}
+					}
+					tagType.Metadata.GetMetadataKey().Path = paths
+				}
+
+				switch ct.Metadata.Kind {
+				case v1alpha1.MetadataKindRequest:
+					tagType.Metadata.Kind = &metadatav3.MetadataKind{
+						Kind: &metadatav3.MetadataKind_Request_{
+							Request: &metadatav3.MetadataKind_Request{},
+						},
+					}
+				case v1alpha1.MetadataKindRoute:
+					tagType.Metadata.Kind = &metadatav3.MetadataKind{
+						Kind: &metadatav3.MetadataKind_Route_{
+							Route: &metadatav3.MetadataKind_Route{},
+						},
+					}
+				case v1alpha1.MetadataKindCluster:
+					tagType.Metadata.Kind = &metadatav3.MetadataKind{
+						Kind: &metadatav3.MetadataKind_Cluster_{
+							Cluster: &metadatav3.MetadataKind_Cluster{},
+						},
+					}
+				case v1alpha1.MetadataKindHost:
+					tagType.Metadata.Kind = &metadatav3.MetadataKind{
+						Kind: &metadatav3.MetadataKind_Host_{
+							Host: &metadatav3.MetadataKind_Host{},
+						},
+					}
+				}
+
+				if ct.Metadata.DefaultValue != nil {
+					tagType.Metadata.DefaultValue = *ct.Metadata.DefaultValue
+				}
+
+				tracingConfig.GetCustomTags()[i] = &tracingv3.CustomTag{
+					Tag:  ct.Tag,
+					Type: tagType,
+				}
+				continue
+			}
+		}
+	}
 	if config.SpawnUpstreamSpan != nil {
 		tracingConfig.SpawnUpstreamSpan = &wrapperspb.BoolValue{
 			Value: *config.SpawnUpstreamSpan,

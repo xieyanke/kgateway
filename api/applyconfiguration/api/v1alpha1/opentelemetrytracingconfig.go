@@ -2,16 +2,12 @@
 
 package v1alpha1
 
-import (
-	apiv1alpha1 "github.com/kgateway-dev/kgateway/v2/api/v1alpha1"
-)
-
 // OpenTelemetryTracingConfigApplyConfiguration represents a declarative configuration of the OpenTelemetryTracingConfig type for use
 // with apply.
 type OpenTelemetryTracingConfigApplyConfiguration struct {
 	GrpcService       *CommonGrpcServiceApplyConfiguration `json:"grpcService,omitempty"`
 	ServiceName       *string                              `json:"serviceName,omitempty"`
-	ResourceDetectors []*apiv1alpha1.ResourceDetector      `json:"resourceDetectors,omitempty"`
+	ResourceDetectors []ResourceDetectorApplyConfiguration `json:"resourceDetectors,omitempty"`
 	Sampler           *SamplerApplyConfiguration           `json:"sampler,omitempty"`
 }
 
@@ -40,7 +36,7 @@ func (b *OpenTelemetryTracingConfigApplyConfiguration) WithServiceName(value str
 // WithResourceDetectors adds the given value to the ResourceDetectors field in the declarative configuration
 // and returns the receiver, so that objects can be build by chaining "With" function invocations.
 // If called multiple times, values provided by each call will be appended to the ResourceDetectors field.
-func (b *OpenTelemetryTracingConfigApplyConfiguration) WithResourceDetectors(values ...**apiv1alpha1.ResourceDetector) *OpenTelemetryTracingConfigApplyConfiguration {
+func (b *OpenTelemetryTracingConfigApplyConfiguration) WithResourceDetectors(values ...*ResourceDetectorApplyConfiguration) *OpenTelemetryTracingConfigApplyConfiguration {
 	for i := range values {
 		if values[i] == nil {
 			panic("nil value passed to WithResourceDetectors")

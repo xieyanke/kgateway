@@ -8,6 +8,7 @@ type OpenTelemetryAccessLogServiceApplyConfiguration struct {
 	GrpcService          *CommonAccessLogGrpcServiceApplyConfiguration `json:"grpcService,omitempty"`
 	Body                 *string                                       `json:"body,omitempty"`
 	DisableBuiltinLabels *bool                                         `json:"disableBuiltinLabels,omitempty"`
+	Attributes           *KeyAnyValueListApplyConfiguration            `json:"attributes,omitempty"`
 }
 
 // OpenTelemetryAccessLogServiceApplyConfiguration constructs a declarative configuration of the OpenTelemetryAccessLogService type for use with
@@ -37,5 +38,13 @@ func (b *OpenTelemetryAccessLogServiceApplyConfiguration) WithBody(value string)
 // If called multiple times, the DisableBuiltinLabels field is set to the value of the last call.
 func (b *OpenTelemetryAccessLogServiceApplyConfiguration) WithDisableBuiltinLabels(value bool) *OpenTelemetryAccessLogServiceApplyConfiguration {
 	b.DisableBuiltinLabels = &value
+	return b
+}
+
+// WithAttributes sets the Attributes field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the Attributes field is set to the value of the last call.
+func (b *OpenTelemetryAccessLogServiceApplyConfiguration) WithAttributes(value *KeyAnyValueListApplyConfiguration) *OpenTelemetryAccessLogServiceApplyConfiguration {
+	b.Attributes = value
 	return b
 }

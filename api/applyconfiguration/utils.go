@@ -39,6 +39,8 @@ func ForKind(kind schema.GroupVersionKind) interface{} {
 		return &apiv1alpha1.AIPromptGuardApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("AnthropicConfig"):
 		return &apiv1alpha1.AnthropicConfigApplyConfiguration{}
+	case v1alpha1.SchemeGroupVersion.WithKind("AnyValue"):
+		return &apiv1alpha1.AnyValueApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("AuthHeaderOverride"):
 		return &apiv1alpha1.AuthHeaderOverrideApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("AwsAuth"):
@@ -155,6 +157,10 @@ func ForKind(kind schema.GroupVersionKind) interface{} {
 		return &apiv1alpha1.IstioContainerApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("IstioIntegration"):
 		return &apiv1alpha1.IstioIntegrationApplyConfiguration{}
+	case v1alpha1.SchemeGroupVersion.WithKind("KeyAnyValue"):
+		return &apiv1alpha1.KeyAnyValueApplyConfiguration{}
+	case v1alpha1.SchemeGroupVersion.WithKind("KeyAnyValueList"):
+		return &apiv1alpha1.KeyAnyValueListApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("KubernetesProxyConfig"):
 		return &apiv1alpha1.KubernetesProxyConfigApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("LLMProvider"):
@@ -207,8 +213,6 @@ func ForKind(kind schema.GroupVersionKind) interface{} {
 		return &apiv1alpha1.PromptguardRequestApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("PromptguardResponse"):
 		return &apiv1alpha1.PromptguardResponseApplyConfiguration{}
-	case v1alpha1.SchemeGroupVersion.WithKind("Provider"):
-		return &apiv1alpha1.ProviderApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("ProxyDeployment"):
 		return &apiv1alpha1.ProxyDeploymentApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("RateLimit"):
@@ -267,6 +271,8 @@ func ForKind(kind schema.GroupVersionKind) interface{} {
 		return &apiv1alpha1.TokenBucketApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("Tracing"):
 		return &apiv1alpha1.TracingApplyConfiguration{}
+	case v1alpha1.SchemeGroupVersion.WithKind("TracingProvider"):
+		return &apiv1alpha1.TracingProviderApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("TrafficPolicy"):
 		return &apiv1alpha1.TrafficPolicyApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("TrafficPolicySpec"):

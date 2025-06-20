@@ -9,6 +9,8 @@ import (
 	envoy_hcm "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/http_connection_manager/v3"
 	resource_detectorsv3 "github.com/envoyproxy/go-control-plane/envoy/extensions/tracers/opentelemetry/resource_detectors/v3"
 	samplersv3 "github.com/envoyproxy/go-control-plane/envoy/extensions/tracers/opentelemetry/samplers/v3"
+	metadatav3 "github.com/envoyproxy/go-control-plane/envoy/type/metadata/v3"
+	tracingv3 "github.com/envoyproxy/go-control-plane/envoy/type/tracing/v3"
 	typev3 "github.com/envoyproxy/go-control-plane/envoy/type/v3"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -16,7 +18,6 @@ import (
 	"google.golang.org/protobuf/types/known/wrapperspb"
 	"k8s.io/utils/pointer"
 	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
-	v1 "sigs.k8s.io/gateway-api/apis/v1"
 
 	"github.com/kgateway-dev/kgateway/v2/api/v1alpha1"
 	"github.com/kgateway-dev/kgateway/v2/internal/kgateway/ir"
@@ -42,10 +43,10 @@ func TestTracingConverter(t *testing.T) {
 			{
 				name: "OTel Tracing minimal config",
 				config: &v1alpha1.Tracing{
-					Provider: &v1alpha1.Provider{
+					Provider: &v1alpha1.TracingProvider{
 						OpenTelemetry: &v1alpha1.OpenTelemetryTracingConfig{
 							GrpcService: &v1alpha1.CommonGrpcService{
-								BackendRef: &v1.BackendRef{
+								BackendRef: &gwv1.BackendRef{
 									BackendObjectReference: gwv1.BackendObjectReference{
 										Name: "test-service",
 									},
@@ -76,17 +77,17 @@ func TestTracingConverter(t *testing.T) {
 			{
 				name: "OTel Tracing full config",
 				config: &v1alpha1.Tracing{
-					Provider: &v1alpha1.Provider{
+					Provider: &v1alpha1.TracingProvider{
 						OpenTelemetry: &v1alpha1.OpenTelemetryTracingConfig{
 							GrpcService: &v1alpha1.CommonGrpcService{
-								BackendRef: &v1.BackendRef{
+								BackendRef: &gwv1.BackendRef{
 									BackendObjectReference: gwv1.BackendObjectReference{
 										Name: "test-service",
 									},
 								},
 							},
 							ServiceName: "my:service",
-							ResourceDetectors: []*v1alpha1.ResourceDetector{{
+							ResourceDetectors: []v1alpha1.ResourceDetector{{
 								EnvironmentResourceDetector: &v1alpha1.EnvironmentResourceDetectorConfig{},
 							}},
 							Sampler: &v1alpha1.Sampler{
@@ -99,7 +100,78 @@ func TestTracingConverter(t *testing.T) {
 					OverallSampling:  pointer.Uint32(65),
 					Verbose:          pointer.Bool(true),
 					MaxPathTagLength: pointer.Uint32(127),
-					// TODO: Custom tags
+					CustomTags: []v1alpha1.CustomTag{
+						{
+							Tag: "Literal",
+							Literal: &v1alpha1.CustomTagLiteral{
+								Value: "Literal Value",
+							},
+						},
+						{
+							Tag: "Environment",
+							Environment: &v1alpha1.CustomTagEnvironment{
+								Name:         "Env",
+								DefaultValue: pointer.String("Environment Value"),
+							},
+						},
+						{
+							Tag: "Request Header",
+							RequestHeader: &v1alpha1.CustomTagHeader{
+								Name:         "Header",
+								DefaultValue: pointer.String("Request"),
+							},
+						},
+						{
+							Tag: "Metadata Request",
+							Metadata: &v1alpha1.CustomTagMetadata{
+								Kind: v1alpha1.MetadataKindRequest,
+								MetadataKey: &v1alpha1.MetadataKey{
+									Key: "Request",
+									Path: []v1alpha1.MetadataPathSegment{{
+										Key: "Request-key",
+									}},
+								},
+							},
+						},
+						{
+							Tag: "Metadata Route",
+							Metadata: &v1alpha1.CustomTagMetadata{
+								Kind: v1alpha1.MetadataKindRoute,
+								MetadataKey: &v1alpha1.MetadataKey{
+									Key: "Route",
+									Path: []v1alpha1.MetadataPathSegment{{
+										Key: "Route-key",
+									}},
+								},
+							},
+						},
+						{
+							Tag: "Metadata Cluster",
+							Metadata: &v1alpha1.CustomTagMetadata{
+								Kind: v1alpha1.MetadataKindCluster,
+								MetadataKey: &v1alpha1.MetadataKey{
+									Key: "Cluster",
+									Path: []v1alpha1.MetadataPathSegment{{
+										Key: "Cluster-key",
+									}},
+								},
+							},
+						},
+						{
+							Tag: "Metadata Host",
+							Metadata: &v1alpha1.CustomTagMetadata{
+								Kind: v1alpha1.MetadataKindHost,
+								MetadataKey: &v1alpha1.MetadataKey{
+									Key: "Host",
+									Path: []v1alpha1.MetadataPathSegment{{
+										Key: "Host-key-1",
+									}, {
+										Key: "Host-key-2",
+									}},
+								},
+							},
+						},
+					},
 					SpawnUpstreamSpan: pointer.Bool(true),
 				},
 				expected: &envoy_hcm.HttpConnectionManager_Tracing{
@@ -131,7 +203,117 @@ func TestTracingConverter(t *testing.T) {
 					OverallSampling:  &typev3.Percent{Value: 65},
 					Verbose:          true,
 					MaxPathTagLength: &wrapperspb.UInt32Value{Value: 127},
-					// TODO: Custom tags
+					CustomTags: []*tracingv3.CustomTag{
+						{
+							Tag: "Literal",
+							Type: &tracingv3.CustomTag_Literal_{
+								Literal: &tracingv3.CustomTag_Literal{
+									Value: "Literal Value",
+								},
+							},
+						},
+						{
+							Tag: "Environment",
+							Type: &tracingv3.CustomTag_Environment_{
+								Environment: &tracingv3.CustomTag_Environment{
+									Name:         "Env",
+									DefaultValue: "Environment Value",
+								},
+							},
+						},
+						{
+							Tag: "Request Header",
+							Type: &tracingv3.CustomTag_RequestHeader{
+								RequestHeader: &tracingv3.CustomTag_Header{
+									Name:         "Header",
+									DefaultValue: "Request",
+								},
+							},
+						},
+						{
+							Tag: "Metadata Request",
+							Type: &tracingv3.CustomTag_Metadata_{
+								Metadata: &tracingv3.CustomTag_Metadata{
+									Kind: &metadatav3.MetadataKind{
+										Kind: &metadatav3.MetadataKind_Request_{
+											Request: &metadatav3.MetadataKind_Request{},
+										},
+									},
+									MetadataKey: &metadatav3.MetadataKey{
+										Key: "Request",
+										Path: []*metadatav3.MetadataKey_PathSegment{{
+											Segment: &metadatav3.MetadataKey_PathSegment_Key{
+												Key: "Request-key",
+											},
+										}},
+									},
+								},
+							},
+						},
+						{
+							Tag: "Metadata Route",
+							Type: &tracingv3.CustomTag_Metadata_{
+								Metadata: &tracingv3.CustomTag_Metadata{
+									Kind: &metadatav3.MetadataKind{
+										Kind: &metadatav3.MetadataKind_Route_{
+											Route: &metadatav3.MetadataKind_Route{},
+										},
+									},
+									MetadataKey: &metadatav3.MetadataKey{
+										Key: "Route",
+										Path: []*metadatav3.MetadataKey_PathSegment{{
+											Segment: &metadatav3.MetadataKey_PathSegment_Key{
+												Key: "Route-key",
+											},
+										}},
+									},
+								},
+							},
+						},
+						{
+							Tag: "Metadata Cluster",
+							Type: &tracingv3.CustomTag_Metadata_{
+								Metadata: &tracingv3.CustomTag_Metadata{
+									Kind: &metadatav3.MetadataKind{
+										Kind: &metadatav3.MetadataKind_Cluster_{
+											Cluster: &metadatav3.MetadataKind_Cluster{},
+										},
+									},
+									MetadataKey: &metadatav3.MetadataKey{
+										Key: "Cluster",
+										Path: []*metadatav3.MetadataKey_PathSegment{{
+											Segment: &metadatav3.MetadataKey_PathSegment_Key{
+												Key: "Cluster-key",
+											},
+										}},
+									},
+								},
+							},
+						},
+						{
+							Tag: "Metadata Host",
+							Type: &tracingv3.CustomTag_Metadata_{
+								Metadata: &tracingv3.CustomTag_Metadata{
+									Kind: &metadatav3.MetadataKind{
+										Kind: &metadatav3.MetadataKind_Host_{
+											Host: &metadatav3.MetadataKind_Host{},
+										},
+									},
+									MetadataKey: &metadatav3.MetadataKey{
+										Key: "Host",
+										Path: []*metadatav3.MetadataKey_PathSegment{{
+											Segment: &metadatav3.MetadataKey_PathSegment_Key{
+												Key: "Host-key-1",
+											}}, {
+											Segment: &metadatav3.MetadataKey_PathSegment_Key{
+												Key: "Host-key-2",
+											}},
+										},
+									},
+								},
+							},
+						},
+					},
 					SpawnUpstreamSpan: &wrapperspb.BoolValue{Value: true},
 				},
 			},

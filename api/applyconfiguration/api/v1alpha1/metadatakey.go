@@ -2,15 +2,11 @@
 
 package v1alpha1
 
-import (
-	apiv1alpha1 "github.com/kgateway-dev/kgateway/v2/api/v1alpha1"
-)
-
 // MetadataKeyApplyConfiguration represents a declarative configuration of the MetadataKey type for use
 // with apply.
 type MetadataKeyApplyConfiguration struct {
-	Key  *string                            `json:"key,omitempty"`
-	Path []*apiv1alpha1.MetadataPathSegment `json:"path,omitempty"`
+	Key  *string                                 `json:"key,omitempty"`
+	Path []MetadataPathSegmentApplyConfiguration `json:"path,omitempty"`
 }
 
 // MetadataKeyApplyConfiguration constructs a declarative configuration of the MetadataKey type for use with
@@ -30,7 +26,7 @@ func (b *MetadataKeyApplyConfiguration) WithKey(value string) *MetadataKeyApplyC
 // WithPath adds the given value to the Path field in the declarative configuration
 // and returns the receiver, so that objects can be build by chaining "With" function invocations.
 // If called multiple times, values provided by each call will be appended to the Path field.
-func (b *MetadataKeyApplyConfiguration) WithPath(values ...**apiv1alpha1.MetadataPathSegment) *MetadataKeyApplyConfiguration {
+func (b *MetadataKeyApplyConfiguration) WithPath(values ...*MetadataPathSegmentApplyConfiguration) *MetadataKeyApplyConfiguration {
 	for i := range values {
 		if values[i] == nil {
 			panic("nil value passed to WithPath")

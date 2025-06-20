@@ -43,7 +43,7 @@ func ToEnvoyGrpc(in *v1alpha1.CommonGrpcService, backend *ir.BackendObjectIR) (*
 	if in.InitialMetadata != nil {
 		grpcService.InitialMetadata = make([]*envoycore.HeaderValue, len(in.InitialMetadata))
 		for i, metadata := range in.InitialMetadata {
-			grpcService.InitialMetadata[i] = &envoycore.HeaderValue{
+			grpcService.GetInitialMetadata()[i] = &envoycore.HeaderValue{
 				Key:   metadata.Key,
 				Value: metadata.Value,
 			}
@@ -62,7 +62,7 @@ func ToEnvoyGrpc(in *v1alpha1.CommonGrpcService, backend *ir.BackendObjectIR) (*
 			}
 			if in.RetryPolicy.RetryBackOff.MaxInterval != nil {
 				if in.RetryPolicy.RetryBackOff.MaxInterval.Duration.Nanoseconds() < in.RetryPolicy.RetryBackOff.BaseInterval.Duration.Nanoseconds() {
-					logger.Error("RetryPolicy.RetryBackOff.MaxInterval is lesser than RetryPolicy.RetryBackOff.MaxInterval. Ignoring MaxInterval", "MaxInterval", in.RetryPolicy.RetryBackOff.MaxInterval.Duration.Seconds(), "BaseInterval", in.RetryPolicy.RetryBackOff.BaseInterval.Duration.Seconds())
+					logger.Error("retryPolicy.RetryBackOff.MaxInterval is lesser than RetryPolicy.RetryBackOff.MaxInterval. Ignoring MaxInterval", "maxInterval", in.RetryPolicy.RetryBackOff.MaxInterval.Duration.Seconds(), "baseInterval", in.RetryPolicy.RetryBackOff.BaseInterval.Duration.Seconds())
 				} else {
 					retryPolicy.GetRetryBackOff().MaxInterval = DurationToProto(in.RetryPolicy.RetryBackOff.MaxInterval.Duration)
 				}

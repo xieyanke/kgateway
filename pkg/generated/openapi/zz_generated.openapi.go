@@ -28,6 +28,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/kgateway-dev/kgateway/v2/api/v1alpha1.AiExtensionStats":                          schema_kgateway_v2_api_v1alpha1_AiExtensionStats(ref),
 		"github.com/kgateway-dev/kgateway/v2/api/v1alpha1.AlwaysOnConfig":                            schema_kgateway_v2_api_v1alpha1_AlwaysOnConfig(ref),
 		"github.com/kgateway-dev/kgateway/v2/api/v1alpha1.AnthropicConfig":                           schema_kgateway_v2_api_v1alpha1_AnthropicConfig(ref),
+		"github.com/kgateway-dev/kgateway/v2/api/v1alpha1.AnyValue":                                  schema_kgateway_v2_api_v1alpha1_AnyValue(ref),
 		"github.com/kgateway-dev/kgateway/v2/api/v1alpha1.AuthHeaderOverride":                        schema_kgateway_v2_api_v1alpha1_AuthHeaderOverride(ref),
 		"github.com/kgateway-dev/kgateway/v2/api/v1alpha1.AwsAuth":                                   schema_kgateway_v2_api_v1alpha1_AwsAuth(ref),
 		"github.com/kgateway-dev/kgateway/v2/api/v1alpha1.AwsBackend":                                schema_kgateway_v2_api_v1alpha1_AwsBackend(ref),
@@ -96,6 +97,8 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/kgateway-dev/kgateway/v2/api/v1alpha1.Image":                                     schema_kgateway_v2_api_v1alpha1_Image(ref),
 		"github.com/kgateway-dev/kgateway/v2/api/v1alpha1.IstioContainer":                            schema_kgateway_v2_api_v1alpha1_IstioContainer(ref),
 		"github.com/kgateway-dev/kgateway/v2/api/v1alpha1.IstioIntegration":                          schema_kgateway_v2_api_v1alpha1_IstioIntegration(ref),
+		"github.com/kgateway-dev/kgateway/v2/api/v1alpha1.KeyAnyValue":                               schema_kgateway_v2_api_v1alpha1_KeyAnyValue(ref),
+		"github.com/kgateway-dev/kgateway/v2/api/v1alpha1.KeyAnyValueList":                           schema_kgateway_v2_api_v1alpha1_KeyAnyValueList(ref),
 		"github.com/kgateway-dev/kgateway/v2/api/v1alpha1.KubernetesProxyConfig":                     schema_kgateway_v2_api_v1alpha1_KubernetesProxyConfig(ref),
 		"github.com/kgateway-dev/kgateway/v2/api/v1alpha1.LLMProvider":                               schema_kgateway_v2_api_v1alpha1_LLMProvider(ref),
 		"github.com/kgateway-dev/kgateway/v2/api/v1alpha1.LoadBalancer":                              schema_kgateway_v2_api_v1alpha1_LoadBalancer(ref),
@@ -126,7 +129,6 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/kgateway-dev/kgateway/v2/api/v1alpha1.ProcessingMode":                            schema_kgateway_v2_api_v1alpha1_ProcessingMode(ref),
 		"github.com/kgateway-dev/kgateway/v2/api/v1alpha1.PromptguardRequest":                        schema_kgateway_v2_api_v1alpha1_PromptguardRequest(ref),
 		"github.com/kgateway-dev/kgateway/v2/api/v1alpha1.PromptguardResponse":                       schema_kgateway_v2_api_v1alpha1_PromptguardResponse(ref),
-		"github.com/kgateway-dev/kgateway/v2/api/v1alpha1.Provider":                                  schema_kgateway_v2_api_v1alpha1_Provider(ref),
 		"github.com/kgateway-dev/kgateway/v2/api/v1alpha1.ProxyDeployment":                           schema_kgateway_v2_api_v1alpha1_ProxyDeployment(ref),
 		"github.com/kgateway-dev/kgateway/v2/api/v1alpha1.RateLimit":                                 schema_kgateway_v2_api_v1alpha1_RateLimit(ref),
 		"github.com/kgateway-dev/kgateway/v2/api/v1alpha1.RateLimitDescriptor":                       schema_kgateway_v2_api_v1alpha1_RateLimitDescriptor(ref),
@@ -157,6 +159,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/kgateway-dev/kgateway/v2/api/v1alpha1.TLSFiles":                                  schema_kgateway_v2_api_v1alpha1_TLSFiles(ref),
 		"github.com/kgateway-dev/kgateway/v2/api/v1alpha1.TokenBucket":                               schema_kgateway_v2_api_v1alpha1_TokenBucket(ref),
 		"github.com/kgateway-dev/kgateway/v2/api/v1alpha1.Tracing":                                   schema_kgateway_v2_api_v1alpha1_Tracing(ref),
+		"github.com/kgateway-dev/kgateway/v2/api/v1alpha1.TracingProvider":                           schema_kgateway_v2_api_v1alpha1_TracingProvider(ref),
 		"github.com/kgateway-dev/kgateway/v2/api/v1alpha1.TrafficPolicy":                             schema_kgateway_v2_api_v1alpha1_TrafficPolicy(ref),
 		"github.com/kgateway-dev/kgateway/v2/api/v1alpha1.TrafficPolicyList":                         schema_kgateway_v2_api_v1alpha1_TrafficPolicyList(ref),
 		"github.com/kgateway-dev/kgateway/v2/api/v1alpha1.TrafficPolicySpec":                         schema_kgateway_v2_api_v1alpha1_TrafficPolicySpec(ref),
@@ -861,7 +864,8 @@ func schema_kgateway_v2_api_v1alpha1_AccessLogGrpcService(ref common.ReferenceCa
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
-										Ref: ref("github.com/kgateway-dev/kgateway/v2/api/v1alpha1.HeaderValue"),
+										Default: map[string]interface{}{},
+										Ref:     ref("github.com/kgateway-dev/kgateway/v2/api/v1alpha1.HeaderValue"),
 									},
 								},
 							},
@@ -1067,7 +1071,8 @@ func schema_kgateway_v2_api_v1alpha1_AlwaysOnConfig(ref common.ReferenceCallback
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
-				Type: []string{"object"},
+				Description: "AlwaysOnConfig specified the AlwaysOn samplerc",
+				Type:        []string{"object"},
 			},
 		},
 	}
@@ -1107,6 +1112,69 @@ func schema_kgateway_v2_api_v1alpha1_AnthropicConfig(ref common.ReferenceCallbac
 		},
 		Dependencies: []string{
 			"github.com/kgateway-dev/kgateway/v2/api/v1alpha1.SingleAuthToken"},
+	}
+}
+
+func schema_kgateway_v2_api_v1alpha1_AnyValue(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "AnyValue is used to represent any type of attribute value. AnyValue may contain a primitive value such as a string or integer or it may contain an arbitrary nested object containing arrays, key-value lists and primitives.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"boolValue": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"boolean"},
+							Format: "",
+						},
+					},
+					"doubleValue": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"intValue": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"integer"},
+							Format: "int64",
+						},
+					},
+					"stringValue": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"bytesValue": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "byte",
+						},
+					},
+					"arrayValue": {
+						SchemaProps: spec.SchemaProps{
+							Type: []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("github.com/kgateway-dev/kgateway/v2/api/v1alpha1.AnyValue"),
+									},
+								},
+							},
+						},
+					},
+					"kvListValue": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("github.com/kgateway-dev/kgateway/v2/api/v1alpha1.KeyAnyValueList"),
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"github.com/kgateway-dev/kgateway/v2/api/v1alpha1.AnyValue", "github.com/kgateway-dev/kgateway/v2/api/v1alpha1.KeyAnyValueList"},
 	}
 }
 
@@ -1892,7 +1960,8 @@ func schema_kgateway_v2_api_v1alpha1_CommonAccessLogGrpcService(ref common.Refer
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
-										Ref: ref("github.com/kgateway-dev/kgateway/v2/api/v1alpha1.HeaderValue"),
+										Default: map[string]interface{}{},
+										Ref:     ref("github.com/kgateway-dev/kgateway/v2/api/v1alpha1.HeaderValue"),
 									},
 								},
 							},
@@ -1968,7 +2037,8 @@ func schema_kgateway_v2_api_v1alpha1_CommonGrpcService(ref common.ReferenceCallb
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
-										Ref: ref("github.com/kgateway-dev/kgateway/v2/api/v1alpha1.HeaderValue"),
+										Default: map[string]interface{}{},
+										Ref:     ref("github.com/kgateway-dev/kgateway/v2/api/v1alpha1.HeaderValue"),
 									},
 								},
 							},
@@ -2581,7 +2651,8 @@ func schema_kgateway_v2_api_v1alpha1_EnvironmentResourceDetectorConfig(ref commo
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
-				Type: []string{"object"},
+				Description: "EnvironmentResourceDetectorConfig specified the EnvironmentResourceDetector",
+				Type:        []string{"object"},
 			},
 		},
 	}
@@ -3804,6 +3875,64 @@ func schema_kgateway_v2_api_v1alpha1_IstioIntegration(ref common.ReferenceCallba
 	}
 }
 
+func schema_kgateway_v2_api_v1alpha1_KeyAnyValue(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "KeyValue is a key-value pair that is used to store Span attributes, Link attributes, etc.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"key": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Attribute keys must be unique",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"value": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Value may contain a primitive value such as a string or integer or it may contain an arbitrary nested object containing arrays, key-value lists and primitives.",
+							Default:     map[string]interface{}{},
+							Ref:         ref("github.com/kgateway-dev/kgateway/v2/api/v1alpha1.AnyValue"),
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"github.com/kgateway-dev/kgateway/v2/api/v1alpha1.AnyValue"},
+	}
+}
+
+func schema_kgateway_v2_api_v1alpha1_KeyAnyValueList(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "A list of key-value pair that is used to store Span attributes, Link attributes, etc.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"values": {
+						SchemaProps: spec.SchemaProps{
+							Description: "A collection of key/value pairs of key-value pairs.",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("github.com/kgateway-dev/kgateway/v2/api/v1alpha1.KeyAnyValue"),
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"github.com/kgateway-dev/kgateway/v2/api/v1alpha1.KeyAnyValue"},
+	}
+}
+
 func schema_kgateway_v2_api_v1alpha1_KubernetesProxyConfig(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
@@ -4303,7 +4432,8 @@ func schema_kgateway_v2_api_v1alpha1_MetadataKey(ref common.ReferenceCallback) c
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
-										Ref: ref("github.com/kgateway-dev/kgateway/v2/api/v1alpha1.MetadataPathSegment"),
+										Default: map[string]interface{}{},
+										Ref:     ref("github.com/kgateway-dev/kgateway/v2/api/v1alpha1.MetadataPathSegment"),
 									},
 								},
 							},
@@ -4445,11 +4575,17 @@ func schema_kgateway_v2_api_v1alpha1_OpenTelemetryAccessLogService(ref common.Re
 							Format:      "",
 						},
 					},
+					"attributes": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Additional attributes that describe the specific event occurrence.",
+							Ref:         ref("github.com/kgateway-dev/kgateway/v2/api/v1alpha1.KeyAnyValueList"),
+						},
+					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"github.com/kgateway-dev/kgateway/v2/api/v1alpha1.CommonAccessLogGrpcService"},
+			"github.com/kgateway-dev/kgateway/v2/api/v1alpha1.CommonAccessLogGrpcService", "github.com/kgateway-dev/kgateway/v2/api/v1alpha1.KeyAnyValueList"},
 	}
 }
 
@@ -4480,7 +4616,8 @@ func schema_kgateway_v2_api_v1alpha1_OpenTelemetryTracingConfig(ref common.Refer
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
-										Ref: ref("github.com/kgateway-dev/kgateway/v2/api/v1alpha1.ResourceDetector"),
+										Default: map[string]interface{}{},
+										Ref:     ref("github.com/kgateway-dev/kgateway/v2/api/v1alpha1.ResourceDetector"),
 									},
 								},
 							},
@@ -4982,26 +5119,6 @@ func schema_kgateway_v2_api_v1alpha1_PromptguardResponse(ref common.ReferenceCal
 	}
 }
 
-func schema_kgateway_v2_api_v1alpha1_Provider(ref common.ReferenceCallback) common.OpenAPIDefinition {
-	return common.OpenAPIDefinition{
-		Schema: spec.Schema{
-			SchemaProps: spec.SchemaProps{
-				Type: []string{"object"},
-				Properties: map[string]spec.Schema{
-					"openTelemetry": {
-						SchemaProps: spec.SchemaProps{
-							Description: "This could be wrapped in a provider struct if future configs need to be added or use cel validation to ensure only one provider can be selected. Tracing contains various settings for Envoy's OTel tracer.",
-							Ref:         ref("github.com/kgateway-dev/kgateway/v2/api/v1alpha1.OpenTelemetryTracingConfig"),
-						},
-					},
-				},
-			},
-		},
-		Dependencies: []string{
-			"github.com/kgateway-dev/kgateway/v2/api/v1alpha1.OpenTelemetryTracingConfig"},
-	}
-}
-
 func schema_kgateway_v2_api_v1alpha1_ProxyDeployment(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
@@ -5308,7 +5425,8 @@ func schema_kgateway_v2_api_v1alpha1_ResourceDetector(ref common.ReferenceCallba
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
-				Type: []string{"object"},
+				Description: "ResourceDetector defines the list of supported ResourceDetectors",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"environmentResourceDetector": {
 						SchemaProps: spec.SchemaProps{
@@ -5383,7 +5501,8 @@ func schema_kgateway_v2_api_v1alpha1_Sampler(ref common.ReferenceCallback) commo
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
-				Type: []string{"object"},
+				Description: "Sampler defines the list of supported Samplers",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"alwaysOnConfig": {
 						SchemaProps: spec.SchemaProps{
@@ -6053,7 +6172,7 @@ func schema_kgateway_v2_api_v1alpha1_Tracing(ref common.ReferenceCallback) commo
 					"provider": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Provider defines the upstream to which envoy sends traces",
-							Ref:         ref("github.com/kgateway-dev/kgateway/v2/api/v1alpha1.Provider"),
+							Ref:         ref("github.com/kgateway-dev/kgateway/v2/api/v1alpha1.TracingProvider"),
 						},
 					},
 					"clientSampling": {
@@ -6098,7 +6217,8 @@ func schema_kgateway_v2_api_v1alpha1_Tracing(ref common.ReferenceCallback) commo
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
-										Ref: ref("github.com/kgateway-dev/kgateway/v2/api/v1alpha1.CustomTag"),
+										Default: map[string]interface{}{},
+										Ref:     ref("github.com/kgateway-dev/kgateway/v2/api/v1alpha1.CustomTag"),
 									},
 								},
 							},
@@ -6116,7 +6236,28 @@ func schema_kgateway_v2_api_v1alpha1_Tracing(ref common.ReferenceCallback) commo
 			},
 		},
 		Dependencies: []string{
-			"github.com/kgateway-dev/kgateway/v2/api/v1alpha1.CustomTag", "github.com/kgateway-dev/kgateway/v2/api/v1alpha1.Provider"},
+			"github.com/kgateway-dev/kgateway/v2/api/v1alpha1.CustomTag", "github.com/kgateway-dev/kgateway/v2/api/v1alpha1.TracingProvider"},
+	}
+}
+
+func schema_kgateway_v2_api_v1alpha1_TracingProvider(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "TracingProvider defines the list of providers for tracing",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"openTelemetry": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Tracing contains various settings for Envoy's OTel tracer.",
+							Ref:         ref("github.com/kgateway-dev/kgateway/v2/api/v1alpha1.OpenTelemetryTracingConfig"),
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"github.com/kgateway-dev/kgateway/v2/api/v1alpha1.OpenTelemetryTracingConfig"},
 	}
 }
 

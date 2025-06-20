@@ -143,7 +143,7 @@ type CommonGrpcService struct {
 	// Additional metadata to include in streams initiated to the GrpcService.
 	// This can be used for scenarios in which additional ad hoc authorization headers (e.g. x-foo-bar: baz-key) are to be injected
 	// +kubebuilder:validation:Optional
-	InitialMetadata []*HeaderValue `json:"initialMetadata,omitempty"`
+	InitialMetadata []HeaderValue `json:"initialMetadata,omitempty"`
 
 	// Indicates the retry policy for re-establishing the gRPC stream.
 	// If max interval is not provided, it will be set to ten times the provided base interval
@@ -205,8 +205,38 @@ type OpenTelemetryAccessLogService struct {
 
 	// Additional attributes that describe the specific event occurrence.
 	// +kubebuilder:validation:Optional
-	// TODO: Should we implement this ?
-	// Attributes opentelemetry.io.proto.otlp.common.v1.KeyValueList `json:"attributes,omitempty"`
+	Attributes *KeyAnyValueList `json:"attributes,omitempty"`
+}
+
+// A list of key-value pair that is used to store Span attributes, Link attributes, etc.
+type KeyAnyValueList struct {
+	// A collection of key/value pairs of key-value pairs.
+	// +kubebuilder:validation:Required
+	Values []KeyAnyValue `json:"values,omitempty"`
+}
+
+// KeyValue is a key-value pair that is used to store Span attributes, Link attributes, etc.
+type KeyAnyValue struct {
+	// Attribute keys must be unique
+	// +kubebuilder:validation:Required
+	Key string `json:"key,omitempty"`
+	// Value may contain a primitive value such as a string or integer or it may contain an arbitrary nested object containing arrays, key-value lists and primitives.
+	// +kubebuilder:validation:Required
+	Value AnyValue `json:"value,omitempty"`
+}
+
+// AnyValue is used to represent any type of attribute value. AnyValue may contain a primitive value such as a string or integer or it may contain an arbitrary nested object containing arrays, key-value lists and primitives.
+// +kubebuilder:validation:MaxProperties=1
+// +kubebuilder:validation:MinProperties=1
+type AnyValue struct {
+	BoolValue *bool `json:"boolValue,omitempty"`
+	// +kubebuilder:validation:Format=numerical
+	DoubleValue *string          `json:"doubleValue,omitempty"`
+	IntValue    *int64           `json:"intValue,omitempty"`
+	StringValue *string          `json:"stringValue,omitempty"`
+	BytesValue  []byte           `json:"bytesValue,omitempty"`
+	ArrayValue  []AnyValue       `json:"arrayValue,omitempty"`
+	KvListValue *KeyAnyValueList `json:"kvListValue,omitempty"`
 }
 
 // AccessLogFilter represents the top-level filter structure.
@@ -328,7 +358,7 @@ type GrpcStatusFilter struct {
 type Tracing struct {
 	// Provider defines the upstream to which envoy sends traces
 	// +kubebuilder:validation:Required
-	Provider *Provider `json:"provider"`
+	Provider *TracingProvider `json:"provider"`
 
 	// Target percentage of requests managed by this HTTP connection manager that will be force traced if the x-client-trace-id header is set. Defaults to 100%
 	// +kubebuilder:validation:Optional
@@ -358,7 +388,7 @@ type Tracing struct {
 
 	// A list of custom tags with unique tag name to create tags for the active span.
 	// +kubebuilder:validation:Optional
-	CustomTags []*CustomTag `json:"customTags,omitempty"`
+	CustomTags []CustomTag `json:"customTags,omitempty"`
 
 	// Create separate tracing span for each upstream request if true. Defaults to false
 	// Link to envoy docs for more info
@@ -368,7 +398,8 @@ type Tracing struct {
 
 // Describes custom tags for the active span.
 // Ref: https://www.envoyproxy.io/docs/envoy/latest/api-v3/type/tracing/v3/custom_tag.proto#envoy-v3-api-msg-type-tracing-v3-customtag
-// TODO add cel validation
+// +kubebuilder:validation:MaxProperties=2
+// +kubebuilder:validation:MinProperties=1
 type CustomTag struct {
 	// Used to populate the tag name
 	// +kubebuilder:validation:Required
@@ -433,9 +464,11 @@ type CustomTagMetadata struct {
 	Kind MetadataKind `json:"kind,omitempty"`
 
 	// Metadata key to define the path to retrieve the tag value.
+	// +kubebuilder:validation:Required
 	MetadataKey *MetadataKey `json:"metadataKey,omitempty"`
 
 	// When no valid metadata is found, the tag value would be populated with this default value if specified, otherwise no tag would be populated.
+	// +kubebuilder:validation:Optional
 	DefaultValue *string `json:"defaultValue,omitempty"`
 }
 
@@ -463,7 +496,7 @@ type MetadataKey struct {
 	// The path used to retrieve a specific Value from the Struct. This can be either a prefix or a full path,
 	// depending on the use case
 	// +kubebuilder:validation:Required
-	Path []*MetadataPathSegment `json:"path,omitempty"`
+	Path []MetadataPathSegment `json:"path,omitempty"`
 }
 
 // Specifies a segment in a path for retrieving values from Metadata.
@@ -473,10 +506,10 @@ type MetadataPathSegment struct {
 	Key string `json:"key,omitempty"`
 }
 
+// TracingProvider defines the list of providers for tracing
 // +kubebuilder:validation:MaxProperties=1
 // +kubebuilder:validation:MinProperties=1
-type Provider struct {
-	// This could be wrapped in a provider struct if future configs need to be added or use cel validation to ensure only one provider can be selected.
+type TracingProvider struct {
 	// Tracing contains various settings for Envoy's OTel tracer.
 	// +kubebuilder:validation:Required
 	OpenTelemetry *OpenTelemetryTracingConfig `json:"openTelemetry,omitempty"`
@@ -494,27 +527,33 @@ type OpenTelemetryTracingConfig struct {
 	ServiceName string `json:"serviceName,omitempty"`
 
 	// An ordered list of resource detectors. Currently supported values are `EnvironmentResourceDetector`
-	ResourceDetectors []*ResourceDetector `json:"resourceDetectors,omitempty"`
+	// +kubebuilder:validation:Optional
+	ResourceDetectors []ResourceDetector `json:"resourceDetectors,omitempty"`
 
 	// Specifies the sampler to be used by the OpenTelemetry tracer. This field can be left empty. In this case, the default Envoy sampling decision is used.
 	// Currently supported values are `AlwaysOn`
+	// +kubebuilder:validation:Optional
 	Sampler *Sampler `json:"sampler,omitempty"`
 }
 
+// ResourceDetector defines the list of supported ResourceDetectors
 // +kubebuilder:validation:MaxProperties=1
 // +kubebuilder:validation:MinProperties=1
 type ResourceDetector struct {
 	EnvironmentResourceDetector *EnvironmentResourceDetectorConfig `json:"environmentResourceDetector,omitempty"`
 }
 
+// EnvironmentResourceDetectorConfig specified the EnvironmentResourceDetector
 type EnvironmentResourceDetectorConfig struct{}
 
+// Sampler defines the list of supported Samplers
 // +kubebuilder:validation:MaxProperties=1
 // +kubebuilder:validation:MinProperties=1
 type Sampler struct {
 	AlwaysOn *AlwaysOnConfig `json:"alwaysOnConfig,omitempty"`
 }
 
+// AlwaysOnConfig specified the AlwaysOn samplerc
 type AlwaysOnConfig struct{}
 
 // GrpcStatus represents possible gRPC statuses.

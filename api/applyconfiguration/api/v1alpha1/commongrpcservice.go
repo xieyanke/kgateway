@@ -5,20 +5,18 @@ package v1alpha1
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	v1 "sigs.k8s.io/gateway-api/apis/v1"
-
-	apiv1alpha1 "github.com/kgateway-dev/kgateway/v2/api/v1alpha1"
 )
 
 // CommonGrpcServiceApplyConfiguration represents a declarative configuration of the CommonGrpcService type for use
 // with apply.
 type CommonGrpcServiceApplyConfiguration struct {
-	BackendRef              *v1.BackendRef                 `json:"backendRef,omitempty"`
-	Authority               *string                        `json:"authority,omitempty"`
-	MaxReceiveMessageLength *uint32                        `json:"maxReceiveMessageLength,omitempty"`
-	SkipEnvoyHeaders        *bool                          `json:"skipEnvoyHeaders,omitempty"`
-	Timeout                 *metav1.Duration               `json:"timeout,omitempty"`
-	InitialMetadata         []*apiv1alpha1.HeaderValue     `json:"initialMetadata,omitempty"`
-	RetryPolicy             *RetryPolicyApplyConfiguration `json:"retryPolicy,omitempty"`
+	BackendRef              *v1.BackendRef                  `json:"backendRef,omitempty"`
+	Authority               *string                         `json:"authority,omitempty"`
+	MaxReceiveMessageLength *uint32                         `json:"maxReceiveMessageLength,omitempty"`
+	SkipEnvoyHeaders        *bool                           `json:"skipEnvoyHeaders,omitempty"`
+	Timeout                 *metav1.Duration                `json:"timeout,omitempty"`
+	InitialMetadata         []HeaderValueApplyConfiguration `json:"initialMetadata,omitempty"`
+	RetryPolicy             *RetryPolicyApplyConfiguration  `json:"retryPolicy,omitempty"`
 }
 
 // CommonGrpcServiceApplyConfiguration constructs a declarative configuration of the CommonGrpcService type for use with
@@ -70,7 +68,7 @@ func (b *CommonGrpcServiceApplyConfiguration) WithTimeout(value metav1.Duration)
 // WithInitialMetadata adds the given value to the InitialMetadata field in the declarative configuration
 // and returns the receiver, so that objects can be build by chaining "With" function invocations.
 // If called multiple times, values provided by each call will be appended to the InitialMetadata field.
-func (b *CommonGrpcServiceApplyConfiguration) WithInitialMetadata(values ...**apiv1alpha1.HeaderValue) *CommonGrpcServiceApplyConfiguration {
+func (b *CommonGrpcServiceApplyConfiguration) WithInitialMetadata(values ...*HeaderValueApplyConfiguration) *CommonGrpcServiceApplyConfiguration {
 	for i := range values {
 		if values[i] == nil {
 			panic("nil value passed to WithInitialMetadata")
