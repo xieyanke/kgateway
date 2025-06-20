@@ -8,7 +8,7 @@ type CustomTagApplyConfiguration struct {
 	Tag           *string                                 `json:"tag,omitempty"`
 	Literal       *CustomTagLiteralApplyConfiguration     `json:"literal,omitempty"`
 	Environment   *CustomTagEnvironmentApplyConfiguration `json:"environment,omitempty"`
-	RequestHeader *CustomTagHeaderApplyConfiguration      `json:"RequestHeader,omitempty"`
+	RequestHeader *CustomTagHeaderApplyConfiguration      `json:"requestHeader,omitempty"`
 	Metadata      *CustomTagMetadataApplyConfiguration    `json:"metadata,omitempty"`
 }
 

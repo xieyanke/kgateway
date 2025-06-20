@@ -663,9 +663,6 @@ var schemaYAML = typed.YAMLObject(`types:
 - name: com.github.kgateway-dev.kgateway.v2.api.v1alpha1.CustomTag
   map:
     fields:
-    - name: RequestHeader
-      type:
-        namedType: com.github.kgateway-dev.kgateway.v2.api.v1alpha1.CustomTagHeader
     - name: environment
       type:
         namedType: com.github.kgateway-dev.kgateway.v2.api.v1alpha1.CustomTagEnvironment
@@ -675,6 +672,9 @@ var schemaYAML = typed.YAMLObject(`types:
     - name: metadata
       type:
         namedType: com.github.kgateway-dev.kgateway.v2.api.v1alpha1.CustomTagMetadata
+    - name: requestHeader
+      type:
+        namedType: com.github.kgateway-dev.kgateway.v2.api.v1alpha1.CustomTagHeader
     - name: tag
       type:
         scalar: string

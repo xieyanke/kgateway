@@ -2329,7 +2329,7 @@ func schema_kgateway_v2_api_v1alpha1_CustomTag(ref common.ReferenceCallback) com
 							Ref:         ref("github.com/kgateway-dev/kgateway/v2/api/v1alpha1.CustomTagEnvironment"),
 						},
 					},
-					"RequestHeader": {
+					"requestHeader": {
 						SchemaProps: spec.SchemaProps{
 							Description: "A request header custom tag.",
 							Ref:         ref("github.com/kgateway-dev/kgateway/v2/api/v1alpha1.CustomTagHeader"),

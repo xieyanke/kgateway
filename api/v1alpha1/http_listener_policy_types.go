@@ -418,7 +418,7 @@ type CustomTag struct {
 
 	// A request header custom tag.
 	// +kubebuilder:validation:Optional
-	RequestHeader *CustomTagHeader `json:"RequestHeader,omitempty"`
+	RequestHeader *CustomTagHeader `json:"requestHeader,omitempty"`
 
 	// A custom tag to obtain tag value from the metadata.
 	// +kubebuilder:validation:Optional
