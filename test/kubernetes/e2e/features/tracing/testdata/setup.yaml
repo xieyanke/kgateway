@@ -63,12 +63,29 @@ spec:
             limits:
               cpu: "200m"
 ---
+# Custom GWP to define OTEL_RESOURCE_ATTRIBUTES required for the environment detector
+kind: GatewayParameters
+apiVersion: gateway.kgateway.dev/v1alpha1
+metadata:
+  name: tracing-params
+spec:
+  kube:
+    envoyContainer:
+      env:
+      - name: OTEL_RESOURCE_ATTRIBUTES
+        value: "environment=detector,resource=attribute"
+---
 kind: Gateway
 apiVersion: gateway.networking.k8s.io/v1
 metadata:
   name: gw
 spec:
   gatewayClassName: kgateway
+  infrastructure:
+    parametersRef:
+      name: tracing-params
+      group: gateway.kgateway.dev
+      kind: GatewayParameters
   listeners:
     - protocol: HTTP
       port: 8080

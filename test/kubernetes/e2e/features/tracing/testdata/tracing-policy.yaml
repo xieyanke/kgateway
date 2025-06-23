@@ -11,6 +11,8 @@ spec:
     provider:
       openTelemetry:
         serviceName: "my:service"
+        resourceDetectors:
+        - environmentResourceDetector: {}
         grpcService:
           authority: "example.com"
           backendRef:

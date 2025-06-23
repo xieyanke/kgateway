@@ -68,6 +68,9 @@ func (s *testingSuite) testOTelTracing() {
 			`-> http.method: Str(GET)`,
 			`-> http.status_code: Str(200)`,
 			`-> upstream_cluster: Str(kube_httpbin_httpbin_8000)`,
+			// Resource attributes specified via the environmentResourceDetector
+			`-> environment: Str(detector)`,
+			`-> resource: Str(attribute)`,
 			// Custom tag passed in the config
 			`-> custom: Str(literal)`,
 			// Custom tag fetched from the request header
