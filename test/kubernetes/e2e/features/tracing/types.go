@@ -16,9 +16,10 @@ import (
 
 var (
 	// manifests
-	setupManifest         = filepath.Join(fsutils.MustGetThisDir(), "testdata", "setup.yaml")
-	otelCollectorManifest = filepath.Join(fsutils.MustGetThisDir(), "testdata", "otel-collector.yaml")
-	policyManifest        = filepath.Join(fsutils.MustGetThisDir(), "testdata", "tracing-policy.yaml")
+	setupManifest               = filepath.Join(fsutils.MustGetThisDir(), "testdata", "setup.yaml")
+	otelCollectorManifest       = filepath.Join(fsutils.MustGetThisDir(), "testdata", "otel-collector.yaml")
+	otelCollectorSecureManifest = filepath.Join(fsutils.MustGetThisDir(), "testdata", "otel-collector-secure.yaml")
+	policyManifest              = filepath.Join(fsutils.MustGetThisDir(), "testdata", "tracing-policy.yaml")
 
 	// setup objects
 	proxyObjectMeta = metav1.ObjectMeta{
@@ -66,6 +67,12 @@ var (
 		"TestOTelTracing": {
 			SimpleTestCase: base.SimpleTestCase{
 				Manifests: []string{otelCollectorManifest, policyManifest},
+				Resources: []client.Object{otelCollectorPod, tracingPolicy},
+			},
+		},
+		"TestOTelTracingSecure": {
+			SimpleTestCase: base.SimpleTestCase{
+				Manifests: []string{otelCollectorSecureManifest, policyManifest},
 				Resources: []client.Object{otelCollectorPod, tracingPolicy},
 			},
 		},

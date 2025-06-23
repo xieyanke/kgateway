@@ -12,10 +12,12 @@ spec:
       openTelemetry:
         serviceName: "my:service"
         grpcService:
+          authority: "example.com"
           backendRef:
             name: otel-collector
             namespace: default
             port: 4317
+    spawnUpstreamSpan: true
     customTags:
       - tag: custom
         literal:

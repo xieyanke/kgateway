@@ -461,7 +461,6 @@ type CustomTagHeader struct {
 // Ref: https://www.envoyproxy.io/docs/envoy/latest/api-v3/type/tracing/v3/custom_tag.proto#type-tracing-v3-customtag-metadata
 type CustomTagMetadata struct {
 	// Specify what kind of metadata to obtain tag value from
-	// +kubebuilder:validation:Enum=Request;Route;Cluster;Host
 	Kind MetadataKind `json:"kind,omitempty"`
 
 	// Metadata key to define the path to retrieve the tag value.
@@ -475,6 +474,7 @@ type CustomTagMetadata struct {
 
 // Describes different types of metadata sources.
 // Ref: https://www.envoyproxy.io/docs/envoy/latest/api-v3/type/metadata/v3/metadata.proto#envoy-v3-api-msg-type-metadata-v3-metadatakind-request
+// +kubebuilder:validation:Enum=Request;Route;Cluster;Host
 type MetadataKind string
 
 const (

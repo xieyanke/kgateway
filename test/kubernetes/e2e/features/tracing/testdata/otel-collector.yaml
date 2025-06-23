@@ -4,7 +4,7 @@ kind: ConfigMap
 metadata:
   name: otel-collector-conf
   labels:
-    app: opentelemetry
+    app: otel-collector
     component: otel-collector-conf
 data:
   otel-collector-config: |
@@ -40,7 +40,7 @@ kind: Pod
 metadata:
   name: otel-collector
   labels:
-    app: opentelemetry
+    app: otel-collector
     component: otel-collector
     app.kubernetes.io/name: otel-collector
 spec:
@@ -76,7 +76,7 @@ kind: Service
 metadata:
   name: otel-collector
   labels:
-    app: opentelemetry
+    app: otel-collector
     component: otel-collector
     app.kubernetes.io/name: opentelemetry
 spec:
