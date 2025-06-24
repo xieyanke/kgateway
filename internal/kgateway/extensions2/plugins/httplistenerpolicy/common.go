@@ -5,7 +5,7 @@ import (
 	"time"
 
 	envoycore "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
-	google_duration "github.com/golang/protobuf/ptypes/duration"
+	google_duration "google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/wrapperspb"
 
 	"github.com/kgateway-dev/kgateway/v2/api/v1alpha1"
