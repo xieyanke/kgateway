@@ -943,7 +943,7 @@ func schema_kgateway_v2_api_v1alpha1_AgentGateway(ref common.ReferenceCallback) 
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
-				Description: "Configuration of the AgentGateway integration",
+				Description: "AgentGateway configures the AgentGateway integration. If AgentGateway is enabled, Envoy",
 				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"enabled": {
@@ -960,9 +960,43 @@ func schema_kgateway_v2_api_v1alpha1_AgentGateway(ref common.ReferenceCallback) 
 							Format:      "",
 						},
 					},
+					"image": {
+						SchemaProps: spec.SchemaProps{
+							Description: "The agentgateway container image. See https://kubernetes.io/docs/concepts/containers/images for details.\n\nDefault values, which may be overridden individually:\n\n\tregistry: ghcr.io/agentgateway\n\trepository: agentgateway\n\ttag: <agentgateway version>\n\tpullPolicy: IfNotPresent",
+							Ref:         ref("github.com/kgateway-dev/kgateway/v2/api/v1alpha1.Image"),
+						},
+					},
+					"securityContext": {
+						SchemaProps: spec.SchemaProps{
+							Description: "The security context for this container. See https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.26/#securitycontext-v1-core for details.",
+							Ref:         ref("k8s.io/api/core/v1.SecurityContext"),
+						},
+					},
+					"resources": {
+						SchemaProps: spec.SchemaProps{
+							Description: "The compute resources required by this container. See https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/ for details.",
+							Ref:         ref("k8s.io/api/core/v1.ResourceRequirements"),
+						},
+					},
+					"env": {
+						SchemaProps: spec.SchemaProps{
+							Description: "The container environment variables.",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("k8s.io/api/core/v1.EnvVar"),
+									},
+								},
+							},
+						},
+					},
 				},
 			},
 		},
+		Dependencies: []string{
+			"github.com/kgateway-dev/kgateway/v2/api/v1alpha1.Image", "k8s.io/api/core/v1.EnvVar", "k8s.io/api/core/v1.ResourceRequirements", "k8s.io/api/core/v1.SecurityContext"},
 	}
 }
 
@@ -2631,7 +2665,7 @@ func schema_kgateway_v2_api_v1alpha1_EnvoyBootstrap(ref common.ReferenceCallback
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
-				Description: "Configuration for the Envoy proxy instance that is provisioned from a Kubernetes Gateway.",
+				Description: "EnvoyBootstrap configures the Envoy proxy instance that is provisioned from a Kubernetes Gateway.",
 				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"logLevel": {
@@ -2667,7 +2701,7 @@ func schema_kgateway_v2_api_v1alpha1_EnvoyContainer(ref common.ReferenceCallback
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
-				Description: "Configuration for the container running Envoy.",
+				Description: "EnvoyContainer configures the container running Envoy.",
 				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"bootstrap": {
@@ -2678,7 +2712,7 @@ func schema_kgateway_v2_api_v1alpha1_EnvoyContainer(ref common.ReferenceCallback
 					},
 					"image": {
 						SchemaProps: spec.SchemaProps{
-							Description: "The envoy container image. See https://kubernetes.io/docs/concepts/containers/images for details.\n\nDefault values, which may be overridden individually:\n\n\tregistry: quay.io/solo-io\n\trepository: gloo-envoy-wrapper (OSS) / gloo-ee-envoy-wrapper (EE)\n\ttag: <gloo version> (OSS) / <gloo-ee version> (EE)\n\tpullPolicy: IfNotPresent",
+							Description: "The envoy container image. See https://kubernetes.io/docs/concepts/containers/images for details.\n\nDefault values, which may be overridden individually:\n\n\tregistry: quay.io/solo-io\n\trepository: envoy-wrapper\n\ttag: <kgateway version>\n\tpullPolicy: IfNotPresent",
 							Ref:         ref("github.com/kgateway-dev/kgateway/v2/api/v1alpha1.Image"),
 						},
 					},
@@ -3766,7 +3800,7 @@ func schema_kgateway_v2_api_v1alpha1_IstioContainer(ref common.ReferenceCallback
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
-				Description: "Configuration for the container running the istio-proxy.",
+				Description: "IstioContainer configures the container running the istio-proxy.",
 				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"image": {
@@ -3827,7 +3861,7 @@ func schema_kgateway_v2_api_v1alpha1_IstioIntegration(ref common.ReferenceCallba
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
-				Description: "Configuration for the Istio integration settings used by a Gloo Gateway's data plane (Envoy proxy instance)",
+				Description: "IstioIntegration configures the Istio integration settings used by a kgateway's data plane (Envoy proxy instance)",
 				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"istioProxyContainer": {
@@ -3920,7 +3954,7 @@ func schema_kgateway_v2_api_v1alpha1_KubernetesProxyConfig(ref common.ReferenceC
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
-				Description: "Configuration for the set of Kubernetes resources that will be provisioned for a given Gateway.",
+				Description: "KubernetesProxyConfig configures the set of Kubernetes resources that will be provisioned for a given Gateway.",
 				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"deployment": {
@@ -3931,7 +3965,7 @@ func schema_kgateway_v2_api_v1alpha1_KubernetesProxyConfig(ref common.ReferenceC
 					},
 					"envoyContainer": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Configuration for the container running Envoy.",
+							Description: "Configuration for the container running Envoy. If AgentGateway is enabled, the EnvoyContainer values will be ignored.",
 							Ref:         ref("github.com/kgateway-dev/kgateway/v2/api/v1alpha1.EnvoyContainer"),
 						},
 					},
@@ -3979,7 +4013,7 @@ func schema_kgateway_v2_api_v1alpha1_KubernetesProxyConfig(ref common.ReferenceC
 					},
 					"agentGateway": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Configure the AgentGateway integration",
+							Description: "Configure the AgentGateway integration. If AgentGateway is disabled, the EnvoyContainer values will be used by default to configure the data plane proxy.",
 							Ref:         ref("github.com/kgateway-dev/kgateway/v2/api/v1alpha1.AgentGateway"),
 						},
 					},
@@ -5106,7 +5140,7 @@ func schema_kgateway_v2_api_v1alpha1_ProxyDeployment(ref common.ReferenceCallbac
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
-				Description: "Configuration for the Proxy deployment in Kubernetes.",
+				Description: "ProxyDeployment configures the Proxy deployment in Kubernetes.",
 				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"replicas": {
@@ -5504,7 +5538,7 @@ func schema_kgateway_v2_api_v1alpha1_SdsBootstrap(ref common.ReferenceCallback) 
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
-				Description: "Configuration for the SDS instance that is provisioned from a Kubernetes Gateway.",
+				Description: "SdsBootstrap configures the SDS instance that is provisioned from a Kubernetes Gateway.",
 				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"logLevel": {
@@ -5524,7 +5558,7 @@ func schema_kgateway_v2_api_v1alpha1_SdsContainer(ref common.ReferenceCallback) 
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
-				Description: "Configuration for the container running Gloo SDS.",
+				Description: "SdsContainer configures the container running SDS sidecar.",
 				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"image": {
