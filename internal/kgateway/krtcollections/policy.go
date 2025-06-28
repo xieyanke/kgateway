@@ -134,19 +134,49 @@ func (i *BackendIndex) getBackendFromRef(kctx krt.HandlerContext, localns string
 }
 
 func (i *BackendIndex) GetBackendFromRef(kctx krt.HandlerContext, src ir.ObjectSource, ref gwv1.BackendObjectReference) (*ir.BackendObjectIR, error) {
-	fromns := src.Namespace
-
-	fromgk := schema.GroupKind{
-		Group: src.Group,
-		Kind:  src.Kind,
-	}
-	to := toFromBackendRef(fromns, ref)
-
-	if i.refgrants.ReferenceAllowed(kctx, fromgk, fromns, to) {
-		return i.getBackendFromRef(kctx, src.Namespace, ref)
-	} else {
+	// Check if a ReferenceGrant allows the cross-namespace ref
+	fromNs := src.Namespace
+	fromGK := schema.GroupKind{Group: src.Group, Kind: src.Kind}
+	to := toFromBackendRef(fromNs, ref)
+	if !i.refgrants.ReferenceAllowed(kctx, fromGK, fromNs, to) {
 		return nil, ErrMissingReferenceGrant
 	}
+
+	// Fetch the InferencePool IR by name/namespace only, ignoring any user-supplied port altogether.
+	// TODO [danehans]: Add a warning message to HTTPRoute status the required change is made per
+	// discussion in github.com/kubernetes-sigs/gateway-api-inference-extension/discussions/918
+	kind := strOr(ref.Kind, string(wellknown.ServiceKind))
+	if kind == wellknown.InferencePoolKind {
+		// Find the pool's IR in availableBackends
+		poolGK := to.GetGroupKind()
+		nns := types.NamespacedName{Namespace: to.Namespace, Name: to.Name}
+		var poolIR *ir.BackendObjectIR
+
+		if col, exists := i.availableBackends[poolGK]; exists {
+			matches := krt.Fetch(kctx, col, krt.FilterGeneric(func(obj any) bool {
+				b, ok := obj.(ir.BackendObjectIR)
+				return ok &&
+					b.ObjectSource.Name == nns.Name &&
+					b.ObjectSource.Namespace == nns.Namespace
+			}))
+			if len(matches) > 0 {
+				poolIR = &matches[0]
+			}
+		}
+
+		if poolIR == nil {
+			return nil, &NotFoundError{NotFoundObj: to}
+		}
+
+		// Overwrite ref.Port so lookup uses the correct port
+		correct := gwv1.PortNumber(poolIR.Port)
+		ref.Port = &correct
+
+		// Delegate to the normal port-aware lookup
+		return i.getBackendFromRef(kctx, src.Namespace, ref)
+	}
+
+	return i.getBackendFromRef(kctx, src.Namespace, ref)
 }
 
 // MARK: GatewayIndex
