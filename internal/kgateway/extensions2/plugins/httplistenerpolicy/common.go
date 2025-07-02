@@ -2,14 +2,13 @@ package httplistenerpolicy
 
 import (
 	"errors"
-	"time"
 
 	envoycore "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
-	google_duration "google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/wrapperspb"
 
 	"github.com/kgateway-dev/kgateway/v2/api/v1alpha1"
 	"github.com/kgateway-dev/kgateway/v2/internal/kgateway/ir"
+	"github.com/kgateway-dev/kgateway/v2/internal/kgateway/utils"
 )
 
 func ToEnvoyGrpc(in *v1alpha1.CommonGrpcService, backend *ir.BackendObjectIR) (*envoycore.GrpcService, error) {
@@ -38,7 +37,7 @@ func ToEnvoyGrpc(in *v1alpha1.CommonGrpcService, backend *ir.BackendObjectIR) (*
 	}
 
 	if in.Timeout != nil {
-		grpcService.Timeout = DurationToProto(in.Timeout.Duration)
+		grpcService.Timeout = utils.DurationToProto(in.Timeout.Duration)
 	}
 	if in.InitialMetadata != nil {
 		grpcService.InitialMetadata = make([]*envoycore.HeaderValue, len(in.InitialMetadata))
@@ -58,25 +57,17 @@ func ToEnvoyGrpc(in *v1alpha1.CommonGrpcService, backend *ir.BackendObjectIR) (*
 		}
 		if in.RetryPolicy.RetryBackOff != nil {
 			retryPolicy.RetryBackOff = &envoycore.BackoffStrategy{
-				BaseInterval: DurationToProto(in.RetryPolicy.RetryBackOff.BaseInterval.Duration),
+				BaseInterval: utils.DurationToProto(in.RetryPolicy.RetryBackOff.BaseInterval.Duration),
 			}
 			if in.RetryPolicy.RetryBackOff.MaxInterval != nil {
 				if in.RetryPolicy.RetryBackOff.MaxInterval.Duration.Nanoseconds() < in.RetryPolicy.RetryBackOff.BaseInterval.Duration.Nanoseconds() {
 					logger.Error("retryPolicy.RetryBackOff.MaxInterval is lesser than RetryPolicy.RetryBackOff.MaxInterval. Ignoring MaxInterval", "max_interval", in.RetryPolicy.RetryBackOff.MaxInterval.Duration.Seconds(), "base_interval", in.RetryPolicy.RetryBackOff.BaseInterval.Duration.Seconds())
 				} else {
-					retryPolicy.GetRetryBackOff().MaxInterval = DurationToProto(in.RetryPolicy.RetryBackOff.MaxInterval.Duration)
+					retryPolicy.GetRetryBackOff().MaxInterval = utils.DurationToProto(in.RetryPolicy.RetryBackOff.MaxInterval.Duration)
 				}
 			}
 		}
 		grpcService.RetryPolicy = retryPolicy
 	}
 	return grpcService, nil
-}
-
-// DurationToProto converts a go Duration to a protobuf Duration.
-func DurationToProto(d time.Duration) *google_duration.Duration {
-	return &google_duration.Duration{
-		Seconds: int64(d) / int64(time.Second),
-		Nanos:   int32(int64(d) % int64(time.Second)),
-	}
 }

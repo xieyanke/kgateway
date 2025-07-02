@@ -75,6 +75,77 @@ func TestTracingConverter(t *testing.T) {
 				},
 			},
 			{
+				name: "OTel Tracing with nil tags",
+				config: &v1alpha1.Tracing{
+					Provider: &v1alpha1.TracingProvider{
+						OpenTelemetry: &v1alpha1.OpenTelemetryTracingConfig{
+							GrpcService: &v1alpha1.CommonGrpcService{
+								BackendRef: &gwv1.BackendRef{
+									BackendObjectReference: gwv1.BackendObjectReference{
+										Name: "test-service",
+									},
+								},
+							},
+							ServiceName: "my:service",
+						},
+					},
+					CustomTags: nil,
+				},
+				expected: &envoy_hcm.HttpConnectionManager_Tracing{
+					Provider: &tracev3.Tracing_Http{
+						Name: "envoy.tracers.opentelemetry",
+						ConfigType: &tracev3.Tracing_Http_TypedConfig{
+							TypedConfig: mustMessageToAny(t, &tracev3.OpenTelemetryConfig{
+								GrpcService: &corev3.GrpcService{
+									TargetSpecifier: &corev3.GrpcService_EnvoyGrpc_{
+										EnvoyGrpc: &corev3.GrpcService_EnvoyGrpc{
+											ClusterName: "backend_default_test-service_0",
+										},
+									},
+								},
+								ServiceName: "my:service",
+							}),
+						},
+					},
+				},
+			},
+			{
+				name: "OTel Tracing with nil tags",
+				config: &v1alpha1.Tracing{
+					Provider: &v1alpha1.TracingProvider{
+						OpenTelemetry: &v1alpha1.OpenTelemetryTracingConfig{
+							GrpcService: &v1alpha1.CommonGrpcService{
+								BackendRef: &gwv1.BackendRef{
+									BackendObjectReference: gwv1.BackendObjectReference{
+										Name: "test-service",
+									},
+								},
+							},
+							ServiceName: "my:service",
+						},
+					},
+					CustomTags: []v1alpha1.CustomTag{},
+				},
+				expected: &envoy_hcm.HttpConnectionManager_Tracing{
+					Provider: &tracev3.Tracing_Http{
+						Name: "envoy.tracers.opentelemetry",
+						ConfigType: &tracev3.Tracing_Http_TypedConfig{
+							TypedConfig: mustMessageToAny(t, &tracev3.OpenTelemetryConfig{
+								GrpcService: &corev3.GrpcService{
+									TargetSpecifier: &corev3.GrpcService_EnvoyGrpc_{
+										EnvoyGrpc: &corev3.GrpcService_EnvoyGrpc{
+											ClusterName: "backend_default_test-service_0",
+										},
+									},
+								},
+								ServiceName: "my:service",
+							}),
+						},
+					},
+					CustomTags: []*tracingv3.CustomTag{},
+				},
+			},
+			{
 				name: "OTel Tracing full config",
 				config: &v1alpha1.Tracing{
 					Provider: &v1alpha1.TracingProvider{
