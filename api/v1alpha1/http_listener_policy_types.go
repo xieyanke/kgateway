@@ -34,30 +34,60 @@ type HTTPListenerPolicyList struct {
 	Items           []HTTPListenerPolicy `json:"items"`
 }
 
+// HTTPListenerPolicySpec defines the desired state of a HTTP listener policy.
 type HTTPListenerPolicySpec struct {
 	// TargetRefs specifies the target resources by reference to attach the policy to.
 	// +optional
 	//
 	// +kubebuilder:validation:MinItems=1
 	// +kubebuilder:validation:MaxItems=16
+	// +kubebuilder:validation:XValidation:rule="self.all(r, r.kind == 'Gateway' && (!has(r.group) || r.group == 'gateway.networking.k8s.io'))",message="targetRefs may only reference Gateway resources"
 	TargetRefs []LocalPolicyTargetReference `json:"targetRefs,omitempty"`
 
 	// TargetSelectors specifies the target selectors to select resources to attach the policy to.
 	// +optional
+	// +kubebuilder:validation:XValidation:rule="self.all(r, r.kind == 'Gateway' && (!has(r.group) || r.group == 'gateway.networking.k8s.io'))",message="targetSelectors may only reference Gateway resources"
 	TargetSelectors []LocalPolicyTargetSelector `json:"targetSelectors,omitempty"`
 
 	// AccessLoggingConfig contains various settings for Envoy's access logging service.
 	// See here for more information: https://www.envoyproxy.io/docs/envoy/v1.33.0/api-v3/config/accesslog/v3/accesslog.proto
 	// +kubebuilder:validation:Items={type=object}
+	//
+	// +kubebuilder:validation:MaxItems=16
 	AccessLog []AccessLog `json:"accessLog,omitempty"`
+
+	// Tracing contains various settings for Envoy's OpenTelemetry tracer.
+	// See here for more information: https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/trace/v3/opentelemetry.proto.html
+	// +optional
+	Tracing *Tracing `json:"tracing,omitempty"`
 
 	// UpgradeConfig contains configuration for HTTP upgrades like WebSocket.
 	// See here for more information: https://www.envoyproxy.io/docs/envoy/v1.34.1/intro/arch_overview/http/upgrades.html
 	UpgradeConfig *UpgradeConfig `json:"upgradeConfig,omitempty"`
 
-	// Tracing contains various settings for Envoy's OpenTelemetry tracer.
-	// See here for more information: https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/trace/v3/opentelemetry.proto.html
-	Tracing *Tracing `json:"tracing,omitempty"`
+	// UseRemoteAddress determines whether to use the remote address for the original client.
+	// When true, Envoy will use the remote address of the connection as the client address.
+	// When false, Envoy will use the X-Forwarded-For header to determine the client address.
+	// See here for more information: https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/filters/network/http_connection_manager/v3/http_connection_manager.proto#envoy-v3-api-field-extensions-filters-network-http-connection-manager-v3-httpconnectionmanager-use-remote-address
+	// +optional
+	UseRemoteAddress *bool `json:"useRemoteAddress,omitempty"`
+
+	// XffNumTrustedHops is the number of additional ingress proxy hops from the right side of the X-Forwarded-For HTTP header to trust when determining the origin client's IP address.
+	// See here for more information: https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/filters/network/http_connection_manager/v3/http_connection_manager.proto#envoy-v3-api-field-extensions-filters-network-http-connection-manager-v3-httpconnectionmanager-xff-num-trusted-hops
+	// +kubebuilder:validation:Minimum=0
+	// +optional
+	XffNumTrustedHops *uint32 `json:"xffNumTrustedHops,omitempty"`
+
+	// ServerHeaderTransformation determines how the server header is transformed.
+	// See here for more information: https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/filters/network/http_connection_manager/v3/http_connection_manager.proto#envoy-v3-api-field-extensions-filters-network-http-connection-manager-v3-httpconnectionmanager-server-header-transformation
+	// +kubebuilder:validation:Enum=Overwrite;AppendIfAbsent;PassThrough
+	// +optional
+	ServerHeaderTransformation *ServerHeaderTransformation `json:"serverHeaderTransformation,omitempty"`
+
+	// StreamIdleTimeout is the idle timeout for HTTP streams.
+	// See here for more information: https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/filters/network/http_connection_manager/v3/http_connection_manager.proto#envoy-v3-api-field-extensions-filters-network-http-connection-manager-v3-httpconnectionmanager-stream-idle-timeout
+	// +optional
+	StreamIdleTimeout *metav1.Duration `json:"streamIdleTimeout,omitempty"`
 }
 
 // AccessLog represents the top-level access log configuration.
@@ -76,7 +106,7 @@ type AccessLog struct {
 }
 
 // FileSink represents the file sink configuration for access logs.
-// +kubebuilder:validation:XValidation:message="only one of 'StringFormat' or 'JsonFormat' may be set",rule="(has(self.stringFormat) && !has(self.jsonFormat)) || (!has(self.stringFormat) && has(self.jsonFormat))"
+// +kubebuilder:validation:ExactlyOneOf=stringFormat;jsonFormat
 type FileSink struct {
 	// the file path to which the file access logging service will sink
 	// +required
@@ -587,3 +617,15 @@ type UpgradeConfig struct {
 	// +kubebuilder:validation:MinItems=1
 	EnabledUpgrades []string `json:"enabledUpgrades,omitempty"`
 }
+
+// ServerHeaderTransformation determines how the server header is transformed.
+type ServerHeaderTransformation string
+
+const (
+	// OverwriteServerHeaderTransformation overwrites the server header.
+	OverwriteServerHeaderTransformation ServerHeaderTransformation = "Overwrite"
+	// AppendIfAbsentServerHeaderTransformation appends to the server header if it's not present.
+	AppendIfAbsentServerHeaderTransformation ServerHeaderTransformation = "AppendIfAbsent"
+	// PassThroughServerHeaderTransformation passes through the server header unchanged.
+	PassThroughServerHeaderTransformation ServerHeaderTransformation = "PassThrough"
+)
