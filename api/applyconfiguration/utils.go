@@ -81,20 +81,20 @@ func ForKind(kind schema.GroupVersionKind) interface{} {
 		return &apiv1alpha1.CorsPolicyApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("CSRFPolicy"):
 		return &apiv1alpha1.CSRFPolicyApplyConfiguration{}
+	case v1alpha1.SchemeGroupVersion.WithKind("CustomAttribute"):
+		return &apiv1alpha1.CustomAttributeApplyConfiguration{}
+	case v1alpha1.SchemeGroupVersion.WithKind("CustomAttributeEnvironment"):
+		return &apiv1alpha1.CustomAttributeEnvironmentApplyConfiguration{}
+	case v1alpha1.SchemeGroupVersion.WithKind("CustomAttributeHeader"):
+		return &apiv1alpha1.CustomAttributeHeaderApplyConfiguration{}
+	case v1alpha1.SchemeGroupVersion.WithKind("CustomAttributeLiteral"):
+		return &apiv1alpha1.CustomAttributeLiteralApplyConfiguration{}
+	case v1alpha1.SchemeGroupVersion.WithKind("CustomAttributeMetadata"):
+		return &apiv1alpha1.CustomAttributeMetadataApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("CustomLabel"):
 		return &apiv1alpha1.CustomLabelApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("CustomResponse"):
 		return &apiv1alpha1.CustomResponseApplyConfiguration{}
-	case v1alpha1.SchemeGroupVersion.WithKind("CustomTag"):
-		return &apiv1alpha1.CustomTagApplyConfiguration{}
-	case v1alpha1.SchemeGroupVersion.WithKind("CustomTagEnvironment"):
-		return &apiv1alpha1.CustomTagEnvironmentApplyConfiguration{}
-	case v1alpha1.SchemeGroupVersion.WithKind("CustomTagHeader"):
-		return &apiv1alpha1.CustomTagHeaderApplyConfiguration{}
-	case v1alpha1.SchemeGroupVersion.WithKind("CustomTagLiteral"):
-		return &apiv1alpha1.CustomTagLiteralApplyConfiguration{}
-	case v1alpha1.SchemeGroupVersion.WithKind("CustomTagMetadata"):
-		return &apiv1alpha1.CustomTagMetadataApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("DirectResponse"):
 		return &apiv1alpha1.DirectResponseApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("DirectResponseSpec"):

@@ -679,12 +679,7 @@ spec:
                     == 'gateway.networking.k8s.io'))
               tracing:
                 properties:
-                  clientSampling:
-                    format: int32
-                    maximum: 100
-                    minimum: 0
-                    type: integer
-                  customTags:
+                  attributes:
                     items:
                       maxProperties: 2
                       minProperties: 1
@@ -736,6 +731,8 @@ spec:
                           required:
                           - metadataKey
                           type: object
+                        name:
+                          type: string
                         requestHeader:
                           properties:
                             defaultValue:
@@ -745,12 +742,15 @@ spec:
                           required:
                           - name
                           type: object
-                        tag:
-                          type: string
                       required:
-                      - tag
+                      - name
                       type: object
                     type: array
+                  clientSampling:
+                    format: int32
+                    maximum: 100
+                    minimum: 0
+                    type: integer
                   maxPathTagLength:
                     format: int32
                     type: integer

@@ -75,7 +75,7 @@ func TestTracingConverter(t *testing.T) {
 				},
 			},
 			{
-				name: "OTel Tracing with nil tags",
+				name: "OTel Tracing with nil attributes",
 				config: &v1alpha1.Tracing{
 					Provider: &v1alpha1.TracingProvider{
 						OpenTelemetry: &v1alpha1.OpenTelemetryTracingConfig{
@@ -89,7 +89,7 @@ func TestTracingConverter(t *testing.T) {
 							ServiceName: "my:service",
 						},
 					},
-					CustomTags: nil,
+					Attributes: nil,
 				},
 				expected: &envoy_hcm.HttpConnectionManager_Tracing{
 					Provider: &tracev3.Tracing_Http{
@@ -110,7 +110,7 @@ func TestTracingConverter(t *testing.T) {
 				},
 			},
 			{
-				name: "OTel Tracing with nil tags",
+				name: "OTel Tracing with nil attributes",
 				config: &v1alpha1.Tracing{
 					Provider: &v1alpha1.TracingProvider{
 						OpenTelemetry: &v1alpha1.OpenTelemetryTracingConfig{
@@ -124,7 +124,7 @@ func TestTracingConverter(t *testing.T) {
 							ServiceName: "my:service",
 						},
 					},
-					CustomTags: []v1alpha1.CustomTag{},
+					Attributes: []v1alpha1.CustomAttribute{},
 				},
 				expected: &envoy_hcm.HttpConnectionManager_Tracing{
 					Provider: &tracev3.Tracing_Http{
@@ -171,30 +171,30 @@ func TestTracingConverter(t *testing.T) {
 					OverallSampling:  pointer.Uint32(65),
 					Verbose:          pointer.Bool(true),
 					MaxPathTagLength: pointer.Uint32(127),
-					CustomTags: []v1alpha1.CustomTag{
+					Attributes: []v1alpha1.CustomAttribute{
 						{
-							Tag: "Literal",
-							Literal: &v1alpha1.CustomTagLiteral{
+							Name: "Literal",
+							Literal: &v1alpha1.CustomAttributeLiteral{
 								Value: "Literal Value",
 							},
 						},
 						{
-							Tag: "Environment",
-							Environment: &v1alpha1.CustomTagEnvironment{
+							Name: "Environment",
+							Environment: &v1alpha1.CustomAttributeEnvironment{
 								Name:         "Env",
 								DefaultValue: pointer.String("Environment Value"),
 							},
 						},
 						{
-							Tag: "Request Header",
-							RequestHeader: &v1alpha1.CustomTagHeader{
+							Name: "Request Header",
+							RequestHeader: &v1alpha1.CustomAttributeHeader{
 								Name:         "Header",
 								DefaultValue: pointer.String("Request"),
 							},
 						},
 						{
-							Tag: "Metadata Request",
-							Metadata: &v1alpha1.CustomTagMetadata{
+							Name: "Metadata Request",
+							Metadata: &v1alpha1.CustomAttributeMetadata{
 								Kind: v1alpha1.MetadataKindRequest,
 								MetadataKey: &v1alpha1.MetadataKey{
 									Key: "Request",
@@ -205,8 +205,8 @@ func TestTracingConverter(t *testing.T) {
 							},
 						},
 						{
-							Tag: "Metadata Route",
-							Metadata: &v1alpha1.CustomTagMetadata{
+							Name: "Metadata Route",
+							Metadata: &v1alpha1.CustomAttributeMetadata{
 								Kind: v1alpha1.MetadataKindRoute,
 								MetadataKey: &v1alpha1.MetadataKey{
 									Key: "Route",
@@ -217,8 +217,8 @@ func TestTracingConverter(t *testing.T) {
 							},
 						},
 						{
-							Tag: "Metadata Cluster",
-							Metadata: &v1alpha1.CustomTagMetadata{
+							Name: "Metadata Cluster",
+							Metadata: &v1alpha1.CustomAttributeMetadata{
 								Kind: v1alpha1.MetadataKindCluster,
 								MetadataKey: &v1alpha1.MetadataKey{
 									Key: "Cluster",
@@ -229,8 +229,8 @@ func TestTracingConverter(t *testing.T) {
 							},
 						},
 						{
-							Tag: "Metadata Host",
-							Metadata: &v1alpha1.CustomTagMetadata{
+							Name: "Metadata Host",
+							Metadata: &v1alpha1.CustomAttributeMetadata{
 								Kind: v1alpha1.MetadataKindHost,
 								MetadataKey: &v1alpha1.MetadataKey{
 									Key: "Host",

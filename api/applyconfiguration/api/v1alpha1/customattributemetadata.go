@@ -6,24 +6,24 @@ import (
 	apiv1alpha1 "github.com/kgateway-dev/kgateway/v2/api/v1alpha1"
 )
 
-// CustomTagMetadataApplyConfiguration represents a declarative configuration of the CustomTagMetadata type for use
+// CustomAttributeMetadataApplyConfiguration represents a declarative configuration of the CustomAttributeMetadata type for use
 // with apply.
-type CustomTagMetadataApplyConfiguration struct {
+type CustomAttributeMetadataApplyConfiguration struct {
 	Kind         *apiv1alpha1.MetadataKind      `json:"kind,omitempty"`
 	MetadataKey  *MetadataKeyApplyConfiguration `json:"metadataKey,omitempty"`
 	DefaultValue *string                        `json:"defaultValue,omitempty"`
 }
 
-// CustomTagMetadataApplyConfiguration constructs a declarative configuration of the CustomTagMetadata type for use with
+// CustomAttributeMetadataApplyConfiguration constructs a declarative configuration of the CustomAttributeMetadata type for use with
 // apply.
-func CustomTagMetadata() *CustomTagMetadataApplyConfiguration {
-	return &CustomTagMetadataApplyConfiguration{}
+func CustomAttributeMetadata() *CustomAttributeMetadataApplyConfiguration {
+	return &CustomAttributeMetadataApplyConfiguration{}
 }
 
 // WithKind sets the Kind field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the Kind field is set to the value of the last call.
-func (b *CustomTagMetadataApplyConfiguration) WithKind(value apiv1alpha1.MetadataKind) *CustomTagMetadataApplyConfiguration {
+func (b *CustomAttributeMetadataApplyConfiguration) WithKind(value apiv1alpha1.MetadataKind) *CustomAttributeMetadataApplyConfiguration {
 	b.Kind = &value
 	return b
 }
@@ -31,7 +31,7 @@ func (b *CustomTagMetadataApplyConfiguration) WithKind(value apiv1alpha1.Metadat
 // WithMetadataKey sets the MetadataKey field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the MetadataKey field is set to the value of the last call.
-func (b *CustomTagMetadataApplyConfiguration) WithMetadataKey(value *MetadataKeyApplyConfiguration) *CustomTagMetadataApplyConfiguration {
+func (b *CustomAttributeMetadataApplyConfiguration) WithMetadataKey(value *MetadataKeyApplyConfiguration) *CustomAttributeMetadataApplyConfiguration {
 	b.MetadataKey = value
 	return b
 }
@@ -39,7 +39,7 @@ func (b *CustomTagMetadataApplyConfiguration) WithMetadataKey(value *MetadataKey
 // WithDefaultValue sets the DefaultValue field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the DefaultValue field is set to the value of the last call.
-func (b *CustomTagMetadataApplyConfiguration) WithDefaultValue(value string) *CustomTagMetadataApplyConfiguration {
+func (b *CustomAttributeMetadataApplyConfiguration) WithDefaultValue(value string) *CustomAttributeMetadataApplyConfiguration {
 	b.DefaultValue = &value
 	return b
 }

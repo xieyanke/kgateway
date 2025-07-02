@@ -417,9 +417,9 @@ type Tracing struct {
 	// +kubebuilder:validation:Optional
 	MaxPathTagLength *uint32 `json:"maxPathTagLength,omitempty"`
 
-	// A list of custom tags with unique tag name to create tags for the active span.
+	// A list of attributes with a unique name to create attributes for the active span.
 	// +kubebuilder:validation:Optional
-	CustomTags []CustomTag `json:"customTags,omitempty"`
+	Attributes []CustomAttribute `json:"attributes,omitempty"`
 
 	// Create separate tracing span for each upstream request if true. Defaults to false
 	// Link to envoy docs for more info
@@ -427,77 +427,77 @@ type Tracing struct {
 	SpawnUpstreamSpan *bool `json:"spawnUpstreamSpan,omitempty"`
 }
 
-// Describes custom tags for the active span.
+// Describes attributes for the active span.
 // Ref: https://www.envoyproxy.io/docs/envoy/latest/api-v3/type/tracing/v3/custom_tag.proto#envoy-v3-api-msg-type-tracing-v3-customtag
 // +kubebuilder:validation:MaxProperties=2
 // +kubebuilder:validation:MinProperties=1
-type CustomTag struct {
-	// Used to populate the tag name
+type CustomAttribute struct {
+	// The name of the attribute
 	// +kubebuilder:validation:Required
-	Tag string `json:"tag,omitempty"`
+	Name string `json:"name,omitempty"`
 
-	// A literal custom tag.
+	// A literal attribute value.
 	// +kubebuilder:validation:Optional
-	Literal *CustomTagLiteral `json:"literal,omitempty"`
+	Literal *CustomAttributeLiteral `json:"literal,omitempty"`
 
-	// An environment custom tag.
+	// An environment attribute value.
 	// +kubebuilder:validation:Optional
-	Environment *CustomTagEnvironment `json:"environment,omitempty"`
+	Environment *CustomAttributeEnvironment `json:"environment,omitempty"`
 
-	// A request header custom tag.
+	// A request header attribute value.
 	// +kubebuilder:validation:Optional
-	RequestHeader *CustomTagHeader `json:"requestHeader,omitempty"`
+	RequestHeader *CustomAttributeHeader `json:"requestHeader,omitempty"`
 
-	// A custom tag to obtain tag value from the metadata.
+	// An attribute to obtain the value from the metadata.
 	// +kubebuilder:validation:Optional
-	Metadata *CustomTagMetadata `json:"metadata,omitempty"`
+	Metadata *CustomAttributeMetadata `json:"metadata,omitempty"`
 }
 
-// Literal type custom tag with static value for the tag value.
+// Literal type attribute with a static value.
 // Ref: https://www.envoyproxy.io/docs/envoy/latest/api-v3/type/tracing/v3/custom_tag.proto#type-tracing-v3-customtag-literal
-type CustomTagLiteral struct {
-	// Static literal value to populate the tag value.
+type CustomAttributeLiteral struct {
+	// Static literal value to populate the attribute value.
 	// +kubebuilder:validation:Required
 	Value string `json:"value,omitempty"`
 }
 
-// Environment type custom tag with environment name and default value.
+// Environment type attribute with environment name and default value.
 // Ref: https://www.envoyproxy.io/docs/envoy/latest/api-v3/type/tracing/v3/custom_tag.proto#type-tracing-v3-customtag-environment
-type CustomTagEnvironment struct {
-	// Environment variable name to obtain the value to populate the tag value.
+type CustomAttributeEnvironment struct {
+	// Environment variable name to obtain the value to populate the attribute value.
 	// +kubebuilder:validation:Required
 	Name string `json:"name,omitempty"`
 
-	// When the environment variable is not found, the tag value will be populated with this default value if specified,
-	// otherwise no tag will be populated.
+	// When the environment variable is not found, the attribute value will be populated with this default value if specified,
+	// otherwise no attribute will be populated.
 	// +kubebuilder:validation:Optional
 	DefaultValue *string `json:"defaultValue,omitempty"`
 }
 
-// Header type custom tag with header name and default value.
+// Header type attribute with header name and default value.
 // https://www.envoyproxy.io/docs/envoy/latest/api-v3/type/tracing/v3/custom_tag.proto#type-tracing-v3-customtag-header
-type CustomTagHeader struct {
-	// Header name to obtain the value to populate the tag value.
+type CustomAttributeHeader struct {
+	// Header name to obtain the value to populate the attribute value.
 	// +kubebuilder:validation:Required
 	Name string `json:"name,omitempty"`
 
-	// When the header does not exist, the tag value will be populated with this default value if specified,
-	// otherwise no tag will be populated.
+	// When the header does not exist, the attribute value will be populated with this default value if specified,
+	// otherwise no attribute will be populated.
 	// +kubebuilder:validation:Optional
 	DefaultValue *string `json:"defaultValue,omitempty"`
 }
 
-// Metadata type custom tag using MetadataKey to retrieve the protobuf value from Metadata, and populate the tag value with the canonical JSON representation of it.
+// Metadata type attribute using MetadataKey to retrieve the protobuf value from Metadata, and populate the attribute value with the canonical JSON representation of it.
 // Ref: https://www.envoyproxy.io/docs/envoy/latest/api-v3/type/tracing/v3/custom_tag.proto#type-tracing-v3-customtag-metadata
-type CustomTagMetadata struct {
-	// Specify what kind of metadata to obtain tag value from
+type CustomAttributeMetadata struct {
+	// Specify what kind of metadata to obtain attribute value from
 	Kind MetadataKind `json:"kind,omitempty"`
 
-	// Metadata key to define the path to retrieve the tag value.
+	// Metadata key to define the path to retrieve the attribute value.
 	// +kubebuilder:validation:Required
 	MetadataKey *MetadataKey `json:"metadataKey,omitempty"`
 
-	// When no valid metadata is found, the tag value would be populated with this default value if specified, otherwise no tag would be populated.
+	// When no valid metadata is found, the attribute value would be populated with this default value if specified, otherwise no attribute would be populated.
 	// +kubebuilder:validation:Optional
 	DefaultValue *string `json:"defaultValue,omitempty"`
 }

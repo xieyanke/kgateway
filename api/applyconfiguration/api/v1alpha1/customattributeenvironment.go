@@ -2,23 +2,23 @@
 
 package v1alpha1
 
-// CustomTagHeaderApplyConfiguration represents a declarative configuration of the CustomTagHeader type for use
+// CustomAttributeEnvironmentApplyConfiguration represents a declarative configuration of the CustomAttributeEnvironment type for use
 // with apply.
-type CustomTagHeaderApplyConfiguration struct {
+type CustomAttributeEnvironmentApplyConfiguration struct {
 	Name         *string `json:"name,omitempty"`
 	DefaultValue *string `json:"defaultValue,omitempty"`
 }
 
-// CustomTagHeaderApplyConfiguration constructs a declarative configuration of the CustomTagHeader type for use with
+// CustomAttributeEnvironmentApplyConfiguration constructs a declarative configuration of the CustomAttributeEnvironment type for use with
 // apply.
-func CustomTagHeader() *CustomTagHeaderApplyConfiguration {
-	return &CustomTagHeaderApplyConfiguration{}
+func CustomAttributeEnvironment() *CustomAttributeEnvironmentApplyConfiguration {
+	return &CustomAttributeEnvironmentApplyConfiguration{}
 }
 
 // WithName sets the Name field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the Name field is set to the value of the last call.
-func (b *CustomTagHeaderApplyConfiguration) WithName(value string) *CustomTagHeaderApplyConfiguration {
+func (b *CustomAttributeEnvironmentApplyConfiguration) WithName(value string) *CustomAttributeEnvironmentApplyConfiguration {
 	b.Name = &value
 	return b
 }
@@ -26,7 +26,7 @@ func (b *CustomTagHeaderApplyConfiguration) WithName(value string) *CustomTagHea
 // WithDefaultValue sets the DefaultValue field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the DefaultValue field is set to the value of the last call.
-func (b *CustomTagHeaderApplyConfiguration) WithDefaultValue(value string) *CustomTagHeaderApplyConfiguration {
+func (b *CustomAttributeEnvironmentApplyConfiguration) WithDefaultValue(value string) *CustomAttributeEnvironmentApplyConfiguration {
 	b.DefaultValue = &value
 	return b
 }

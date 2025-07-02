@@ -20,10 +20,10 @@ spec:
             namespace: default
             port: 4317
     spawnUpstreamSpan: true
-    customTags:
-      - tag: custom
+    attributes:
+      - name: custom
         literal:
           value: literal
-      - tag: request
+      - name: request
         requestHeader:
           name: x-header-tag

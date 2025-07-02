@@ -88,12 +88,12 @@ func translateTracing(
 			Value: *config.MaxPathTagLength,
 		}
 	}
-	if len(config.CustomTags) != 0 {
-		tracingConfig.CustomTags = make([]*tracingv3.CustomTag, len(config.CustomTags))
-		for i, ct := range config.CustomTags {
+	if len(config.Attributes) != 0 {
+		tracingConfig.CustomTags = make([]*tracingv3.CustomTag, len(config.Attributes))
+		for i, ct := range config.Attributes {
 			if ct.Literal != nil {
 				tracingConfig.GetCustomTags()[i] = &tracingv3.CustomTag{
-					Tag: ct.Tag,
+					Tag: ct.Name,
 					Type: &tracingv3.CustomTag_Literal_{
 						Literal: &tracingv3.CustomTag_Literal{
 							Value: ct.Literal.Value,
@@ -114,7 +114,7 @@ func translateTracing(
 				}
 
 				tracingConfig.GetCustomTags()[i] = &tracingv3.CustomTag{
-					Tag:  ct.Tag,
+					Tag:  ct.Name,
 					Type: tagType,
 				}
 				continue
@@ -131,7 +131,7 @@ func translateTracing(
 				}
 
 				tracingConfig.GetCustomTags()[i] = &tracingv3.CustomTag{
-					Tag:  ct.Tag,
+					Tag:  ct.Name,
 					Type: tagType,
 				}
 				continue
@@ -190,7 +190,7 @@ func translateTracing(
 				}
 
 				tracingConfig.GetCustomTags()[i] = &tracingv3.CustomTag{
-					Tag:  ct.Tag,
+					Tag:  ct.Name,
 					Type: tagType,
 				}
 				continue

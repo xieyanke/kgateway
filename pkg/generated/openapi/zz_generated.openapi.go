@@ -52,13 +52,13 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/kgateway-dev/kgateway/v2/api/v1alpha1.CommonHttpProtocolOptions":                 schema_kgateway_v2_api_v1alpha1_CommonHttpProtocolOptions(ref),
 		"github.com/kgateway-dev/kgateway/v2/api/v1alpha1.ComparisonFilter":                          schema_kgateway_v2_api_v1alpha1_ComparisonFilter(ref),
 		"github.com/kgateway-dev/kgateway/v2/api/v1alpha1.CorsPolicy":                                schema_kgateway_v2_api_v1alpha1_CorsPolicy(ref),
+		"github.com/kgateway-dev/kgateway/v2/api/v1alpha1.CustomAttribute":                           schema_kgateway_v2_api_v1alpha1_CustomAttribute(ref),
+		"github.com/kgateway-dev/kgateway/v2/api/v1alpha1.CustomAttributeEnvironment":                schema_kgateway_v2_api_v1alpha1_CustomAttributeEnvironment(ref),
+		"github.com/kgateway-dev/kgateway/v2/api/v1alpha1.CustomAttributeHeader":                     schema_kgateway_v2_api_v1alpha1_CustomAttributeHeader(ref),
+		"github.com/kgateway-dev/kgateway/v2/api/v1alpha1.CustomAttributeLiteral":                    schema_kgateway_v2_api_v1alpha1_CustomAttributeLiteral(ref),
+		"github.com/kgateway-dev/kgateway/v2/api/v1alpha1.CustomAttributeMetadata":                   schema_kgateway_v2_api_v1alpha1_CustomAttributeMetadata(ref),
 		"github.com/kgateway-dev/kgateway/v2/api/v1alpha1.CustomLabel":                               schema_kgateway_v2_api_v1alpha1_CustomLabel(ref),
 		"github.com/kgateway-dev/kgateway/v2/api/v1alpha1.CustomResponse":                            schema_kgateway_v2_api_v1alpha1_CustomResponse(ref),
-		"github.com/kgateway-dev/kgateway/v2/api/v1alpha1.CustomTag":                                 schema_kgateway_v2_api_v1alpha1_CustomTag(ref),
-		"github.com/kgateway-dev/kgateway/v2/api/v1alpha1.CustomTagEnvironment":                      schema_kgateway_v2_api_v1alpha1_CustomTagEnvironment(ref),
-		"github.com/kgateway-dev/kgateway/v2/api/v1alpha1.CustomTagHeader":                           schema_kgateway_v2_api_v1alpha1_CustomTagHeader(ref),
-		"github.com/kgateway-dev/kgateway/v2/api/v1alpha1.CustomTagLiteral":                          schema_kgateway_v2_api_v1alpha1_CustomTagLiteral(ref),
-		"github.com/kgateway-dev/kgateway/v2/api/v1alpha1.CustomTagMetadata":                         schema_kgateway_v2_api_v1alpha1_CustomTagMetadata(ref),
 		"github.com/kgateway-dev/kgateway/v2/api/v1alpha1.DirectResponse":                            schema_kgateway_v2_api_v1alpha1_DirectResponse(ref),
 		"github.com/kgateway-dev/kgateway/v2/api/v1alpha1.DirectResponseList":                        schema_kgateway_v2_api_v1alpha1_DirectResponseList(ref),
 		"github.com/kgateway-dev/kgateway/v2/api/v1alpha1.DirectResponseSpec":                        schema_kgateway_v2_api_v1alpha1_DirectResponseSpec(ref),
@@ -2285,6 +2285,161 @@ func schema_kgateway_v2_api_v1alpha1_CorsPolicy(ref common.ReferenceCallback) co
 	}
 }
 
+func schema_kgateway_v2_api_v1alpha1_CustomAttribute(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "Describes attributes for the active span. Ref: https://www.envoyproxy.io/docs/envoy/latest/api-v3/type/tracing/v3/custom_tag.proto#envoy-v3-api-msg-type-tracing-v3-customtag",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"name": {
+						SchemaProps: spec.SchemaProps{
+							Description: "The name of the attribute",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"literal": {
+						SchemaProps: spec.SchemaProps{
+							Description: "A literal attribute value.",
+							Ref:         ref("github.com/kgateway-dev/kgateway/v2/api/v1alpha1.CustomAttributeLiteral"),
+						},
+					},
+					"environment": {
+						SchemaProps: spec.SchemaProps{
+							Description: "An environment attribute value.",
+							Ref:         ref("github.com/kgateway-dev/kgateway/v2/api/v1alpha1.CustomAttributeEnvironment"),
+						},
+					},
+					"requestHeader": {
+						SchemaProps: spec.SchemaProps{
+							Description: "A request header attribute value.",
+							Ref:         ref("github.com/kgateway-dev/kgateway/v2/api/v1alpha1.CustomAttributeHeader"),
+						},
+					},
+					"metadata": {
+						SchemaProps: spec.SchemaProps{
+							Description: "An attribute to obtain the value from the metadata.",
+							Ref:         ref("github.com/kgateway-dev/kgateway/v2/api/v1alpha1.CustomAttributeMetadata"),
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"github.com/kgateway-dev/kgateway/v2/api/v1alpha1.CustomAttributeEnvironment", "github.com/kgateway-dev/kgateway/v2/api/v1alpha1.CustomAttributeHeader", "github.com/kgateway-dev/kgateway/v2/api/v1alpha1.CustomAttributeLiteral", "github.com/kgateway-dev/kgateway/v2/api/v1alpha1.CustomAttributeMetadata"},
+	}
+}
+
+func schema_kgateway_v2_api_v1alpha1_CustomAttributeEnvironment(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "Environment type attribute with environment name and default value. Ref: https://www.envoyproxy.io/docs/envoy/latest/api-v3/type/tracing/v3/custom_tag.proto#type-tracing-v3-customtag-environment",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"name": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Environment variable name to obtain the value to populate the attribute value.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"defaultValue": {
+						SchemaProps: spec.SchemaProps{
+							Description: "When the environment variable is not found, the attribute value will be populated with this default value if specified, otherwise no attribute will be populated.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+				},
+			},
+		},
+	}
+}
+
+func schema_kgateway_v2_api_v1alpha1_CustomAttributeHeader(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "Header type attribute with header name and default value. https://www.envoyproxy.io/docs/envoy/latest/api-v3/type/tracing/v3/custom_tag.proto#type-tracing-v3-customtag-header",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"name": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Header name to obtain the value to populate the attribute value.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"defaultValue": {
+						SchemaProps: spec.SchemaProps{
+							Description: "When the header does not exist, the attribute value will be populated with this default value if specified, otherwise no attribute will be populated.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+				},
+			},
+		},
+	}
+}
+
+func schema_kgateway_v2_api_v1alpha1_CustomAttributeLiteral(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "Literal type attribute with a static value. Ref: https://www.envoyproxy.io/docs/envoy/latest/api-v3/type/tracing/v3/custom_tag.proto#type-tracing-v3-customtag-literal",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"value": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Static literal value to populate the attribute value.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+				},
+			},
+		},
+	}
+}
+
+func schema_kgateway_v2_api_v1alpha1_CustomAttributeMetadata(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "Metadata type attribute using MetadataKey to retrieve the protobuf value from Metadata, and populate the attribute value with the canonical JSON representation of it. Ref: https://www.envoyproxy.io/docs/envoy/latest/api-v3/type/tracing/v3/custom_tag.proto#type-tracing-v3-customtag-metadata",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"kind": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Specify what kind of metadata to obtain attribute value from",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"metadataKey": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Metadata key to define the path to retrieve the attribute value.",
+							Ref:         ref("github.com/kgateway-dev/kgateway/v2/api/v1alpha1.MetadataKey"),
+						},
+					},
+					"defaultValue": {
+						SchemaProps: spec.SchemaProps{
+							Description: "When no valid metadata is found, the attribute value would be populated with this default value if specified, otherwise no attribute would be populated.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"github.com/kgateway-dev/kgateway/v2/api/v1alpha1.MetadataKey"},
+	}
+}
+
 func schema_kgateway_v2_api_v1alpha1_CustomLabel(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
@@ -2352,161 +2507,6 @@ func schema_kgateway_v2_api_v1alpha1_CustomResponse(ref common.ReferenceCallback
 				},
 			},
 		},
-	}
-}
-
-func schema_kgateway_v2_api_v1alpha1_CustomTag(ref common.ReferenceCallback) common.OpenAPIDefinition {
-	return common.OpenAPIDefinition{
-		Schema: spec.Schema{
-			SchemaProps: spec.SchemaProps{
-				Description: "Describes custom tags for the active span. Ref: https://www.envoyproxy.io/docs/envoy/latest/api-v3/type/tracing/v3/custom_tag.proto#envoy-v3-api-msg-type-tracing-v3-customtag",
-				Type:        []string{"object"},
-				Properties: map[string]spec.Schema{
-					"tag": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Used to populate the tag name",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-					"literal": {
-						SchemaProps: spec.SchemaProps{
-							Description: "A literal custom tag.",
-							Ref:         ref("github.com/kgateway-dev/kgateway/v2/api/v1alpha1.CustomTagLiteral"),
-						},
-					},
-					"environment": {
-						SchemaProps: spec.SchemaProps{
-							Description: "An environment custom tag.",
-							Ref:         ref("github.com/kgateway-dev/kgateway/v2/api/v1alpha1.CustomTagEnvironment"),
-						},
-					},
-					"requestHeader": {
-						SchemaProps: spec.SchemaProps{
-							Description: "A request header custom tag.",
-							Ref:         ref("github.com/kgateway-dev/kgateway/v2/api/v1alpha1.CustomTagHeader"),
-						},
-					},
-					"metadata": {
-						SchemaProps: spec.SchemaProps{
-							Description: "A custom tag to obtain tag value from the metadata.",
-							Ref:         ref("github.com/kgateway-dev/kgateway/v2/api/v1alpha1.CustomTagMetadata"),
-						},
-					},
-				},
-			},
-		},
-		Dependencies: []string{
-			"github.com/kgateway-dev/kgateway/v2/api/v1alpha1.CustomTagEnvironment", "github.com/kgateway-dev/kgateway/v2/api/v1alpha1.CustomTagHeader", "github.com/kgateway-dev/kgateway/v2/api/v1alpha1.CustomTagLiteral", "github.com/kgateway-dev/kgateway/v2/api/v1alpha1.CustomTagMetadata"},
-	}
-}
-
-func schema_kgateway_v2_api_v1alpha1_CustomTagEnvironment(ref common.ReferenceCallback) common.OpenAPIDefinition {
-	return common.OpenAPIDefinition{
-		Schema: spec.Schema{
-			SchemaProps: spec.SchemaProps{
-				Description: "Environment type custom tag with environment name and default value. Ref: https://www.envoyproxy.io/docs/envoy/latest/api-v3/type/tracing/v3/custom_tag.proto#type-tracing-v3-customtag-environment",
-				Type:        []string{"object"},
-				Properties: map[string]spec.Schema{
-					"name": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Environment variable name to obtain the value to populate the tag value.",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-					"defaultValue": {
-						SchemaProps: spec.SchemaProps{
-							Description: "When the environment variable is not found, the tag value will be populated with this default value if specified, otherwise no tag will be populated.",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-				},
-			},
-		},
-	}
-}
-
-func schema_kgateway_v2_api_v1alpha1_CustomTagHeader(ref common.ReferenceCallback) common.OpenAPIDefinition {
-	return common.OpenAPIDefinition{
-		Schema: spec.Schema{
-			SchemaProps: spec.SchemaProps{
-				Description: "Header type custom tag with header name and default value. https://www.envoyproxy.io/docs/envoy/latest/api-v3/type/tracing/v3/custom_tag.proto#type-tracing-v3-customtag-header",
-				Type:        []string{"object"},
-				Properties: map[string]spec.Schema{
-					"name": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Header name to obtain the value to populate the tag value.",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-					"defaultValue": {
-						SchemaProps: spec.SchemaProps{
-							Description: "When the header does not exist, the tag value will be populated with this default value if specified, otherwise no tag will be populated.",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-				},
-			},
-		},
-	}
-}
-
-func schema_kgateway_v2_api_v1alpha1_CustomTagLiteral(ref common.ReferenceCallback) common.OpenAPIDefinition {
-	return common.OpenAPIDefinition{
-		Schema: spec.Schema{
-			SchemaProps: spec.SchemaProps{
-				Description: "Literal type custom tag with static value for the tag value. Ref: https://www.envoyproxy.io/docs/envoy/latest/api-v3/type/tracing/v3/custom_tag.proto#type-tracing-v3-customtag-literal",
-				Type:        []string{"object"},
-				Properties: map[string]spec.Schema{
-					"value": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Static literal value to populate the tag value.",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-				},
-			},
-		},
-	}
-}
-
-func schema_kgateway_v2_api_v1alpha1_CustomTagMetadata(ref common.ReferenceCallback) common.OpenAPIDefinition {
-	return common.OpenAPIDefinition{
-		Schema: spec.Schema{
-			SchemaProps: spec.SchemaProps{
-				Description: "Metadata type custom tag using MetadataKey to retrieve the protobuf value from Metadata, and populate the tag value with the canonical JSON representation of it. Ref: https://www.envoyproxy.io/docs/envoy/latest/api-v3/type/tracing/v3/custom_tag.proto#type-tracing-v3-customtag-metadata",
-				Type:        []string{"object"},
-				Properties: map[string]spec.Schema{
-					"kind": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Specify what kind of metadata to obtain tag value from",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-					"metadataKey": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Metadata key to define the path to retrieve the tag value.",
-							Ref:         ref("github.com/kgateway-dev/kgateway/v2/api/v1alpha1.MetadataKey"),
-						},
-					},
-					"defaultValue": {
-						SchemaProps: spec.SchemaProps{
-							Description: "When no valid metadata is found, the tag value would be populated with this default value if specified, otherwise no tag would be populated.",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-				},
-			},
-		},
-		Dependencies: []string{
-			"github.com/kgateway-dev/kgateway/v2/api/v1alpha1.MetadataKey"},
 	}
 }
 
@@ -6452,15 +6452,15 @@ func schema_kgateway_v2_api_v1alpha1_Tracing(ref common.ReferenceCallback) commo
 							Format:      "int64",
 						},
 					},
-					"customTags": {
+					"attributes": {
 						SchemaProps: spec.SchemaProps{
-							Description: "A list of custom tags with unique tag name to create tags for the active span.",
+							Description: "A list of attributes with a unique name to create attributes for the active span.",
 							Type:        []string{"array"},
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
 										Default: map[string]interface{}{},
-										Ref:     ref("github.com/kgateway-dev/kgateway/v2/api/v1alpha1.CustomTag"),
+										Ref:     ref("github.com/kgateway-dev/kgateway/v2/api/v1alpha1.CustomAttribute"),
 									},
 								},
 							},
@@ -6478,7 +6478,7 @@ func schema_kgateway_v2_api_v1alpha1_Tracing(ref common.ReferenceCallback) commo
 			},
 		},
 		Dependencies: []string{
-			"github.com/kgateway-dev/kgateway/v2/api/v1alpha1.CustomTag", "github.com/kgateway-dev/kgateway/v2/api/v1alpha1.TracingProvider"},
+			"github.com/kgateway-dev/kgateway/v2/api/v1alpha1.CustomAttribute", "github.com/kgateway-dev/kgateway/v2/api/v1alpha1.TracingProvider"},
 	}
 }
 

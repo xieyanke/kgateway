@@ -650,6 +650,60 @@ var schemaYAML = typed.YAMLObject(`types:
     - name: maxAge
       type:
         scalar: numeric
+- name: com.github.kgateway-dev.kgateway.v2.api.v1alpha1.CustomAttribute
+  map:
+    fields:
+    - name: environment
+      type:
+        namedType: com.github.kgateway-dev.kgateway.v2.api.v1alpha1.CustomAttributeEnvironment
+    - name: literal
+      type:
+        namedType: com.github.kgateway-dev.kgateway.v2.api.v1alpha1.CustomAttributeLiteral
+    - name: metadata
+      type:
+        namedType: com.github.kgateway-dev.kgateway.v2.api.v1alpha1.CustomAttributeMetadata
+    - name: name
+      type:
+        scalar: string
+    - name: requestHeader
+      type:
+        namedType: com.github.kgateway-dev.kgateway.v2.api.v1alpha1.CustomAttributeHeader
+- name: com.github.kgateway-dev.kgateway.v2.api.v1alpha1.CustomAttributeEnvironment
+  map:
+    fields:
+    - name: defaultValue
+      type:
+        scalar: string
+    - name: name
+      type:
+        scalar: string
+- name: com.github.kgateway-dev.kgateway.v2.api.v1alpha1.CustomAttributeHeader
+  map:
+    fields:
+    - name: defaultValue
+      type:
+        scalar: string
+    - name: name
+      type:
+        scalar: string
+- name: com.github.kgateway-dev.kgateway.v2.api.v1alpha1.CustomAttributeLiteral
+  map:
+    fields:
+    - name: value
+      type:
+        scalar: string
+- name: com.github.kgateway-dev.kgateway.v2.api.v1alpha1.CustomAttributeMetadata
+  map:
+    fields:
+    - name: defaultValue
+      type:
+        scalar: string
+    - name: kind
+      type:
+        scalar: string
+    - name: metadataKey
+      type:
+        namedType: com.github.kgateway-dev.kgateway.v2.api.v1alpha1.MetadataKey
 - name: com.github.kgateway-dev.kgateway.v2.api.v1alpha1.CustomLabel
   map:
     fields:
@@ -676,60 +730,6 @@ var schemaYAML = typed.YAMLObject(`types:
     - name: statusCode
       type:
         scalar: numeric
-- name: com.github.kgateway-dev.kgateway.v2.api.v1alpha1.CustomTag
-  map:
-    fields:
-    - name: environment
-      type:
-        namedType: com.github.kgateway-dev.kgateway.v2.api.v1alpha1.CustomTagEnvironment
-    - name: literal
-      type:
-        namedType: com.github.kgateway-dev.kgateway.v2.api.v1alpha1.CustomTagLiteral
-    - name: metadata
-      type:
-        namedType: com.github.kgateway-dev.kgateway.v2.api.v1alpha1.CustomTagMetadata
-    - name: requestHeader
-      type:
-        namedType: com.github.kgateway-dev.kgateway.v2.api.v1alpha1.CustomTagHeader
-    - name: tag
-      type:
-        scalar: string
-- name: com.github.kgateway-dev.kgateway.v2.api.v1alpha1.CustomTagEnvironment
-  map:
-    fields:
-    - name: defaultValue
-      type:
-        scalar: string
-    - name: name
-      type:
-        scalar: string
-- name: com.github.kgateway-dev.kgateway.v2.api.v1alpha1.CustomTagHeader
-  map:
-    fields:
-    - name: defaultValue
-      type:
-        scalar: string
-    - name: name
-      type:
-        scalar: string
-- name: com.github.kgateway-dev.kgateway.v2.api.v1alpha1.CustomTagLiteral
-  map:
-    fields:
-    - name: value
-      type:
-        scalar: string
-- name: com.github.kgateway-dev.kgateway.v2.api.v1alpha1.CustomTagMetadata
-  map:
-    fields:
-    - name: defaultValue
-      type:
-        scalar: string
-    - name: kind
-      type:
-        scalar: string
-    - name: metadataKey
-      type:
-        namedType: com.github.kgateway-dev.kgateway.v2.api.v1alpha1.MetadataKey
 - name: com.github.kgateway-dev.kgateway.v2.api.v1alpha1.DirectResponse
   map:
     fields:
@@ -2096,15 +2096,15 @@ var schemaYAML = typed.YAMLObject(`types:
 - name: com.github.kgateway-dev.kgateway.v2.api.v1alpha1.Tracing
   map:
     fields:
-    - name: clientSampling
-      type:
-        scalar: numeric
-    - name: customTags
+    - name: attributes
       type:
         list:
           elementType:
-            namedType: com.github.kgateway-dev.kgateway.v2.api.v1alpha1.CustomTag
+            namedType: com.github.kgateway-dev.kgateway.v2.api.v1alpha1.CustomAttribute
           elementRelationship: atomic
+    - name: clientSampling
+      type:
+        scalar: numeric
     - name: maxPathTagLength
       type:
         scalar: numeric
