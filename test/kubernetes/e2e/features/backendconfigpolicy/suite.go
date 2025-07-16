@@ -125,6 +125,7 @@ func (s *testingSuite) TestBackendConfigPolicy() {
 		err = anypb.UnmarshalTo(cfg, http2ProtocolOptions, proto.UnmarshalOptions{})
 		s.Assert().NoError(err)
 		s.Assert().NotNil(http2ProtocolOptions)
+		s.Assert().NotNil(http2ProtocolOptions.CommonHttpProtocolOptions)
 		s.Assert().Equal(int64(12), http2ProtocolOptions.CommonHttpProtocolOptions.IdleTimeout.Seconds)
 		s.Assert().Equal(uint32(17), http2ProtocolOptions.CommonHttpProtocolOptions.MaxHeadersCount.Value)
 		s.Assert().Equal(int64(32), http2ProtocolOptions.CommonHttpProtocolOptions.MaxStreamDuration.Seconds)
