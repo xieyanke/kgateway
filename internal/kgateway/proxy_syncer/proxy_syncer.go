@@ -40,6 +40,7 @@ import (
 	"github.com/kgateway-dev/kgateway/v2/internal/kgateway/utils/krtutil"
 	"github.com/kgateway-dev/kgateway/v2/internal/kgateway/wellknown"
 	"github.com/kgateway-dev/kgateway/v2/internal/kgateway/xds"
+	"github.com/kgateway-dev/kgateway/v2/pkg/leaderelector"
 	"github.com/kgateway-dev/kgateway/v2/pkg/logging"
 	plug "github.com/kgateway-dev/kgateway/v2/pkg/pluginsdk"
 	"github.com/kgateway-dev/kgateway/v2/pkg/reports"
@@ -76,6 +77,9 @@ type ProxySyncer struct {
 	listenerStatusMetrics statusSyncMetricsRecorder
 	policyStatusMetrics   statusSyncMetricsRecorder
 	xdsSnapshotsMetrics   krtcollections.CollectionMetricsRecorder
+
+	identity            leaderelector.Identity
+	leaderStartupAction *leaderelector.LeaderStartupAction
 }
 
 type GatewayXdsResources struct {
@@ -147,6 +151,7 @@ func NewProxySyncer(
 	commonCols *common.CommonCollections,
 	xdsCache envoycache.SnapshotCache,
 	agentGatewayClassName string,
+	identity leaderelector.Identity,
 ) *ProxySyncer {
 	return &ProxySyncer{
 		controllerName:        controllerName,
@@ -163,6 +168,8 @@ func NewProxySyncer(
 		listenerStatusMetrics: NewStatusSyncMetricsRecorder("ListenerSetStatusSyncer"),
 		policyStatusMetrics:   NewStatusSyncMetricsRecorder("PolicyStatusSyncer"),
 		xdsSnapshotsMetrics:   krtcollections.NewCollectionMetricsRecorder("ClientXDSSnapshots"),
+		identity:              identity,
+		leaderStartupAction:   leaderelector.NewLeaderStartupAction(identity),
 	}
 }
 
@@ -278,6 +285,8 @@ func (s *ProxySyncer) Init(ctx context.Context, krtopts krtutil.KrtOptions) {
 		s.plugins.HasSynced,
 		s.translator.HasSynced,
 	}
+
+	s.syncStatusOnElectionChange(ctx)
 }
 
 func mergeProxyReports(
@@ -375,54 +384,65 @@ func (s *ProxySyncer) Start(ctx context.Context) error {
 	logger.Info("caches warm!")
 
 	// caches are warm, now we can do registrations
-
-	// latestReport will be constantly updated to contain the merged status report for Kube Gateway status
-	// when timer ticks, we will use the state of the mergedReports at that point in time to sync the status to k8s
-	latestReportQueue := utils.NewAsyncQueue[reports.ReportMap]()
-	s.statusReport.Register(func(o krt.Event[report]) {
-		if o.Event == controllers.EventDelete {
-			// TODO: handle garbage collection (see: https://github.com/solo-io/solo-projects/issues/7086)
-			return
-		}
-		latestReportQueue.Enqueue(o.Latest().reportMap)
-	})
-
-	routeStatusLogger := logger.With("subcomponent", "routeStatusSyncer")
-	listenerSetStatusLogger := logger.With("subcomponent", "listenerSetStatusSyncer")
-	gatewayStatusLogger := logger.With("subcomponent", "gatewayStatusSyncer")
-	go func() {
-		for {
-			latestReport, err := latestReportQueue.Dequeue(ctx)
-			if err != nil {
+	leaderAction := func() {
+		// latestReport will be constantly updated to contain the merged status report for Kube Gateway status
+		// when timer ticks, we will use the state of the mergedReports at that point in time to sync the status to k8s
+		latestReportQueue := utils.NewAsyncQueue[reports.ReportMap]()
+		s.statusReport.Register(func(o krt.Event[report]) {
+			if o.Event == controllers.EventDelete {
+				// TODO: handle garbage collection (see: https://github.com/solo-io/solo-projects/issues/7086)
 				return
 			}
-			s.syncGatewayStatus(ctx, gatewayStatusLogger, latestReport)
-			s.syncListenerSetStatus(ctx, listenerSetStatusLogger, latestReport)
-			s.syncRouteStatus(ctx, routeStatusLogger, latestReport)
-			s.syncPolicyStatus(ctx, latestReport)
-		}
-	}()
-	latestBackendPolicyReportQueue := utils.NewAsyncQueue[reports.ReportMap]()
-	s.backendPolicyReport.Register(func(o krt.Event[report]) {
-		if o.Event == controllers.EventDelete {
-			return
-		}
-		latestBackendPolicyReportQueue.Enqueue(o.Latest().reportMap)
-	})
-	go func() {
-		for {
-			latestReport, err := latestBackendPolicyReportQueue.Dequeue(ctx)
-			if err != nil {
+			latestReportQueue.Enqueue(o.Latest().reportMap)
+		})
+
+		routeStatusLogger := logger.With("subcomponent", "routeStatusSyncer")
+		listenerSetStatusLogger := logger.With("subcomponent", "listenerSetStatusSyncer")
+		gatewayStatusLogger := logger.With("subcomponent", "gatewayStatusSyncer")
+		go func() {
+			for {
+				latestReport, err := latestReportQueue.Dequeue(ctx)
+				if err != nil {
+					return
+				}
+				s.syncGatewayStatus(ctx, gatewayStatusLogger, latestReport)
+				s.syncListenerSetStatus(ctx, listenerSetStatusLogger, latestReport)
+				s.syncRouteStatus(ctx, routeStatusLogger, latestReport)
+				s.syncPolicyStatus(ctx, latestReport)
+			}
+		}()
+		latestBackendPolicyReportQueue := utils.NewAsyncQueue[reports.ReportMap]()
+		s.backendPolicyReport.Register(func(o krt.Event[report]) {
+			if o.Event == controllers.EventDelete {
 				return
 			}
-			s.syncPolicyStatus(ctx, latestReport)
-		}
-	}()
+			latestBackendPolicyReportQueue.Enqueue(o.Latest().reportMap)
+		})
+		go func() {
+			for {
+				latestReport, err := latestBackendPolicyReportQueue.Dequeue(ctx)
+				if err != nil {
+					return
+				}
+				s.syncPolicyStatus(ctx, latestReport)
+			}
+		}()
 
-	for _, regFunc := range s.plugins.ContributesRegistration {
-		if regFunc != nil {
-			regFunc()
+		for _, regFunc := range s.plugins.ContributesRegistration {
+			if regFunc != nil {
+				regFunc()
+			}
 		}
+	}
+
+	if s.identity.IsLeader() {
+		leaderAction()
+	} else {
+		s.leaderStartupAction.SetAction(func() error {
+			logger.Info("follower assumed leadership and is writing status")
+			leaderAction()
+			return nil
+		})
 	}
 
 	s.perclientSnapCollection.RegisterBatch(func(o []krt.Event[XdsSnapWrapper], initialSync bool) {
@@ -760,6 +780,10 @@ func (s *ProxySyncer) syncPolicyStatus(ctx context.Context, rm reports.ReportMap
 			logger.Error("error updating policy status", "error", err, "group_kind", gk, "resource_ref", nsName)
 		}
 	}
+}
+
+func (s *ProxySyncer) syncStatusOnElectionChange(ctx context.Context) {
+	s.leaderStartupAction.WatchElectionResults(ctx)
 }
 
 var opts = cmp.Options{

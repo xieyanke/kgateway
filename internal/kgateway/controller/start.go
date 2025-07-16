@@ -3,6 +3,7 @@ package controller
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"sync/atomic"
@@ -32,6 +33,9 @@ import (
 	"github.com/kgateway-dev/kgateway/v2/internal/kgateway/utils/krtutil"
 	"github.com/kgateway-dev/kgateway/v2/pkg/client/clientset/versioned"
 	"github.com/kgateway-dev/kgateway/v2/pkg/deployer"
+	"github.com/kgateway-dev/kgateway/v2/pkg/leaderelector"
+	"github.com/kgateway-dev/kgateway/v2/pkg/leaderelector/kube"
+	"github.com/kgateway-dev/kgateway/v2/pkg/leaderelector/singlereplica"
 	"github.com/kgateway-dev/kgateway/v2/pkg/logging"
 	sdk "github.com/kgateway-dev/kgateway/v2/pkg/pluginsdk"
 	common "github.com/kgateway-dev/kgateway/v2/pkg/pluginsdk/collections"
@@ -92,6 +96,7 @@ type ControllerBuilder struct {
 	proxySyncer *proxy_syncer.ProxySyncer
 	cfg         StartConfig
 	mgr         ctrl.Manager
+	identity    leaderelector.Identity
 	commoncol   *common.CommonCollections
 
 	ready atomic.Bool
@@ -118,6 +123,28 @@ func NewControllerBuilder(ctx context.Context, cfg StartConfig) (*ControllerBuil
 		if err := cfg.AddToScheme(scheme); err != nil {
 			return nil, err
 		}
+	}
+
+	identity, err := startLeaderElection(ctx, cfg.RestConfig, &leaderelector.ElectionConfig{
+		Id:        "kgateway",
+		Namespace: namespaces.GetPodNamespace(),
+		// no-op all the callbacks for now
+		// at the moment, leadership functionality is performed within components
+		// in the future we could pull that out and let these callbacks change configuration
+		OnStartedLeading: func(c context.Context) {
+			setupLog.Info("starting leadership")
+		},
+		OnNewLeader: func(leaderId string) {
+			setupLog.Info("new leader elected", "id", leaderId)
+		},
+		OnStoppedLeading: func() {
+			// Don't die if we fall from grace. Instead we can retry leader election
+			// Ref: https://github.com/kgateway-dev/kgateway/issues/7346
+			setupLog.Error(fmt.Errorf("lost leadership"), "leadership lost")
+		},
+	})
+	if err != nil {
+		return nil, err
 	}
 
 	mgrOpts := ctrl.Options{
@@ -206,6 +233,7 @@ func NewControllerBuilder(ctx context.Context, cfg StartConfig) (*ControllerBuil
 		commoncol,
 		cfg.SetupOpts.Cache,
 		cfg.AgentGatewayClassName,
+		identity,
 	)
 	proxySyncer.Init(ctx, cfg.KrtOptions)
 
@@ -238,6 +266,7 @@ func NewControllerBuilder(ctx context.Context, cfg StartConfig) (*ControllerBuil
 		cfg:         cfg,
 		mgr:         mgr,
 		commoncol:   commoncol,
+		identity:    identity,
 	}
 
 	// wait for the ControllerBuilder to Start
@@ -302,6 +331,7 @@ func (c *ControllerBuilder) Start(ctx context.Context) error {
 		GatewayClassName:         c.cfg.GatewayClassName,
 		WaypointGatewayClassName: c.cfg.WaypointGatewayClassName,
 		AgentGatewayClassName:    c.cfg.AgentGatewayClassName,
+		Identity:                 c.identity,
 	}
 
 	setupLog.Info("creating gateway class provisioner")
@@ -373,4 +403,13 @@ func GetDefaultClassInfo(globalSettings *settings.Settings, gatewayClassName str
 		}
 	}
 	return classInfos
+}
+
+func startLeaderElection(ctx context.Context, cfg *rest.Config, electionConfig *leaderelector.ElectionConfig) (leaderelector.Identity, error) {
+	if electionConfig == nil || leaderelector.IsDisabled() {
+		// If a component does not contain election config, it does not support HA
+		// If leader election is explicitly disabled, it means a user has decided not to opt-into HA
+		return singlereplica.NewElectionFactory().StartElection(ctx, electionConfig)
+	}
+	return kube.NewElectionFactory(cfg).StartElection(ctx, electionConfig)
 }

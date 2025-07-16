@@ -31,6 +31,7 @@ import (
 	"github.com/kgateway-dev/kgateway/v2/internal/kgateway/setup"
 	"github.com/kgateway-dev/kgateway/v2/internal/kgateway/wellknown"
 	"github.com/kgateway-dev/kgateway/v2/pkg/deployer"
+	"github.com/kgateway-dev/kgateway/v2/pkg/leaderelector"
 	"github.com/kgateway-dev/kgateway/v2/pkg/pluginsdk"
 	"github.com/kgateway-dev/kgateway/v2/pkg/settings"
 )
@@ -117,6 +118,8 @@ func RunController(t *testing.T, logger *zap.Logger, globalSettings *settings.Se
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
+		os.Setenv(leaderelector.DisableElectionEnvVar, "true")
+
 		setup.StartKgatewayWithConfig(ctx, wellknown.DefaultGatewayControllerName, wellknown.DefaultGatewayClassName, wellknown.DefaultWaypointClassName, wellknown.DefaultAgentGatewayClassName, setupOpts, cfg, builder, extraPlugins, extraGatewayParameters, nil)
 	}()
 	// give kgateway time to initialize so we don't get

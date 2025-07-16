@@ -41,6 +41,7 @@ import (
 	"github.com/kgateway-dev/kgateway/v2/internal/kgateway/wellknown"
 	"github.com/kgateway-dev/kgateway/v2/pkg/client/clientset/versioned"
 	"github.com/kgateway-dev/kgateway/v2/pkg/deployer"
+	"github.com/kgateway-dev/kgateway/v2/pkg/leaderelector/singlereplica"
 	"github.com/kgateway-dev/kgateway/v2/pkg/pluginsdk/collections"
 	"github.com/kgateway-dev/kgateway/v2/pkg/pluginsdk/krtutil"
 	"github.com/kgateway-dev/kgateway/v2/pkg/schemes"
@@ -213,6 +214,7 @@ func createManager(
 		},
 		DiscoveryNamespaceFilter: fakeDiscoveryNamespaceFilter{},
 		CommonCollections:        newCommonCols(ctx, kubeClient),
+		Identity:                 singlereplica.Identity(),
 	}
 	if err := controller.NewBaseGatewayController(parentCtx, gwCfg, nil); err != nil {
 		cancel()

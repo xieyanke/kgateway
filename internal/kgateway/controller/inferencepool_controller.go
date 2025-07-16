@@ -15,13 +15,30 @@ import (
 
 	"github.com/kgateway-dev/kgateway/v2/internal/kgateway/wellknown"
 	"github.com/kgateway-dev/kgateway/v2/pkg/deployer"
+	"github.com/kgateway-dev/kgateway/v2/pkg/leaderelector"
 )
 
 type inferencePoolReconciler struct {
-	cli      client.Client
-	scheme   *runtime.Scheme
-	deployer *deployer.Deployer
-	metrics  controllerMetricsRecorder
+	cli                 client.Client
+	scheme              *runtime.Scheme
+	deployer            *deployer.Deployer
+	metrics             controllerMetricsRecorder
+	identity            leaderelector.Identity
+	leaderStartupAction *leaderelector.LeaderStartupAction
+}
+
+func NewInferencePoolReconciler(ctx context.Context, cfg GatewayConfig, deployer *deployer.Deployer) *inferencePoolReconciler {
+	r := &inferencePoolReconciler{
+		cli:                 cfg.Mgr.GetClient(),
+		scheme:              cfg.Mgr.GetScheme(),
+		deployer:            deployer,
+		metrics:             newControllerMetricsRecorder("gateway-inferencepool"),
+		identity:            cfg.Identity,
+		leaderStartupAction: leaderelector.NewLeaderStartupAction(cfg.Identity),
+	}
+
+	r.syncStatusOnElectionChange(ctx)
+	return r
 }
 
 func (r *inferencePoolReconciler) Reconcile(ctx context.Context, req ctrl.Request) (res ctrl.Result, rErr error) {
@@ -85,20 +102,34 @@ func (r *inferencePoolReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 	if err != nil {
 		return ctrl.Result{}, err
 	}
-	objs = r.deployer.SetNamespaceAndOwner(pool, objs)
 
-	// TODO [danehans]: Manage inferencepool status conditions.
+	leaderAction := func() error {
+		objs = r.deployer.SetNamespaceAndOwner(pool, objs)
 
-	// Deploy the endpoint picker resources.
-	log.Info("Ensuring endpoint picker is deployed for InferencePool")
-	err = r.deployer.DeployObjs(ctx, objs)
-	if err != nil {
-		return ctrl.Result{}, err
+		// TODO [danehans]: Manage inferencepool status conditions.
+
+		// Deploy the endpoint picker resources.
+		log.Info("Ensuring endpoint picker is deployed for InferencePool")
+		err = r.deployer.DeployObjs(ctx, objs)
+		return err
+	}
+
+	if r.identity.IsLeader() {
+		return ctrl.Result{}, leaderAction()
+	} else {
+		r.leaderStartupAction.SetAction(func() error {
+			log.Info("follower assumed leadership and is deploying objects")
+			return leaderAction()
+		})
 	}
 
 	log.V(1).Info("reconciled request", "request", req)
 
 	return ctrl.Result{}, nil
+}
+
+func (r *inferencePoolReconciler) syncStatusOnElectionChange(ctx context.Context) {
+	r.leaderStartupAction.WatchElectionResults(ctx)
 }
 
 // EnsureFinalizer adds the InferencePool finalizer to the given pool if it’s not already present.

@@ -104,6 +104,7 @@ type Plugin struct {
 	ContributesGwTranslator GwTranslatorFactory
 	// ContributesRegistration is a lifecycle hook called after all collections are synced
 	// allowing Plugins to register handlers against collections, e.g. for status reporting
+	// This is called only by the leader in case of multiple replicas
 	ContributesRegistration map[schema.GroupKind]func()
 	// extra has sync beyong primary resources in the collections above
 	ExtraHasSynced func() bool

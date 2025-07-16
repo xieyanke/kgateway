@@ -14,6 +14,7 @@ import (
 	api "sigs.k8s.io/gateway-api/apis/v1"
 
 	"github.com/kgateway-dev/kgateway/v2/pkg/deployer"
+	"github.com/kgateway-dev/kgateway/v2/pkg/leaderelector"
 )
 
 const (
@@ -26,9 +27,27 @@ type gatewayReconciler struct {
 
 	controllerName string
 
-	scheme   *runtime.Scheme
-	deployer *deployer.Deployer
-	metrics  controllerMetricsRecorder
+	scheme              *runtime.Scheme
+	deployer            *deployer.Deployer
+	metrics             controllerMetricsRecorder
+	identity            leaderelector.Identity
+	leaderStartupAction *leaderelector.LeaderStartupAction
+}
+
+func NewGatewayReconciler(ctx context.Context, cfg GatewayConfig, deployer *deployer.Deployer) *gatewayReconciler {
+	r := &gatewayReconciler{
+		cli:                 cfg.Mgr.GetClient(),
+		scheme:              cfg.Mgr.GetScheme(),
+		controllerName:      cfg.ControllerName,
+		autoProvision:       cfg.AutoProvision,
+		deployer:            deployer,
+		metrics:             newControllerMetricsRecorder("gateway"),
+		identity:            cfg.Identity,
+		leaderStartupAction: leaderelector.NewLeaderStartupAction(cfg.Identity),
+	}
+
+	r.syncStatusOnElectionChange(ctx)
+	return r
 }
 
 func (r *gatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) (res ctrl.Result, rErr error) {
@@ -97,20 +116,33 @@ func (r *gatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) (re
 		}
 	}
 
-	// update status (whether we generated a service or not, for unmanaged)
 	result := ctrl.Result{}
-	err = updateStatus(ctx, r.cli, &gw, generatedSvc)
-	if err != nil {
-		log.Error(err, "failed to update status")
-		result.Requeue = true
+	leaderAction := func() error {
+		// update status (whether we generated a service or not, for unmanaged)
+		err = updateStatus(ctx, r.cli, &gw, generatedSvc)
+		if err != nil {
+			log.Error(err, "failed to update status")
+			result.Requeue = true
+		}
+
+		err = r.deployer.DeployObjs(ctx, objs)
+		return err
 	}
 
-	err = r.deployer.DeployObjs(ctx, objs)
-	if err != nil {
-		return result, err
+	if r.identity.IsLeader() {
+		return result, leaderAction()
+	} else {
+		r.leaderStartupAction.SetAction(func() error {
+			log.Info("follower assumed leadership and is deploying objects")
+			return leaderAction()
+		})
 	}
 
 	return result, nil
+}
+
+func (r *gatewayReconciler) syncStatusOnElectionChange(ctx context.Context) {
+	r.leaderStartupAction.WatchElectionResults(ctx)
 }
 
 func updateStatus(ctx context.Context, cli client.Client, gw *api.Gateway, svcmd *metav1.ObjectMeta) error {

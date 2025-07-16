@@ -29,6 +29,7 @@ import (
 	"github.com/kgateway-dev/kgateway/v2/internal/kgateway/ir"
 	"github.com/kgateway-dev/kgateway/v2/internal/kgateway/wellknown"
 	"github.com/kgateway-dev/kgateway/v2/pkg/deployer"
+	"github.com/kgateway-dev/kgateway/v2/pkg/leaderelector"
 	common "github.com/kgateway-dev/kgateway/v2/pkg/pluginsdk/collections"
 )
 
@@ -54,7 +55,8 @@ type ClassInfo struct {
 
 // TODO [danehans]: Refactor so controller config is organized into shared and Gateway/InferencePool-specific controllers.
 type GatewayConfig struct {
-	Mgr manager.Manager
+	Mgr      manager.Manager
+	Identity leaderelector.Identity
 	// Dev enables development mode for the controller.
 	Dev bool
 	// ControllerName is the name of the controller. Any GatewayClass objects
@@ -335,14 +337,7 @@ func (c *controllerBuilder) watchGw(ctx context.Context) error {
 		buildr.Owns(clientObj, opts...)
 	}
 
-	return buildr.Complete(&gatewayReconciler{
-		cli:            c.cfg.Mgr.GetClient(),
-		scheme:         c.cfg.Mgr.GetScheme(),
-		controllerName: c.cfg.ControllerName,
-		autoProvision:  c.cfg.AutoProvision,
-		deployer:       d,
-		metrics:        newControllerMetricsRecorder("gateway"),
-	})
+	return buildr.Complete(NewGatewayReconciler(ctx, c.cfg, d))
 }
 
 func (c *controllerBuilder) addHTTPRouteIndexes(ctx context.Context) error {
@@ -458,12 +453,7 @@ func (c *controllerBuilder) watchInferencePool(ctx context.Context) error {
 			}
 			buildr.Owns(clientObj, opts...)
 		}
-		r := &inferencePoolReconciler{
-			cli:      c.cfg.Mgr.GetClient(),
-			scheme:   c.cfg.Mgr.GetScheme(),
-			deployer: d,
-			metrics:  newControllerMetricsRecorder("gateway-inferencepool"),
-		}
+		r := NewInferencePoolReconciler(ctx, c.cfg, d)
 		if err := buildr.Complete(r); err != nil {
 			return err
 		}
