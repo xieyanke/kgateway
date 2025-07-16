@@ -10,7 +10,7 @@ This directory contains the Helm charts to deploy the kgateway project via [Helm
 
 - `kgateway/`: Contains the control plane chart
   - Deploys the control plane components that extend the Kubernetes Gateway API
-  - Includes RBAC configurations in `templates/rbac.yaml` for control plane access
+  - Includes RBAC configurations in `templates/roles.yaml` for control plane access
   - Generated from API definitions in `api/v1alpha1`
 
 ## Installation Order

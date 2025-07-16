@@ -38,6 +38,7 @@ Name|Version|License
 [k8s.io/apiextensions-apiserver](https://k8s.io/apiextensions-apiserver)|v0.33.2|Apache License 2.0
 [k8s.io/apimachinery](https://k8s.io/apimachinery)|v0.33.2|Apache License 2.0
 [k8s.io/client-go](https://k8s.io/client-go)|v0.33.2|Apache License 2.0
+[k8s.io/component-base](https://k8s.io/component-base)|v0.33.2|Apache License 2.0
 [klog/v2](https://k8s.io/klog/v2)|v2.130.1|Apache License 2.0
 [k8s.io/kube-openapi](https://k8s.io/kube-openapi)|v0.0.0-20250318190949-c8a335a9a2ff|Apache License 2.0
 [k8s.io/utils](https://k8s.io/utils)|v0.0.0-20241210054802-24370beab758|Apache License 2.0
