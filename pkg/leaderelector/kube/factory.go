@@ -166,7 +166,7 @@ func (f *kubeElectionFactory) StartElection(ctx context.Context, config *leadere
 			logger.Error("leader election cycle lost. Trying again", "cycle", counter.Load())
 			counter.Add(1)
 			// Sleep for the lease duration so another container has a chance to become the leader rather than try to renew
-			// in when the kube api server is unreachable by this container
+			// immediately when the kube api server is unreachable by this container
 			time.Sleep(getLeaseDuration())
 		}
 	}()
