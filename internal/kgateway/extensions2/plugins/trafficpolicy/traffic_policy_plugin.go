@@ -4,10 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"slices"
 	"strconv"
 	"time"
 
-	routev3 "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
+	envoyroutev3 "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
 	exteniondynamicmodulev3 "github.com/envoyproxy/go-control-plane/envoy/extensions/dynamic_modules/v3"
 	bufferv3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/buffer/v3"
 	corsv3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/cors/v3"
@@ -65,7 +66,7 @@ var (
 	// If the field `config` is configured but is empty, we treat the filter is enabled
 	// explicitly.
 	// see: https://github.com/envoyproxy/envoy/blob/8ed93ef372f788456b708fc93a7e54e17a013aa7/source/common/router/config_impl.cc#L2552
-	EnableFilterPerRoute = &routev3.FilterConfig{Config: &anypb.Any{}}
+	EnableFilterPerRoute = &envoyroutev3.FilterConfig{Config: &anypb.Any{}}
 )
 
 type TrafficPolicy struct {
@@ -86,6 +87,7 @@ type trafficPolicySpecIr struct {
 	rateLimit                  *GlobalRateLimitIR
 	cors                       *CorsIR
 	csrf                       *CsrfIR
+	hashPolicies               []*envoyroutev3.RouteAction_HashPolicy
 	autoHostRewrite            *wrapperspb.BoolValue
 	buffer                     *BufferIR
 }
@@ -158,6 +160,12 @@ func (d *TrafficPolicy) Equals(in any) bool {
 	}
 
 	if !d.spec.buffer.Equals(d2.spec.buffer) {
+		return false
+	}
+
+	if !slices.EqualFunc(d.spec.hashPolicies, d2.spec.hashPolicies, func(a, b *envoyroutev3.RouteAction_HashPolicy) bool {
+		return proto.Equal(a, b)
+	}) {
 		return false
 	}
 
@@ -267,7 +275,7 @@ func (p *TrafficPolicy) Name() string {
 func (p *trafficPolicyPluginGwPass) ApplyRouteConfigPlugin(
 	ctx context.Context,
 	pCtx *ir.RouteConfigContext,
-	out *routev3.RouteConfiguration,
+	out *envoyroutev3.RouteConfiguration,
 ) {
 	policy, ok := pCtx.Policy.(*TrafficPolicy)
 	if !ok {
@@ -280,7 +288,7 @@ func (p *trafficPolicyPluginGwPass) ApplyRouteConfigPlugin(
 func (p *trafficPolicyPluginGwPass) ApplyVhostPlugin(
 	ctx context.Context,
 	pCtx *ir.VirtualHostContext,
-	out *routev3.VirtualHost,
+	out *envoyroutev3.VirtualHost,
 ) {
 	policy, ok := pCtx.Policy.(*TrafficPolicy)
 	if !ok {
@@ -291,7 +299,7 @@ func (p *trafficPolicyPluginGwPass) ApplyVhostPlugin(
 }
 
 // called 0 or more times
-func (p *trafficPolicyPluginGwPass) ApplyForRoute(ctx context.Context, pCtx *ir.RouteContext, outputRoute *routev3.Route) error {
+func (p *trafficPolicyPluginGwPass) ApplyForRoute(ctx context.Context, pCtx *ir.RouteContext, outputRoute *envoyroutev3.Route) error {
 	policy, ok := pCtx.Policy.(*TrafficPolicy)
 	if !ok {
 		return nil
@@ -376,10 +384,14 @@ func (p *trafficPolicyPluginGwPass) ApplyForRoute(ctx context.Context, pCtx *ir.
 		}
 	}
 
+	if policy.spec.hashPolicies != nil {
+		outputRoute.GetRoute().HashPolicy = policy.spec.hashPolicies
+	}
+
 	if policy.spec.autoHostRewrite != nil && policy.spec.autoHostRewrite.GetValue() {
 		// Only apply TrafficPolicy's AutoHostRewrite if built-in policy's AutoHostRewrite is not already set
 		if ra := outputRoute.GetRoute(); ra != nil && ra.GetHostRewriteSpecifier() == nil {
-			ra.HostRewriteSpecifier = &routev3.RouteAction_AutoHostRewrite{
+			ra.HostRewriteSpecifier = &envoyroutev3.RouteAction_AutoHostRewrite{
 				AutoHostRewrite: policy.spec.autoHostRewrite,
 			}
 		}
@@ -624,6 +636,7 @@ func MergeTrafficPolicies(
 		mergeCSRF,
 		mergeBuffer,
 		mergeAutoHostRewrite,
+		mergeHashPolicies,
 	}
 
 	for _, mergeFunc := range mergeFuncs {

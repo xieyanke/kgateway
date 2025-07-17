@@ -262,6 +262,16 @@ var _ = DescribeTable("Basic",
 			},
 		}),
 	Entry(
+		"Load balancer with hash policies, route level",
+		translatorTestCase{
+			inputFile:  "loadbalancer/route.yaml",
+			outputFile: "loadbalancer/route.yaml",
+			gwNN: types.NamespacedName{
+				Namespace: "default",
+				Name:      "example-gateway",
+			},
+		}),
+	Entry(
 		"TrafficPolicy with buffer attached to gateway",
 		translatorTestCase{
 			inputFile:  "traffic-policy/buffer-gateway.yaml",
@@ -722,6 +732,14 @@ var _ = DescribeTable("Basic",
 	Entry("HTTPListenerPolicy with healthCheck", translatorTestCase{
 		inputFile:  "httplistenerpolicy/route-and-pol.yaml",
 		outputFile: "httplistenerpolicy/route-and-pol.yaml",
+		gwNN: types.NamespacedName{
+			Namespace: "default",
+			Name:      "example-gateway",
+		},
+	}),
+	Entry("HTTPListenerPolicy merging", translatorTestCase{
+		inputFile:  "httplistenerpolicy/merge.yaml",
+		outputFile: "httplistenerpolicy/merge.yaml",
 		gwNN: types.NamespacedName{
 			Namespace: "default",
 			Name:      "example-gateway",
