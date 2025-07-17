@@ -19,11 +19,7 @@ import (
 	"github.com/kgateway-dev/kgateway/v2/test/kubernetes/e2e/tests/base"
 )
 
-var (
-	_                  e2e.NewSuiteFunc = NewTestingSuite
-	kGatewayDeployment                  = "deploy/kgateway"
-	kGatewayPodLabel                    = "kgateway=kgateway"
-)
+var _ e2e.NewSuiteFunc = NewTestingSuite
 
 type testingSuite struct {
 	*base.BaseTestingSuite
@@ -40,10 +36,10 @@ func (s *testingSuite) TestLeaderWritesStatus() {
 	leader := s.getLeader()
 
 	// Scale the deployment to 2 replicas so the other can take over when the leader is killed
-	err := s.TestInstallation.Actions.Kubectl().Scale(s.Ctx, s.TestInstallation.Metadata.InstallNamespace, kGatewayDeployment, 2)
+	err := s.TestInstallation.Actions.Kubectl().Scale(s.Ctx, s.TestInstallation.Metadata.InstallNamespace, defaults.KGatewayDeployment, 2)
 	s.NoError(err)
 	defer func() {
-		err = s.TestInstallation.Actions.Kubectl().Scale(s.Ctx, s.TestInstallation.Metadata.InstallNamespace, kGatewayDeployment, 1)
+		err = s.TestInstallation.Actions.Kubectl().Scale(s.Ctx, s.TestInstallation.Metadata.InstallNamespace, defaults.KGatewayDeployment, 1)
 		s.NoError(err)
 	}()
 
@@ -80,10 +76,10 @@ func (s *testingSuite) TestLeaderDeploysProxy() {
 	leader := s.getLeader()
 
 	// Scale the deployment to 2 replicas so the other can take over when the leader is killed
-	err := s.TestInstallation.Actions.Kubectl().Scale(s.Ctx, s.TestInstallation.Metadata.InstallNamespace, kGatewayDeployment, 2)
+	err := s.TestInstallation.Actions.Kubectl().Scale(s.Ctx, s.TestInstallation.Metadata.InstallNamespace, defaults.KGatewayDeployment, 2)
 	s.NoError(err)
 	defer func() {
-		err = s.TestInstallation.Actions.Kubectl().Scale(s.Ctx, s.TestInstallation.Metadata.InstallNamespace, kGatewayDeployment, 1)
+		err = s.TestInstallation.Actions.Kubectl().Scale(s.Ctx, s.TestInstallation.Metadata.InstallNamespace, defaults.KGatewayDeployment, 1)
 		s.NoError(err)
 	}()
 
@@ -117,14 +113,14 @@ func (s *testingSuite) waitUntilStartsLeading() {
 	time.Sleep(10 * time.Second)
 
 	s.TestInstallation.Assertions.Gomega.Eventually(func(g gomega.Gomega) {
-		out, err := s.TestInstallation.Actions.Kubectl().GetContainerLogs(s.Ctx, s.TestInstallation.Metadata.InstallNamespace, kGatewayDeployment)
+		out, err := s.TestInstallation.Actions.Kubectl().GetContainerLogs(s.Ctx, s.TestInstallation.Metadata.InstallNamespace, defaults.KGatewayDeployment)
 		g.Expect(err).NotTo(gomega.HaveOccurred(), "Failed to get pod logs")
 		g.Expect(out).To(gomega.ContainSubstring("starting leadership"))
 	}, "30s", "10s").Should(gomega.Succeed())
 }
 
 func (s *testingSuite) getLeader() string {
-	pods, err := s.TestInstallation.Actions.Kubectl().GetPodsInNsWithLabel(s.Ctx, s.TestInstallation.Metadata.InstallNamespace, kGatewayPodLabel)
+	pods, err := s.TestInstallation.Actions.Kubectl().GetPodsInNsWithLabel(s.Ctx, s.TestInstallation.Metadata.InstallNamespace, defaults.KGatewayPodLabel)
 	s.NoError(err)
 	return s.getLeaderFromPods(pods...)
 }
@@ -145,7 +141,7 @@ func (s *testingSuite) getLeaderFromPods(pods ...string) string {
 }
 
 func (s *testingSuite) getFollower() string {
-	pods, err := s.TestInstallation.Actions.Kubectl().GetPodsInNsWithLabel(s.Ctx, s.TestInstallation.Metadata.InstallNamespace, kGatewayPodLabel)
+	pods, err := s.TestInstallation.Actions.Kubectl().GetPodsInNsWithLabel(s.Ctx, s.TestInstallation.Metadata.InstallNamespace, defaults.KGatewayPodLabel)
 	s.NoError(err)
 	return s.getFollowerFromPods(pods...)
 }

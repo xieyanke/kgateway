@@ -68,6 +68,7 @@ require (
 	github.com/manuelarte/funcorder v0.2.1 // indirect
 	github.com/mikefarah/yq/v4 v4.45.4 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
+	github.com/prometheus/common v0.62.0 // indirect
 	github.com/rotisserie/eris v0.5.4 // indirect
 	github.com/yuin/gopher-lua v1.1.1 // indirect
 	go.augendre.info/fatcontext v0.8.0 // indirect
@@ -466,7 +467,6 @@ require (
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
 	github.com/polydawn/refmt v0.89.1-0.20221221234430-40501e09de1f // indirect
 	github.com/polyfloyd/go-errorlint v1.8.0 // indirect
-	github.com/prometheus/common v0.62.0 // indirect
 	github.com/prometheus/procfs v0.15.1 // indirect
 	github.com/prometheus/statsd_exporter v0.25.0 // indirect
 	github.com/quasilyte/go-ruleguard v0.4.4 // indirect
