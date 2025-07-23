@@ -237,6 +237,12 @@ func ForKind(kind schema.GroupVersionKind) interface{} {
 		return &apiv1alpha1.PromptguardResponseApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("ProxyDeployment"):
 		return &apiv1alpha1.ProxyDeploymentApplyConfiguration{}
+	case v1alpha1.SchemeGroupVersion.WithKind("ProxyProtocol"):
+		return &apiv1alpha1.ProxyProtocolApplyConfiguration{}
+	case v1alpha1.SchemeGroupVersion.WithKind("ProxyProtocolKeyValuePair"):
+		return &apiv1alpha1.ProxyProtocolKeyValuePairApplyConfiguration{}
+	case v1alpha1.SchemeGroupVersion.WithKind("ProxyProtocolRule"):
+		return &apiv1alpha1.ProxyProtocolRuleApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("RateLimit"):
 		return &apiv1alpha1.RateLimitApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("RateLimitDescriptor"):

@@ -26,6 +26,7 @@ func mergePolicies(
 		mergeServerHeaderTransformation,
 		mergeStreamIdleTimeout,
 		mergeHealthCheckPolicy,
+		mergeProxyProtocolPolicy,
 	}
 
 	for _, mergeFunc := range mergeFuncs {
@@ -143,4 +144,18 @@ func mergeHealthCheckPolicy(
 
 	p1.healthCheckPolicy = p2.healthCheckPolicy
 	mergeOrigins.SetOne("healthCheckPolicy", p2Ref)
+}
+
+func mergeProxyProtocolPolicy(
+	p1, p2 *httpListenerPolicy,
+	p2Ref *ir.AttachedPolicyRef,
+	opts policy.MergeOptions,
+	mergeOrigins ir.MergeOrigins,
+) {
+	if !policy.IsMergeable(p1.proxyProtocol, p2.proxyProtocol, opts) {
+		return
+	}
+
+	p1.proxyProtocol = p2.proxyProtocol
+	mergeOrigins.SetOne("proxyProtocol", p2Ref)
 }

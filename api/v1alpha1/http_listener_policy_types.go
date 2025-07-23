@@ -92,6 +92,10 @@ type HTTPListenerPolicySpec struct {
 	// HealthCheck configures [Envoy health checks](https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/filters/http/health_check/v3/health_check.proto)
 	// +optional
 	HealthCheck *EnvoyHealthCheck `json:"healthCheck,omitempty"`
+
+	// ProxyProtocol configures the [PROXY protocol listener filter](https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/filters/listener/proxy_protocol/v3/proxy_protocol.proto).
+	// +optional
+	ProxyProtocol *ProxyProtocol `json:"proxyProtocol,omitempty"`
 }
 
 // AccessLog represents the top-level access log configuration.
@@ -641,4 +645,32 @@ type EnvoyHealthCheck struct {
 	// +kubebuilder:validation:MaxLength=2048
 	// +kubebuilder:validation:Pattern="^/[-a-zA-Z0-9@:%.+~#?&/=_]+$"
 	Path string `json:"path"`
+}
+
+// ProxyProtocol represents configuration for Envoy's proxy protocol filter.
+type ProxyProtocol struct {
+	// The list of rules to apply to requests.
+	// +optional
+	Rules []ProxyProtocolRule `json:"rules,omitempty"`
+
+	// Allow requests through that don't use proxy protocol. Defaults to false.
+	// +optional
+	AllowRequestsWithoutProxyProtocol *bool `json:"allowRequestsWithoutProxyProtocol,omitempty"`
+}
+
+// A Rule defines what metadata to apply when a header is present or missing.
+type ProxyProtocolRule struct {
+	// The type that triggers the rule
+	// TLV type is defined as uint8_t in proxy protocol. See [the spec](https://www.haproxy.org/download/2.1/doc/proxy-protocol.txt) for details.
+	// +required
+	TlvType uint32 `json:"tlvType,omitempty"`
+	// If the TLV type is present, apply this metadata KeyValuePair.
+	OnTlvPresent *ProxyProtocolKeyValuePair `json:"onTlvPresent,omitempty"`
+}
+
+type ProxyProtocolKeyValuePair struct {
+	// The namespace — if this is empty, the filter's namespace will be used.
+	MetadataNamespace *string `json:"metadataNamespace,omitempty"`
+	// The key to use within the namespace.
+	Key *string `json:"key,omitempty"`
 }

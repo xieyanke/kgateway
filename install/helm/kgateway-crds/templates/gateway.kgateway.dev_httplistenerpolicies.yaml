@@ -624,6 +624,28 @@ spec:
                 required:
                 - path
                 type: object
+              proxyProtocol:
+                properties:
+                  allowRequestsWithoutProxyProtocol:
+                    type: boolean
+                  rules:
+                    items:
+                      properties:
+                        onTlvPresent:
+                          properties:
+                            key:
+                              type: string
+                            metadataNamespace:
+                              type: string
+                          type: object
+                        tlvType:
+                          format: int32
+                          type: integer
+                      required:
+                      - tlvType
+                      type: object
+                    type: array
+                type: object
               serverHeaderTransformation:
                 enum:
                 - Overwrite

@@ -7,13 +7,17 @@ import (
 	"time"
 
 	envoyaccesslogv3 "github.com/envoyproxy/go-control-plane/envoy/config/accesslog/v3"
+	envoy_config_listener_v3 "github.com/envoyproxy/go-control-plane/envoy/config/listener/v3"
 	envoylistenerv3 "github.com/envoyproxy/go-control-plane/envoy/config/listener/v3"
 	envoyroutev3 "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
 	healthcheckv3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/health_check/v3"
+	envoy_listener_proxy_protocol "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/listener/proxy_protocol/v3"
 	envoy_hcm "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/http_connection_manager/v3"
+	envoy_wellknown "github.com/envoyproxy/go-control-plane/pkg/wellknown"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/wrapperspb"
+	"istio.io/istio/pilot/pkg/util/protoconv"
 	skubeclient "istio.io/istio/pkg/config/schema/kubeclient"
 	"istio.io/istio/pkg/kube/kclient"
 	"istio.io/istio/pkg/kube/krt"
@@ -49,6 +53,7 @@ type httpListenerPolicy struct {
 	serverHeaderTransformation *envoy_hcm.HttpConnectionManager_ServerHeaderTransformation
 	streamIdleTimeout          *time.Duration
 	healthCheckPolicy          *healthcheckv3.HealthCheck
+	proxyProtocol              *envoy_listener_proxy_protocol.ProxyProtocol
 }
 
 func (d *httpListenerPolicy) CreationTime() time.Time {
@@ -113,6 +118,11 @@ func (d *httpListenerPolicy) Equals(in any) bool {
 
 	// Check healthCheckPolicy
 	if !proto.Equal(d.healthCheckPolicy, d2.healthCheckPolicy) {
+		return false
+	}
+
+	// Check proxy protocol
+	if !proto.Equal(d.proxyProtocol, d2.proxyProtocol) {
 		return false
 	}
 
@@ -181,6 +191,8 @@ func NewPlugin(ctx context.Context, commoncol *common.CommonCollections) extensi
 
 		healthCheckPolicy := convertHealthCheckPolicy(i)
 
+		proxyProtocol := convertProxyProtocol(i)
+
 		pol := &ir.PolicyWrapper{
 			ObjectSource: objSrc,
 			Policy:       i,
@@ -194,6 +206,7 @@ func NewPlugin(ctx context.Context, commoncol *common.CommonCollections) extensi
 				serverHeaderTransformation: serverHeaderTransformation,
 				streamIdleTimeout:          streamIdleTimeout,
 				healthCheckPolicy:          healthCheckPolicy,
+				proxyProtocol:              proxyProtocol,
 			},
 			TargetRefs: pluginsdkutils.TargetRefsToPolicyRefs(i.Spec.TargetRefs, i.Spec.TargetSelectors),
 			Errors:     errs,
@@ -302,6 +315,15 @@ func (p *httpListenerPolicyPluginGwPass) ApplyListenerPlugin(
 	}
 
 	p.healthCheckPolicy = policy.healthCheckPolicy
+
+	if policy.proxyProtocol != nil {
+		out.ListenerFilters = append(out.GetListenerFilters(), &envoy_config_listener_v3.ListenerFilter{
+			Name: envoy_wellknown.ProxyProtocol,
+			ConfigType: &envoy_config_listener_v3.ListenerFilter_TypedConfig{
+				TypedConfig: protoconv.MessageToAny(policy.proxyProtocol),
+			},
+		})
+	}
 }
 
 func convertUpgradeConfig(policy *v1alpha1.HTTPListenerPolicy) []*envoy_hcm.HttpConnectionManager_UpgradeConfig {
@@ -351,4 +373,39 @@ func convertHealthCheckPolicy(policy *v1alpha1.HTTPListenerPolicy) *healthcheckv
 		}
 	}
 	return nil
+}
+
+func convertProxyProtocol(policy *v1alpha1.HTTPListenerPolicy) *envoy_listener_proxy_protocol.ProxyProtocol {
+	if policy.Spec.ProxyProtocol == nil {
+		return nil
+	}
+
+	envoyProxyProtocol := &envoy_listener_proxy_protocol.ProxyProtocol{}
+	if policy.Spec.ProxyProtocol.AllowRequestsWithoutProxyProtocol != nil {
+		envoyProxyProtocol.AllowRequestsWithoutProxyProtocol = *policy.Spec.ProxyProtocol.AllowRequestsWithoutProxyProtocol
+	}
+
+	var rules []*envoy_listener_proxy_protocol.ProxyProtocol_Rule
+	for _, rule := range policy.Spec.ProxyProtocol.Rules {
+		metadataNamespace := ""
+		if rule.OnTlvPresent.MetadataNamespace != nil {
+			metadataNamespace = *rule.OnTlvPresent.MetadataNamespace
+		}
+		key := ""
+		if rule.OnTlvPresent.Key != nil {
+			key = *rule.OnTlvPresent.Key
+		}
+
+		tlvPresent := &envoy_listener_proxy_protocol.ProxyProtocol_KeyValuePair{
+			MetadataNamespace: metadataNamespace,
+			Key:               key,
+		}
+
+		rules = append(rules, &envoy_listener_proxy_protocol.ProxyProtocol_Rule{
+			TlvType:      rule.TlvType,
+			OnTlvPresent: tlvPresent,
+		})
+	}
+	envoyProxyProtocol.Rules = rules
+	return envoyProxyProtocol
 }

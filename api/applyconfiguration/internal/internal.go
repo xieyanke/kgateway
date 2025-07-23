@@ -1145,6 +1145,9 @@ var schemaYAML = typed.YAMLObject(`types:
     - name: healthCheck
       type:
         namedType: com.github.kgateway-dev.kgateway.v2.api.v1alpha1.EnvoyHealthCheck
+    - name: proxyProtocol
+      type:
+        namedType: com.github.kgateway-dev.kgateway.v2.api.v1alpha1.ProxyProtocol
     - name: serverHeaderTransformation
       type:
         scalar: string
@@ -1815,6 +1818,36 @@ var schemaYAML = typed.YAMLObject(`types:
   map:
     fields:
     - name: replicas
+      type:
+        scalar: numeric
+- name: com.github.kgateway-dev.kgateway.v2.api.v1alpha1.ProxyProtocol
+  map:
+    fields:
+    - name: allowRequestsWithoutProxyProtocol
+      type:
+        scalar: boolean
+    - name: rules
+      type:
+        list:
+          elementType:
+            namedType: com.github.kgateway-dev.kgateway.v2.api.v1alpha1.ProxyProtocolRule
+          elementRelationship: atomic
+- name: com.github.kgateway-dev.kgateway.v2.api.v1alpha1.ProxyProtocolKeyValuePair
+  map:
+    fields:
+    - name: key
+      type:
+        scalar: string
+    - name: metadataNamespace
+      type:
+        scalar: string
+- name: com.github.kgateway-dev.kgateway.v2.api.v1alpha1.ProxyProtocolRule
+  map:
+    fields:
+    - name: onTlvPresent
+      type:
+        namedType: com.github.kgateway-dev.kgateway.v2.api.v1alpha1.ProxyProtocolKeyValuePair
+    - name: tlvType
       type:
         scalar: numeric
 - name: com.github.kgateway-dev.kgateway.v2.api.v1alpha1.RateLimit

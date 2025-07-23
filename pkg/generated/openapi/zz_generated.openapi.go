@@ -141,6 +141,9 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/kgateway-dev/kgateway/v2/api/v1alpha1.PromptguardRequest":                        schema_kgateway_v2_api_v1alpha1_PromptguardRequest(ref),
 		"github.com/kgateway-dev/kgateway/v2/api/v1alpha1.PromptguardResponse":                       schema_kgateway_v2_api_v1alpha1_PromptguardResponse(ref),
 		"github.com/kgateway-dev/kgateway/v2/api/v1alpha1.ProxyDeployment":                           schema_kgateway_v2_api_v1alpha1_ProxyDeployment(ref),
+		"github.com/kgateway-dev/kgateway/v2/api/v1alpha1.ProxyProtocol":                             schema_kgateway_v2_api_v1alpha1_ProxyProtocol(ref),
+		"github.com/kgateway-dev/kgateway/v2/api/v1alpha1.ProxyProtocolKeyValuePair":                 schema_kgateway_v2_api_v1alpha1_ProxyProtocolKeyValuePair(ref),
+		"github.com/kgateway-dev/kgateway/v2/api/v1alpha1.ProxyProtocolRule":                         schema_kgateway_v2_api_v1alpha1_ProxyProtocolRule(ref),
 		"github.com/kgateway-dev/kgateway/v2/api/v1alpha1.RateLimit":                                 schema_kgateway_v2_api_v1alpha1_RateLimit(ref),
 		"github.com/kgateway-dev/kgateway/v2/api/v1alpha1.RateLimitDescriptor":                       schema_kgateway_v2_api_v1alpha1_RateLimitDescriptor(ref),
 		"github.com/kgateway-dev/kgateway/v2/api/v1alpha1.RateLimitDescriptorEntry":                  schema_kgateway_v2_api_v1alpha1_RateLimitDescriptorEntry(ref),
@@ -3820,11 +3823,17 @@ func schema_kgateway_v2_api_v1alpha1_HTTPListenerPolicySpec(ref common.Reference
 							Ref:         ref("github.com/kgateway-dev/kgateway/v2/api/v1alpha1.EnvoyHealthCheck"),
 						},
 					},
+					"proxyProtocol": {
+						SchemaProps: spec.SchemaProps{
+							Description: "ProxyProtocol configures the [PROXY protocol listener filter](https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/filters/listener/proxy_protocol/v3/proxy_protocol.proto).",
+							Ref:         ref("github.com/kgateway-dev/kgateway/v2/api/v1alpha1.ProxyProtocol"),
+						},
+					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"github.com/kgateway-dev/kgateway/v2/api/v1alpha1.AccessLog", "github.com/kgateway-dev/kgateway/v2/api/v1alpha1.EnvoyHealthCheck", "github.com/kgateway-dev/kgateway/v2/api/v1alpha1.LocalPolicyTargetReference", "github.com/kgateway-dev/kgateway/v2/api/v1alpha1.LocalPolicyTargetSelector", "github.com/kgateway-dev/kgateway/v2/api/v1alpha1.Tracing", "github.com/kgateway-dev/kgateway/v2/api/v1alpha1.UpgradeConfig", "k8s.io/apimachinery/pkg/apis/meta/v1.Duration"},
+			"github.com/kgateway-dev/kgateway/v2/api/v1alpha1.AccessLog", "github.com/kgateway-dev/kgateway/v2/api/v1alpha1.EnvoyHealthCheck", "github.com/kgateway-dev/kgateway/v2/api/v1alpha1.LocalPolicyTargetReference", "github.com/kgateway-dev/kgateway/v2/api/v1alpha1.LocalPolicyTargetSelector", "github.com/kgateway-dev/kgateway/v2/api/v1alpha1.ProxyProtocol", "github.com/kgateway-dev/kgateway/v2/api/v1alpha1.Tracing", "github.com/kgateway-dev/kgateway/v2/api/v1alpha1.UpgradeConfig", "k8s.io/apimachinery/pkg/apis/meta/v1.Duration"},
 	}
 }
 
@@ -5636,6 +5645,97 @@ func schema_kgateway_v2_api_v1alpha1_ProxyDeployment(ref common.ReferenceCallbac
 				},
 			},
 		},
+	}
+}
+
+func schema_kgateway_v2_api_v1alpha1_ProxyProtocol(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "ProxyProtocol represents configuration for Envoy's proxy protocol filter.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"rules": {
+						SchemaProps: spec.SchemaProps{
+							Description: "The list of rules to apply to requests.",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("github.com/kgateway-dev/kgateway/v2/api/v1alpha1.ProxyProtocolRule"),
+									},
+								},
+							},
+						},
+					},
+					"allowRequestsWithoutProxyProtocol": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Allow requests through that don't use proxy protocol. Defaults to false.",
+							Type:        []string{"boolean"},
+							Format:      "",
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"github.com/kgateway-dev/kgateway/v2/api/v1alpha1.ProxyProtocolRule"},
+	}
+}
+
+func schema_kgateway_v2_api_v1alpha1_ProxyProtocolKeyValuePair(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
+				Properties: map[string]spec.Schema{
+					"metadataNamespace": {
+						SchemaProps: spec.SchemaProps{
+							Description: "The namespace — if this is empty, the filter's namespace will be used.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"key": {
+						SchemaProps: spec.SchemaProps{
+							Description: "The key to use within the namespace.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+				},
+			},
+		},
+	}
+}
+
+func schema_kgateway_v2_api_v1alpha1_ProxyProtocolRule(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "A Rule defines what metadata to apply when a header is present or missing.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"tlvType": {
+						SchemaProps: spec.SchemaProps{
+							Description: "The type that triggers the rule TLV type is defined as uint8_t in proxy protocol. See [the spec](https://www.haproxy.org/download/2.1/doc/proxy-protocol.txt) for details.",
+							Type:        []string{"integer"},
+							Format:      "int64",
+						},
+					},
+					"onTlvPresent": {
+						SchemaProps: spec.SchemaProps{
+							Description: "If the TLV type is present, apply this metadata KeyValuePair.",
+							Ref:         ref("github.com/kgateway-dev/kgateway/v2/api/v1alpha1.ProxyProtocolKeyValuePair"),
+						},
+					},
+				},
+				Required: []string{"tlvType"},
+			},
+		},
+		Dependencies: []string{
+			"github.com/kgateway-dev/kgateway/v2/api/v1alpha1.ProxyProtocolKeyValuePair"},
 	}
 }
 
