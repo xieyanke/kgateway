@@ -21,8 +21,6 @@ require (
 	github.com/mitchellh/hashstructure v1.0.0
 	github.com/onsi/ginkgo/v2 v2.23.4
 	github.com/onsi/gomega v1.37.0
-	github.com/prometheus/client_golang v1.22.0
-	github.com/prometheus/client_model v0.6.2
 	github.com/solo-io/envoy-gloo/go v0.0.0-20250102165327-33a74fcf9966
 	github.com/solo-io/go-list-licenses v0.1.4
 	github.com/solo-io/go-utils v0.27.3
@@ -43,7 +41,6 @@ require (
 	k8s.io/apiextensions-apiserver v0.33.2
 	k8s.io/apimachinery v0.33.2
 	k8s.io/client-go v0.33.2
-	k8s.io/component-base v0.33.2
 	k8s.io/klog/v2 v2.130.1
 	k8s.io/kube-openapi v0.0.0-20250318190949-c8a335a9a2ff
 	k8s.io/utils v0.0.0-20241210054802-24370beab758
@@ -68,7 +65,6 @@ require (
 	github.com/manuelarte/funcorder v0.2.1 // indirect
 	github.com/mikefarah/yq/v4 v4.45.4 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
-	github.com/prometheus/common v0.65.0 // indirect
 	github.com/rotisserie/eris v0.5.4 // indirect
 	github.com/yuin/gopher-lua v1.1.1 // indirect
 	go.augendre.info/fatcontext v0.8.0 // indirect
@@ -469,6 +465,9 @@ require (
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
 	github.com/polydawn/refmt v0.89.1-0.20221221234430-40501e09de1f // indirect
 	github.com/polyfloyd/go-errorlint v1.8.0 // indirect
+	github.com/prometheus/client_golang v1.22.0
+	github.com/prometheus/client_model v0.6.2
+	github.com/prometheus/common v0.65.0 // indirect
 	github.com/prometheus/procfs v0.15.1 // indirect
 	github.com/prometheus/statsd_exporter v0.25.0 // indirect
 	github.com/quasilyte/go-ruleguard v0.4.4 // indirect
@@ -598,6 +597,7 @@ require (
 	k8s.io/apiserver v0.33.2 // indirect
 	k8s.io/cli-runtime v0.32.3 // indirect
 	k8s.io/code-generator v0.33.2 // indirect
+	k8s.io/component-base v0.33.2
 	k8s.io/gengo/v2 v2.0.0-20250207200755-1244d31929d7 // indirect
 	k8s.io/kubectl v0.32.3 // indirect
 	lukechampine.com/blake3 v1.2.1 // indirect
@@ -615,14 +615,14 @@ require (
 	software.sslmate.com/src/go-pkcs12 v0.5.0 // indirect
 )
 
-replace (
-	github.com/imdario/mergo => github.com/imdario/mergo v0.3.16
-	// Use a patched version of gengo to produce consistent zz_generated.openapi.go
-	// Ref: https://github.com/kubernetes/gengo/issues/292
-	k8s.io/gengo/v2 => github.com/kgateway-dev/gengo/v2 v2.0.0-20250512195215-4fa0a9df2978
-	// Remove once https://github.com/kubernetes-sigs/controller-tools/pull/1224 merges
-	sigs.k8s.io/controller-tools => github.com/shashankram/controller-tools v0.0.0-20250626172831-f7be064a9132
-)
+// Remove once https://github.com/kubernetes-sigs/controller-tools/pull/1224 merges
+replace sigs.k8s.io/controller-tools => github.com/shashankram/controller-tools v0.0.0-20250626172831-f7be064a9132
+
+replace github.com/imdario/mergo => github.com/imdario/mergo v0.3.16
+
+// Use a patched version of gengo to produce consistent zz_generated.openapi.go
+// Ref: https://github.com/kubernetes/gengo/issues/292
+replace k8s.io/gengo/v2 => github.com/kgateway-dev/gengo/v2 v2.0.0-20250512195215-4fa0a9df2978
 
 tool (
 	github.com/golang/mock/mockgen
