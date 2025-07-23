@@ -12,6 +12,7 @@ import (
 	"github.com/kgateway-dev/kgateway/v2/api/v1alpha1"
 	"github.com/kgateway-dev/kgateway/v2/internal/kgateway/extensions2/pluginutils"
 	"github.com/kgateway-dev/kgateway/v2/internal/kgateway/ir"
+	"github.com/kgateway-dev/kgateway/v2/pkg/utils/cmputils"
 )
 
 const (
@@ -41,10 +42,9 @@ func (r *GlobalRateLimitIR) Equals(other *GlobalRateLimitIR) bool {
 			return false
 		}
 	}
-	if (r.provider == nil) != (other.provider == nil) {
-		return false
-	}
-	if r.provider != nil && !r.provider.Equals(*other.provider) {
+	if !cmputils.CompareWithNils(r.provider, other.provider, func(a, b *TrafficPolicyGatewayExtensionIR) bool {
+		return a.Equals(*b)
+	}) {
 		return false
 	}
 
@@ -124,13 +124,13 @@ func createRateLimitActions(descriptors []v1alpha1.RateLimitDescriptor) ([]*envo
 					},
 				}
 			case v1alpha1.RateLimitDescriptorEntryTypeHeader:
-				if entry.Header == "" {
+				if entry.Header == nil {
 					return nil, fmt.Errorf("header entry requires Header field to be set")
 				}
 				action.ActionSpecifier = &envoyroutev3.RateLimit_Action_RequestHeaders_{
 					RequestHeaders: &envoyroutev3.RateLimit_Action_RequestHeaders{
-						HeaderName:    entry.Header,
-						DescriptorKey: entry.Header, // Use header name as key
+						HeaderName:    *entry.Header,
+						DescriptorKey: *entry.Header, // Use header name as key
 					},
 				}
 			case v1alpha1.RateLimitDescriptorEntryTypeRemoteAddress:

@@ -25,6 +25,7 @@ import (
 	translatorutils "github.com/kgateway-dev/kgateway/v2/internal/kgateway/translator/utils"
 	"github.com/kgateway-dev/kgateway/v2/internal/kgateway/utils"
 	"github.com/kgateway-dev/kgateway/v2/pkg/utils/arnutils"
+	"github.com/kgateway-dev/kgateway/v2/pkg/utils/cmputils"
 )
 
 const (
@@ -170,20 +171,11 @@ type lambdaFilters struct {
 
 // Equals checks if two lambdaFilters objects are equal.
 func (u *lambdaFilters) Equals(other *lambdaFilters) bool {
-	if u == nil && other != nil {
-		return false
-	}
-	if u != nil {
-		if other == nil {
-			return false
-		}
-		return proto.Equal(u.lambdaConfigAny, other.lambdaConfigAny) &&
-			proto.Equal(u.awsRequestSigningAny, other.awsRequestSigningAny) &&
-			proto.Equal(u.codecConfigAny, other.codecConfigAny)
-	}
-
-	// only if both are nil
-	return true
+	return cmputils.CompareWithNils(u, other, func(a, b *lambdaFilters) bool {
+		return proto.Equal(a.lambdaConfigAny, b.lambdaConfigAny) &&
+			proto.Equal(a.awsRequestSigningAny, b.awsRequestSigningAny) &&
+			proto.Equal(a.codecConfigAny, b.codecConfigAny)
+	})
 }
 
 // buildLambdaFilters configures cluster's upstream HTTP filters for the given backend.
@@ -244,8 +236,8 @@ func getRegion(in *v1alpha1.AwsBackend) string {
 // getLambdaHostname returns the hostname for the lambda function. When using a custom endpoint
 // has been specified, it will be returned. Otherwise, the default lambda hostname is returned.
 func getLambdaHostname(in *v1alpha1.AwsBackend) string {
-	if in.Lambda.EndpointURL != "" {
-		return in.Lambda.EndpointURL
+	if in.Lambda.EndpointURL != nil {
+		return *in.Lambda.EndpointURL
 	}
 	return fmt.Sprintf("lambda.%s.amazonaws.com", getRegion(in))
 }
@@ -260,15 +252,12 @@ func getLambdaInvocationMode(in *v1alpha1.AwsBackend) envoy_lambda_v3.Config_Inv
 }
 
 // buildLambdaARN attempts to build a fully qualified lambda arn from the given backend configuration.
-// If the qualifier is not specified, the $LATEST qualifier is used. An error is returned if the arn
-// is not a valid lambda arn.
+// CEL validation should reject invalid `qualifier` values and handle defaulting, so we can assume
+// the qualifier passed here is valid.
+// An error is returned if the arn is not a valid lambda arn.
 func buildLambdaARN(in *v1alpha1.AwsBackend, region string) (string, error) {
-	qualifier := "$LATEST"
-	if in.Lambda.Qualifier != "" {
-		qualifier = in.Lambda.Qualifier
-	}
 	// TODO(tim): url.QueryEscape(...)?
-	arnStr := fmt.Sprintf("arn:aws:lambda:%s:%s:function:%s:%s", region, in.AccountId, in.Lambda.FunctionName, qualifier)
+	arnStr := fmt.Sprintf("arn:aws:lambda:%s:%s:function:%s:%s", region, in.AccountId, in.Lambda.FunctionName, in.Lambda.Qualifier)
 	parsedARN, err := arnutils.Parse(arnStr)
 	if err != nil {
 		return "", fmt.Errorf("failed to parse lambda arn: %v", err)
@@ -295,12 +284,14 @@ func configureLambdaEndpoint(in *v1alpha1.AwsBackend) (*lambdaEndpointConfig, er
 		port:     443,
 		useTLS:   true,
 	}
-	if in.Lambda.EndpointURL == "" {
+
+	if in.Lambda.EndpointURL == nil {
 		// no custom endpoint specified, use the default lambda hostname.
 		return config, nil
 	}
 
-	parsedURL, err := url.Parse(in.Lambda.EndpointURL)
+	inUrl := *in.Lambda.EndpointURL
+	parsedURL, err := url.Parse(inUrl)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse endpoint URL: %v", err)
 	}

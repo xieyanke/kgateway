@@ -30,6 +30,7 @@ import (
 	"github.com/kgateway-dev/kgateway/v2/internal/kgateway/ir"
 	"github.com/kgateway-dev/kgateway/v2/internal/kgateway/krtcollections"
 	"github.com/kgateway-dev/kgateway/v2/internal/kgateway/proxy_syncer"
+	"github.com/kgateway-dev/kgateway/v2/internal/kgateway/translator/metrics"
 	"github.com/kgateway-dev/kgateway/v2/internal/kgateway/utils/krtutil"
 	"github.com/kgateway-dev/kgateway/v2/pkg/client/clientset/versioned"
 	"github.com/kgateway-dev/kgateway/v2/pkg/deployer"
@@ -222,6 +223,10 @@ func NewControllerBuilder(ctx context.Context, cfg StartConfig) (*ControllerBuil
 	}
 	mergedPlugins := pluginFactoryWithBuiltin(cfg)(ctx, commoncol)
 	commoncol.InitPlugins(ctx, mergedPlugins, globalSettings)
+
+	// Begin background processing of resource sync metrics.
+	// This only effects metrics in the resources subsystem and is not required for other metrics.
+	metrics.StartResourceSyncMetricsProcessing(ctx)
 
 	// Create the proxy syncer for the Gateway API resources
 	setupLog.Info("initializing proxy syncer")
