@@ -40,6 +40,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/kgateway-dev/kgateway/v2/api/v1alpha1.BackendConfigPolicyList":                   schema_kgateway_v2_api_v1alpha1_BackendConfigPolicyList(ref),
 		"github.com/kgateway-dev/kgateway/v2/api/v1alpha1.BackendConfigPolicySpec":                   schema_kgateway_v2_api_v1alpha1_BackendConfigPolicySpec(ref),
 		"github.com/kgateway-dev/kgateway/v2/api/v1alpha1.BackendList":                               schema_kgateway_v2_api_v1alpha1_BackendList(ref),
+		"github.com/kgateway-dev/kgateway/v2/api/v1alpha1.BackendProxyProtocol":                      schema_kgateway_v2_api_v1alpha1_BackendProxyProtocol(ref),
 		"github.com/kgateway-dev/kgateway/v2/api/v1alpha1.BackendSpec":                               schema_kgateway_v2_api_v1alpha1_BackendSpec(ref),
 		"github.com/kgateway-dev/kgateway/v2/api/v1alpha1.BackendStatus":                             schema_kgateway_v2_api_v1alpha1_BackendStatus(ref),
 		"github.com/kgateway-dev/kgateway/v2/api/v1alpha1.BackoffStrategy":                           schema_kgateway_v2_api_v1alpha1_BackoffStrategy(ref),
@@ -1700,11 +1701,17 @@ func schema_kgateway_v2_api_v1alpha1_BackendConfigPolicySpec(ref common.Referenc
 							Ref:         ref("github.com/kgateway-dev/kgateway/v2/api/v1alpha1.HealthCheck"),
 						},
 					},
+					"proxyProtocol": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Configuration for Proxy Protocol socket",
+							Ref:         ref("github.com/kgateway-dev/kgateway/v2/api/v1alpha1.BackendProxyProtocol"),
+						},
+					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"github.com/kgateway-dev/kgateway/v2/api/v1alpha1.CommonHttpProtocolOptions", "github.com/kgateway-dev/kgateway/v2/api/v1alpha1.HealthCheck", "github.com/kgateway-dev/kgateway/v2/api/v1alpha1.Http1ProtocolOptions", "github.com/kgateway-dev/kgateway/v2/api/v1alpha1.Http2ProtocolOptions", "github.com/kgateway-dev/kgateway/v2/api/v1alpha1.LoadBalancer", "github.com/kgateway-dev/kgateway/v2/api/v1alpha1.LocalPolicyTargetReference", "github.com/kgateway-dev/kgateway/v2/api/v1alpha1.LocalPolicyTargetSelector", "github.com/kgateway-dev/kgateway/v2/api/v1alpha1.TCPKeepalive", "github.com/kgateway-dev/kgateway/v2/api/v1alpha1.TLS", "k8s.io/apimachinery/pkg/apis/meta/v1.Duration"},
+			"github.com/kgateway-dev/kgateway/v2/api/v1alpha1.BackendProxyProtocol", "github.com/kgateway-dev/kgateway/v2/api/v1alpha1.CommonHttpProtocolOptions", "github.com/kgateway-dev/kgateway/v2/api/v1alpha1.HealthCheck", "github.com/kgateway-dev/kgateway/v2/api/v1alpha1.Http1ProtocolOptions", "github.com/kgateway-dev/kgateway/v2/api/v1alpha1.Http2ProtocolOptions", "github.com/kgateway-dev/kgateway/v2/api/v1alpha1.LoadBalancer", "github.com/kgateway-dev/kgateway/v2/api/v1alpha1.LocalPolicyTargetReference", "github.com/kgateway-dev/kgateway/v2/api/v1alpha1.LocalPolicyTargetSelector", "github.com/kgateway-dev/kgateway/v2/api/v1alpha1.TCPKeepalive", "github.com/kgateway-dev/kgateway/v2/api/v1alpha1.TLS", "k8s.io/apimachinery/pkg/apis/meta/v1.Duration"},
 	}
 }
 
@@ -1753,6 +1760,26 @@ func schema_kgateway_v2_api_v1alpha1_BackendList(ref common.ReferenceCallback) c
 		},
 		Dependencies: []string{
 			"github.com/kgateway-dev/kgateway/v2/api/v1alpha1.Backend", "k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"},
+	}
+}
+
+func schema_kgateway_v2_api_v1alpha1_BackendProxyProtocol(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
+				Properties: map[string]spec.Schema{
+					"version": {
+						SchemaProps: spec.SchemaProps{
+							Description: "The Proxy Protocol version to use. See https://www.haproxy.org/download/2.1/doc/proxy-protocol.txt for details. Valid values are `v1` and `v2`.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+				},
+				Required: []string{"version"},
+			},
+		},
 	}
 }
 

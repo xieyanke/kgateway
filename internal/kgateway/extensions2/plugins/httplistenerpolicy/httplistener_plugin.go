@@ -7,7 +7,6 @@ import (
 	"time"
 
 	envoyaccesslogv3 "github.com/envoyproxy/go-control-plane/envoy/config/accesslog/v3"
-	envoy_config_listener_v3 "github.com/envoyproxy/go-control-plane/envoy/config/listener/v3"
 	envoylistenerv3 "github.com/envoyproxy/go-control-plane/envoy/config/listener/v3"
 	envoyroutev3 "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
 	healthcheckv3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/health_check/v3"
@@ -317,9 +316,9 @@ func (p *httpListenerPolicyPluginGwPass) ApplyListenerPlugin(
 	p.healthCheckPolicy = policy.healthCheckPolicy
 
 	if policy.proxyProtocol != nil {
-		out.ListenerFilters = append(out.GetListenerFilters(), &envoy_config_listener_v3.ListenerFilter{
+		out.ListenerFilters = append(out.GetListenerFilters(), &envoylistenerv3.ListenerFilter{
 			Name: envoy_wellknown.ProxyProtocol,
-			ConfigType: &envoy_config_listener_v3.ListenerFilter_TypedConfig{
+			ConfigType: &envoylistenerv3.ListenerFilter_TypedConfig{
 				TypedConfig: protoconv.MessageToAny(policy.proxyProtocol),
 			},
 		})

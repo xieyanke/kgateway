@@ -87,6 +87,17 @@ func translateHttp2ProtocolOptions(http2ProtocolOptions *v1alpha1.Http2ProtocolO
 	return out
 }
 
+func translateProxyProtocol(proxyProtocolOptions *v1alpha1.BackendProxyProtocol) *envoycorev3.ProxyProtocolConfig {
+	out := &envoycorev3.ProxyProtocolConfig{}
+	switch proxyProtocolOptions.Version {
+	case v1alpha1.ProxyProtocolVersion1:
+		out.Version = envoycorev3.ProxyProtocolConfig_V1
+	case v1alpha1.ProxyProtocolVersion2:
+		out.Version = envoycorev3.ProxyProtocolConfig_V2
+	}
+	return out
+}
+
 func applyCommonHttpProtocolOptions(commonHttpProtocolOptions *envoycorev3.HttpProtocolOptions, backend ir.BackendObjectIR, out *envoyclusterv3.Cluster) {
 	if commonHttpProtocolOptions == nil {
 		return
@@ -151,4 +162,74 @@ func applyHttp2ProtocolOptions(http2ProtocolOptions *envoycorev3.Http2ProtocolOp
 	}); err != nil {
 		logger.Error("failed to apply http2 protocol options", "backend", backend.GetName(), "error", err)
 	}
+}
+
+func applyProxyProtocolOptions(proxyProtocolOptions *envoycorev3.ProxyProtocolConfig, out *envoyclusterv3.Cluster) {
+	if proxyProtocolOptions == nil {
+		return
+	}
+
+	// if unset envoy uses a raw buffer transport socket
+	// so explicitly make it here
+	if out.GetTransportSocket() == nil {
+		return
+	}
+
+	// // we may have to operate on a different pointer so lets store this for now
+	// topTS := out.GetTransportSocket()
+	// shouldMutate := topTS.GetName() == wellknown.TransportSocketTls
+	// // we have a transport socket and its not tls which was the former intention here
+	// // given this we attempt to parse if we have a wrapped proxy protocol ts.
+	// // We need this so that we can mutate the snis in any nested or non-nested
+	// // tls transport sockets.
+	// if out.GetTransportSocket().GetName() == upstream_proxy_protocol.UpstreamProxySocketName {
+	// 	// strip it we will reset it
+	// 	tcMsg, err := utils.AnyToMessage(out.GetTransportSocket().GetTypedConfig())
+	// 	if err != nil {
+	// 		return err
+	// 	}
+
+	// 	typedTransport, ok := tcMsg.(*proxyproto.ProxyProtocolUpstreamTransport)
+	// 	if !ok {
+	// 		return fmt.Errorf("static upstream cannot convert transport socket: %v", tcMsg)
+	// 	}
+	// 	topTS = typedTransport.GetTransportSocket()
+
+	// 	cfg, err := utils.AnyToMessage(topTS.GetTypedConfig())
+	// 	if err != nil {
+	// 		return errors.Wrapf(err, "static upstream cannot convert transport socket: %v", tcMsg)
+	// 	}
+
+	// 	_, ok = cfg.(*envoyauth.UpstreamTlsContext)
+	// 	shouldMutate = ok
+
+	// }
+	// if shouldMutate {
+	// 	for _, host := range spec.GetHosts() {
+
+	// 		sniname := sniAddr(spec, host)
+	// 		if sniname == "" {
+	// 			continue
+	// 		}
+	// 		ts, err := mutateSni(topTS, sniname)
+	// 		if err != nil {
+	// 			return err
+	// 		}
+
+	// 		if in.GetProxyProtocolVersion() != nil {
+	// 			// reinstate the proxy protocol as we may wipe it out when we mutate the sni
+	// 			newTs, err := upstream_proxy_protocol.WrapWithPProtocol(ts, in.GetProxyProtocolVersion().GetValue())
+	// 			if err != nil {
+	// 				return err
+	// 			}
+	// 			ts = newTs
+	// 		}
+
+	// 		out.TransportSocketMatches = append(out.GetTransportSocketMatches(), &envoy_config_cluster_v3.Cluster_TransportSocketMatch{
+	// 			Name:            name(spec, host),
+	// 			Match:           metadataMatch(spec, host),
+	// 			TransportSocket: ts,
+	// 		})
+	// 	}
+	// }
 }

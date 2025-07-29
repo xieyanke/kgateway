@@ -242,6 +242,16 @@ spec:
                     <= 1'
               perConnectionBufferLimitBytes:
                 type: integer
+              proxyProtocol:
+                properties:
+                  version:
+                    enum:
+                    - v1
+                    - v2
+                    type: string
+                required:
+                - version
+                type: object
               targetRefs:
                 items:
                   properties:

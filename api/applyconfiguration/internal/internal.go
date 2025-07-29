@@ -447,6 +447,9 @@ var schemaYAML = typed.YAMLObject(`types:
     - name: perConnectionBufferLimitBytes
       type:
         scalar: numeric
+    - name: proxyProtocol
+      type:
+        namedType: com.github.kgateway-dev.kgateway.v2.api.v1alpha1.BackendProxyProtocol
     - name: targetRefs
       type:
         list:
@@ -465,6 +468,12 @@ var schemaYAML = typed.YAMLObject(`types:
     - name: tls
       type:
         namedType: com.github.kgateway-dev.kgateway.v2.api.v1alpha1.TLS
+- name: com.github.kgateway-dev.kgateway.v2.api.v1alpha1.BackendProxyProtocol
+  map:
+    fields:
+    - name: version
+      type:
+        scalar: string
 - name: com.github.kgateway-dev.kgateway.v2.api.v1alpha1.BackendSpec
   map:
     fields:

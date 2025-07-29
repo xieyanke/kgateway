@@ -86,6 +86,10 @@ type BackendConfigPolicySpec struct {
 	// HealthCheck contains the options necessary to configure the health check.
 	// +optional
 	HealthCheck *HealthCheck `json:"healthCheck,omitempty"`
+
+	// Configuration for Proxy Protocol socket
+	// +optional
+	ProxyProtocol *BackendProxyProtocol `json:"proxyProtocol,omitempty"`
 }
 
 // See [Envoy documentation](https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/core/v3/protocol.proto#envoy-v3-api-msg-config-core-v3-http1protocoloptions) for more details.
@@ -484,3 +488,18 @@ type HealthCheckGrpc struct {
 	// +optional
 	Authority *string `json:"authority,omitempty"`
 }
+
+type BackendProxyProtocol struct {
+	// The Proxy Protocol version to use. See https://www.haproxy.org/download/2.1/doc/proxy-protocol.txt for details.
+	// Valid values are `v1` and `v2`.
+	// +required
+	// +kubebuilder:validation:Enum=v1;v2
+	Version ProxyProtocolVersion `json:"version,omitempty"`
+}
+
+type ProxyProtocolVersion string
+
+const (
+	ProxyProtocolVersion1 ProxyProtocolVersion = "v1"
+	ProxyProtocolVersion2 ProxyProtocolVersion = "v2"
+)

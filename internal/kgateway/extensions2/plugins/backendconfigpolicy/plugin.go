@@ -44,6 +44,7 @@ type BackendConfigPolicyIR struct {
 	tlsConfig                     *envoytlsv3.UpstreamTlsContext
 	loadBalancerConfig            *LoadBalancerConfigIR
 	healthCheck                   *envoycorev3.HealthCheck
+	proxyProtocol                 *envoycorev3.ProxyProtocolConfig
 }
 
 var logger = logging.New("backendconfigpolicy")
@@ -99,6 +100,10 @@ func (d *BackendConfigPolicyIR) Equals(other any) bool {
 	}
 
 	if !proto.Equal(d.healthCheck, d2.healthCheck) {
+		return false
+	}
+
+	if !proto.Equal(d.proxyProtocol, d2.proxyProtocol) {
 		return false
 	}
 
@@ -197,6 +202,8 @@ func processBackend(_ context.Context, polir ir.PolicyIR, backend ir.BackendObje
 	if pol.healthCheck != nil {
 		out.HealthChecks = []*envoycorev3.HealthCheck{pol.healthCheck}
 	}
+
+	applyProxyProtocolOptions(pol.proxyProtocol, out)
 }
 
 func translate(commoncol *common.CommonCollections, krtctx krt.HandlerContext, pol *v1alpha1.BackendConfigPolicy) (*BackendConfigPolicyIR, error) {
@@ -244,6 +251,10 @@ func translate(commoncol *common.CommonCollections, krtctx krt.HandlerContext, p
 
 	if pol.Spec.HealthCheck != nil {
 		ir.healthCheck = translateHealthCheck(pol.Spec.HealthCheck)
+	}
+
+	if pol.Spec.ProxyProtocol != nil {
+		ir.proxyProtocol = translateProxyProtocol(pol.Spec.ProxyProtocol)
 	}
 
 	return &ir, nil

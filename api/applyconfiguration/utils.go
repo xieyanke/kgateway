@@ -59,6 +59,8 @@ func ForKind(kind schema.GroupVersionKind) interface{} {
 		return &apiv1alpha1.BackendConfigPolicyApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("BackendConfigPolicySpec"):
 		return &apiv1alpha1.BackendConfigPolicySpecApplyConfiguration{}
+	case v1alpha1.SchemeGroupVersion.WithKind("BackendProxyProtocol"):
+		return &apiv1alpha1.BackendProxyProtocolApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("BackendSpec"):
 		return &apiv1alpha1.BackendSpecApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("BackendStatus"):
