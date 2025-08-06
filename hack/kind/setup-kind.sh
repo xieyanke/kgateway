@@ -21,6 +21,8 @@ CONFORMANCE="${CONFORMANCE:-false}"
 CONFORMANCE_VERSION="${CONFORMANCE_VERSION:-$(go list -m sigs.k8s.io/gateway-api | awk '{print $2}')}"
 # The channel of the k8s gateway api conformance tests to run. Requires CONFORMANCE=true
 CONFORMANCE_CHANNEL="${CONFORMANCE_CHANNEL:-"experimental"}"
+# The version of the k8s gateway api inference extension CRDs to install. Requires CONFORMANCE=true
+GIE_CRD_VERSION="${GIE_CRD_VERSION:-$(go list -m sigs.k8s.io/gateway-api-inference-extension | awk '{print $2}')}"
 # The kind CLI to use. Defaults to the latest version from the kind repo.
 KIND="${KIND:-go tool kind}"
 # If true, use localstack for lambda functions
@@ -86,14 +88,17 @@ fi
 # the CRDs yet, or won't be for the foreseeable future.
 kubectl apply --kustomize "https://github.com/kubernetes-sigs/gateway-api/config/crd/$CONFORMANCE_CHANNEL?ref=$CONFORMANCE_VERSION"
 
-# 7. Conformance test setup
+# 7. Apply the Kubernetes Gateway API Inference Extension CRDs
+kubectl apply -f https://github.com/kubernetes-sigs/gateway-api-inference-extension/releases/download/$GIE_CRD_VERSION/manifests.yaml
+
+# 8. Conformance test setup
 if [[ $CONFORMANCE == "true" ]]; then
   echo "Running conformance test setup"
 
   . $SCRIPT_DIR/setup-metalllb-on-kind.sh
 fi
 
-# 7. Setup localstack
+# 9. Setup localstack
 if [[ $LOCALSTACK == "true" ]]; then
   echo "Setting up localstack"
   . $SCRIPT_DIR/setup-localstack.sh

@@ -573,6 +573,11 @@ func (h *RoutesIndex) HasSynced() bool {
 	return h.httpRoutes.HasSynced() && h.routes.HasSynced() && h.policies.HasSynced() && h.backends.HasSynced() && h.refgrants.HasSynced()
 }
 
+// HTTPRoutes returns the raw krt collection that contains only the HTTPRouteIR.
+func (r *RoutesIndex) HTTPRoutes() krt.Collection[ir.HttpRouteIR] {
+	return r.httpRoutes
+}
+
 func NewRoutesIndex(
 	krtopts krtutil.KrtOptions,
 	httproutes krt.Collection[*gwv1.HTTPRoute],
@@ -670,6 +675,17 @@ func (h *RoutesIndex) FetchHttp(kctx krt.HandlerContext, ns, n string) *ir.HttpR
 	}
 	route := krt.FetchOne(kctx, h.httpRoutes, krt.FilterKey(src.ResourceName()))
 	return route
+}
+
+// ListHTTPRoutesInNamespace returns all HTTPRouteIRs in the given namespace.
+func (h *RoutesIndex) ListHTTPRoutesInNamespace(ns string) []ir.HttpRouteIR {
+	var out []ir.HttpRouteIR
+	for _, rt := range h.httpRoutes.List() {
+		if rt.GetNamespace() == ns {
+			out = append(out, rt)
+		}
+	}
+	return out
 }
 
 func (h *RoutesIndex) Fetch(kctx krt.HandlerContext, gk schema.GroupKind, ns, n string) *RouteWrapper {
