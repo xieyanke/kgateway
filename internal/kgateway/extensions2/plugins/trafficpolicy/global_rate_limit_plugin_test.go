@@ -22,6 +22,136 @@ import (
 	"github.com/kgateway-dev/kgateway/v2/internal/kgateway/ir"
 )
 
+func TestGlobalRateLimitIREquals(t *testing.T) {
+	createSimpleRateLimit := func(key string) []*envoyroutev3.RateLimit {
+		return []*envoyroutev3.RateLimit{
+			{
+				Actions: []*envoyroutev3.RateLimit_Action{
+					{
+						ActionSpecifier: &envoyroutev3.RateLimit_Action_GenericKey_{
+							GenericKey: &envoyroutev3.RateLimit_Action_GenericKey{
+								DescriptorKey:   key,
+								DescriptorValue: "test-value",
+							},
+						},
+					},
+				},
+			},
+		}
+	}
+	createProvider := func(name string) *TrafficPolicyGatewayExtensionIR {
+		return &TrafficPolicyGatewayExtensionIR{
+			Name: name,
+			RateLimit: &ratev3.RateLimit{
+				Domain: "test-domain",
+				RateLimitService: &envoyratelimitv3.RateLimitServiceConfig{
+					GrpcService: &envoycorev3.GrpcService{
+						TargetSpecifier: &envoycorev3.GrpcService_EnvoyGrpc_{
+							EnvoyGrpc: &envoycorev3.GrpcService_EnvoyGrpc{
+								ClusterName: name,
+							},
+						},
+					},
+				},
+			},
+		}
+	}
+
+	tests := []struct {
+		name       string
+		rateLimit1 *globalRateLimitIR
+		rateLimit2 *globalRateLimitIR
+		expected   bool
+	}{
+		{
+			name:       "both nil are equal",
+			rateLimit1: nil,
+			rateLimit2: nil,
+			expected:   true,
+		},
+		{
+			name:       "nil vs non-nil are not equal",
+			rateLimit1: nil,
+			rateLimit2: &globalRateLimitIR{rateLimitActions: createSimpleRateLimit("key1")},
+			expected:   false,
+		},
+		{
+			name:       "non-nil vs nil are not equal",
+			rateLimit1: &globalRateLimitIR{rateLimitActions: createSimpleRateLimit("key1")},
+			rateLimit2: nil,
+			expected:   false,
+		},
+		{
+			name:       "same instance is equal",
+			rateLimit1: &globalRateLimitIR{rateLimitActions: createSimpleRateLimit("key1")},
+			rateLimit2: &globalRateLimitIR{rateLimitActions: createSimpleRateLimit("key1")},
+			expected:   true,
+		},
+		{
+			name:       "different rate limit keys are not equal",
+			rateLimit1: &globalRateLimitIR{rateLimitActions: createSimpleRateLimit("key1")},
+			rateLimit2: &globalRateLimitIR{rateLimitActions: createSimpleRateLimit("key2")},
+			expected:   false,
+		},
+		{
+			name:       "different providers are not equal",
+			rateLimit1: &globalRateLimitIR{provider: createProvider("service1")},
+			rateLimit2: &globalRateLimitIR{provider: createProvider("service2")},
+			expected:   false,
+		},
+		{
+			name:       "same providers are equal",
+			rateLimit1: &globalRateLimitIR{provider: createProvider("service1")},
+			rateLimit2: &globalRateLimitIR{provider: createProvider("service1")},
+			expected:   true,
+		},
+		{
+			name:       "different length action slices are not equal",
+			rateLimit1: &globalRateLimitIR{rateLimitActions: createSimpleRateLimit("key1")},
+			rateLimit2: &globalRateLimitIR{rateLimitActions: append(createSimpleRateLimit("key1"), createSimpleRateLimit("key2")...)},
+			expected:   false,
+		},
+		{
+			name:       "nil fields are equal",
+			rateLimit1: &globalRateLimitIR{rateLimitActions: nil, provider: nil},
+			rateLimit2: &globalRateLimitIR{rateLimitActions: nil, provider: nil},
+			expected:   true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := tt.rateLimit1.Equals(tt.rateLimit2)
+			assert.Equal(t, tt.expected, result)
+
+			// Test symmetry: a.Equals(b) should equal b.Equals(a)
+			reverseResult := tt.rateLimit2.Equals(tt.rateLimit1)
+			assert.Equal(t, result, reverseResult, "Equals should be symmetric")
+		})
+	}
+
+	// Test reflexivity: x.Equals(x) should always be true for non-nil values
+	t.Run("reflexivity", func(t *testing.T) {
+		rateLimit := &globalRateLimitIR{rateLimitActions: createSimpleRateLimit("test")}
+		assert.True(t, rateLimit.Equals(rateLimit), "rateLimit should equal itself")
+	})
+
+	// Test transitivity: if a.Equals(b) && b.Equals(c), then a.Equals(c)
+	t.Run("transitivity", func(t *testing.T) {
+		createSameRateLimit := func() *globalRateLimitIR {
+			return &globalRateLimitIR{rateLimitActions: createSimpleRateLimit("test")}
+		}
+
+		a := createSameRateLimit()
+		b := createSameRateLimit()
+		c := createSameRateLimit()
+
+		assert.True(t, a.Equals(b), "a should equal b")
+		assert.True(t, b.Equals(c), "b should equal c")
+		assert.True(t, a.Equals(c), "a should equal c (transitivity)")
+	})
+}
+
 func TestCreateRateLimitActions(t *testing.T) {
 	tests := []struct {
 		name           string
@@ -500,43 +630,38 @@ func TestToRateLimitFilterConfig(t *testing.T) {
 					// Create a timeout based on the timeout from extension
 					timeout := durationpb.New(extension.Timeout.Duration)
 
-					if err == nil {
-						// Use the domain from the extension
-						domain := extension.Domain
+					// Use the domain from the extension
+					domain := extension.Domain
 
-						// Construct cluster name from the backendRef
-						clusterName := ""
-						if extension.GrpcService != nil && extension.GrpcService.BackendRef != nil {
-							clusterName = fmt.Sprintf("%s.%s.svc.cluster.local:%d",
-								extension.GrpcService.BackendRef.Name,
-								tt.gatewayExtension.Namespace,
-								*extension.GrpcService.BackendRef.Port)
-						} else {
-							err = fmt.Errorf("backend not provided in grpc service")
-						}
+					// Construct cluster name from the backendRef
+					if extension.GrpcService != nil && extension.GrpcService.BackendRef != nil {
+						clusterName := fmt.Sprintf("%s.%s.svc.cluster.local:%d",
+							extension.GrpcService.BackendRef.Name,
+							tt.gatewayExtension.Namespace,
+							*extension.GrpcService.BackendRef.Port)
 
-						if err == nil {
-							// Create a rate limit configuration
-							rl = &ratev3.RateLimit{
-								Domain:          domain,
-								Timeout:         timeout,
-								FailureModeDeny: !extension.FailOpen,
-								RateLimitService: &envoyratelimitv3.RateLimitServiceConfig{
-									GrpcService: &envoycorev3.GrpcService{
-										TargetSpecifier: &envoycorev3.GrpcService_EnvoyGrpc_{
-											EnvoyGrpc: &envoycorev3.GrpcService_EnvoyGrpc{
-												ClusterName: clusterName,
-											},
+						// Create a rate limit configuration
+						rl = &ratev3.RateLimit{
+							Domain:          domain,
+							Timeout:         timeout,
+							FailureModeDeny: !extension.FailOpen,
+							RateLimitService: &envoyratelimitv3.RateLimitServiceConfig{
+								GrpcService: &envoycorev3.GrpcService{
+									TargetSpecifier: &envoycorev3.GrpcService_EnvoyGrpc_{
+										EnvoyGrpc: &envoycorev3.GrpcService_EnvoyGrpc{
+											ClusterName: clusterName,
 										},
 									},
-									TransportApiVersion: envoycorev3.ApiVersion_V3,
 								},
-								Stage:                   0,
-								EnableXRatelimitHeaders: ratev3.RateLimit_DRAFT_VERSION_03,
-								RequestType:             "both",
-								StatPrefix:              rateLimitStatPrefix,
-							}
+								TransportApiVersion: envoycorev3.ApiVersion_V3,
+							},
+							Stage:                   0,
+							EnableXRatelimitHeaders: ratev3.RateLimit_DRAFT_VERSION_03,
+							RequestType:             "both",
+							StatPrefix:              rateLimitStatPrefix,
 						}
+					} else {
+						err = fmt.Errorf("backend not provided in grpc service")
 					}
 				}
 			}

@@ -7,6 +7,7 @@ import (
 	"slices"
 	"strings"
 
+	"github.com/agentgateway/agentgateway/go/api"
 	envoyclusterv3 "github.com/envoyproxy/go-control-plane/envoy/config/cluster/v3"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
@@ -20,12 +21,17 @@ var VirtualBuiltInGK = schema.GroupKind{
 }
 
 type BackendInit struct {
-	// InitBackend optionally returns an `*ir.EndpointsForBackend` that can be used
+	// InitEnvoyBackend optionally returns an `*ir.EndpointsForBackend` that can be used
 	// to initialize a ClusterLoadAssignment inline on the Cluster, with proper locality
 	// based prioritization applied, as well as endpoint plugins applied.
-	// This will never override a ClusterLoadAssignment that is set inside of an InitBackend implementation.
+	// This will never override a ClusterLoadAssignment that is set inside of an InitEnvoyBackend implementation.
 	// The CLA is only added if the Cluster has a compatible type (EDS, LOGICAL_DNS, STRICT_DNS).
-	InitBackend func(ctx context.Context, in BackendObjectIR, out *envoyclusterv3.Cluster) *EndpointsForBackend
+	InitEnvoyBackend func(ctx context.Context, in BackendObjectIR, out *envoyclusterv3.Cluster) *EndpointsForBackend
+
+	// InitAgentBackend translates backend objects for the agent gateway data plane.
+	// It takes a BackendObjectIR (which includes the backend and any attached policies)
+	// and returns the corresponding agent gateway Backend and Policy resources.
+	InitAgentBackend func(in BackendObjectIR) ([]*api.Backend, []*api.Policy, error)
 }
 
 type PolicyRef struct {
@@ -51,11 +57,12 @@ func (ref *AttachedPolicyRef) ID() string {
 }
 
 type PolicyAtt struct {
+	// GroupKind is the GK of the original policy object
+	GroupKind schema.GroupKind
+
 	// Generation of the Policy CR contributing to this attachment
 	Generation int64
 
-	// GroupKind is the GK of the original policy object
-	GroupKind schema.GroupKind
 	// original object. ideally with structural errors removed.
 	// Opaque to us other than metadata.
 	PolicyIr PolicyIR
@@ -64,20 +71,24 @@ type PolicyAtt struct {
 	// nil if the attachment was done via extension ref or if PolicyAtt is the result of MergePolicies(...)
 	PolicyRef *AttachedPolicyRef
 
-	// MergeOrigins maps field names in the PolicyIr to their original source in the merged PolicyAtt.
-	// It can be used to determine which PolicyAtt a merged field came from.
-	MergeOrigins MergeOrigins
-
+	// InheritedPolicyPriority is the priority of the policy when it is inherited by a child resource
+	// of the resource this policy is attached to
 	InheritedPolicyPriority apiannotations.InheritedPolicyPriorityValue
+
+	// Errors should be formatted for users, so do not include internal lib errors.
+	// Instead use a well defined error such as ErrInvalidConfig
+	Errors []error
 
 	// HierarchicalPriority is the priority of the policy in an inheritance hierarchy.
 	// A higher value means higher priority. It is used to accurately merge policies
 	// that are at different levels in the config tree hierarchy.
 	HierarchicalPriority int
 
-	// Errors should be formatted for users, so do not include internal lib errors.
-	// Instead use a well defined error such as ErrInvalidConfig
-	Errors []error
+	// MergeOrigins maps field names in the PolicyIr to their original source in the merged PolicyAtt.
+	// It can be used to determine which PolicyAtt a merged field came from.
+	// Only relevant to policy merging and does not contribute to KRT events
+	// +noKrtEquals
+	MergeOrigins MergeOrigins
 }
 
 func (c PolicyAtt) FormatErrors() string {
@@ -126,7 +137,12 @@ func (c PolicyAtt) Equals(in PolicyAtt) bool {
 		return false
 	}
 
-	return c.GroupKind == in.GroupKind && ptrEquals(c.PolicyRef, in.PolicyRef) && c.PolicyIr.Equals(in.PolicyIr)
+	return c.GroupKind == in.GroupKind &&
+		c.Generation == in.Generation &&
+		c.PolicyIr.Equals(in.PolicyIr) &&
+		ptrEquals(c.PolicyRef, in.PolicyRef) &&
+		c.InheritedPolicyPriority == in.InheritedPolicyPriority &&
+		c.HierarchicalPriority == in.HierarchicalPriority
 }
 
 func ptrEquals[T comparable](a, b *T) bool {
@@ -259,4 +275,8 @@ type HttpRouteRuleIR struct {
 	Backends         []HttpBackendOrDelegate
 	Matches          []gwv1.HTTPRouteMatch
 	Name             string
+
+	// Err contains any error encountered during the construction of this HttpRouteRuleIR
+	// that should be propagated through to translation to any derived ir.HttpRouteRuleMatchIRs
+	Err error
 }

@@ -49,6 +49,8 @@ func ForKind(kind schema.GroupVersionKind) interface{} {
 		return &apiv1alpha1.AwsAuthApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("AwsBackend"):
 		return &apiv1alpha1.AwsBackendApplyConfiguration{}
+	case v1alpha1.SchemeGroupVersion.WithKind("AWSGuardrailConfig"):
+		return &apiv1alpha1.AWSGuardrailConfigApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("AwsLambda"):
 		return &apiv1alpha1.AwsLambdaApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("AzureOpenAIConfig"):
@@ -65,6 +67,8 @@ func ForKind(kind schema.GroupVersionKind) interface{} {
 		return &apiv1alpha1.BackendStatusApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("BackoffStrategy"):
 		return &apiv1alpha1.BackoffStrategyApplyConfiguration{}
+	case v1alpha1.SchemeGroupVersion.WithKind("BedrockConfig"):
+		return &apiv1alpha1.BedrockConfigApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("BodyTransformation"):
 		return &apiv1alpha1.BodyTransformationApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("Buffer"):
@@ -203,6 +207,14 @@ func ForKind(kind schema.GroupVersionKind) interface{} {
 		return &apiv1alpha1.LocalPolicyTargetSelectorApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("LocalRateLimitPolicy"):
 		return &apiv1alpha1.LocalRateLimitPolicyApplyConfiguration{}
+	case v1alpha1.SchemeGroupVersion.WithKind("MCP"):
+		return &apiv1alpha1.MCPApplyConfiguration{}
+	case v1alpha1.SchemeGroupVersion.WithKind("McpSelector"):
+		return &apiv1alpha1.McpSelectorApplyConfiguration{}
+	case v1alpha1.SchemeGroupVersion.WithKind("McpTarget"):
+		return &apiv1alpha1.McpTargetApplyConfiguration{}
+	case v1alpha1.SchemeGroupVersion.WithKind("McpTargetSelector"):
+		return &apiv1alpha1.McpTargetSelectorApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("Message"):
 		return &apiv1alpha1.MessageApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("MetadataKey"):

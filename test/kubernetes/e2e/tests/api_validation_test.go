@@ -42,7 +42,7 @@ spec:
     - host: example.com
       port: 80
 `,
-			wantErrors: []string{"exactly one of the fields in [ai aws static dynamicForwardProxy] must be set"},
+			wantErrors: []string{"exactly one of the fields in [ai aws static dynamicForwardProxy mcp] must be set"},
 		},
 		{
 			name: "Backend: empty lambda qualifier does not match pattern",
@@ -75,7 +75,6 @@ spec:
     name: test-service
   http1ProtocolOptions:
     enableTrailers: true
-    headerFormat: ProperCaseHeaderKeyFormat
   http2ProtocolOptions:
     maxConcurrentStreams: 100
     overrideStreamErrorOnInvalidHttpMessage: true
@@ -408,6 +407,34 @@ spec:
   body: ""
 `,
 			wantErrors: []string{"spec.body in body should be at least 1 chars long"},
+		},
+		{
+			name: "TrafficPolicy: empty generic key and value in rate limit descriptor",
+			input: `---
+apiVersion: gateway.kgateway.dev/v1alpha1
+kind: TrafficPolicy
+metadata:
+  name: traffic-policy-empty-generic-fields
+spec:
+  targetRefs:
+  - group: gateway.networking.k8s.io
+    kind: HTTPRoute
+    name: test-route
+  rateLimit:
+    global:
+      descriptors:
+      - entries:
+        - type: Generic
+          generic:
+            key: ""
+            value: ""
+      extensionRef:
+        name: test-extension
+`,
+			wantErrors: []string{
+				"spec.rateLimit.global.descriptors[0].entries[0].generic.key in body should be at least 1 chars long",
+				"spec.rateLimit.global.descriptors[0].entries[0].generic.value in body should be at least 1 chars long",
+			},
 		},
 	}
 

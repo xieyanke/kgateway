@@ -6,6 +6,7 @@ import (
 	"slices"
 	"time"
 
+	"github.com/agentgateway/agentgateway/go/api"
 	envoyclusterv3 "github.com/envoyproxy/go-control-plane/envoy/config/cluster/v3"
 	envoycorev3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
 	envoylistenerv3 "github.com/envoyproxy/go-control-plane/envoy/config/listener/v3"
@@ -112,7 +113,7 @@ type HcmContext struct {
 	Policy PolicyIR
 }
 
-// ProxyTranslationPass represents a single translation pass for a gateway. It can hold state
+// ProxyTranslationPass represents a single translation pass for a gateway using envoy. It can hold state
 // for the duration of the translation.
 // Each of the functions here will be called in the order they appear in the interface.
 type ProxyTranslationPass interface {
@@ -131,11 +132,7 @@ type ProxyTranslationPass interface {
 		pCtx *RouteConfigContext,
 		out *envoyroutev3.RouteConfiguration,
 	)
-	ApplyVhostPlugin(
-		ctx context.Context,
-		pCtx *VirtualHostContext,
-		out *envoyroutev3.VirtualHost,
-	)
+
 	// no policy applied - this is called for every backend in a route.
 	// For this to work the backend needs to register itself as a policy. TODO: rethink this.
 	// Note: TypedFilterConfig should be applied in the pCtx and is shared between ApplyForRoute, ApplyForBackend
@@ -146,6 +143,7 @@ type ProxyTranslationPass interface {
 		in HttpBackend,
 		out *envoyroutev3.Route,
 	) error
+
 	// Applies a policy attached to a specific Backend (via extensionRef on the BackendRef).
 	// Note: TypedFilterConfig should be applied in the pCtx and is shared between ApplyForRoute, ApplyForBackend
 	// and ApplyForRouteBackend
@@ -154,6 +152,7 @@ type ProxyTranslationPass interface {
 		policy PolicyIR,
 		pCtx *RouteBackendContext,
 	) error
+
 	// called once per route rule if SupportsPolicyMerge returns false, otherwise this is called only
 	// once on the value returned by MergePolicies.
 	// Applies policy for an HTTPRoute that has a policy attached via a targetRef.
@@ -165,6 +164,12 @@ type ProxyTranslationPass interface {
 		pCtx *RouteContext,
 		out *envoyroutev3.Route,
 	) error
+
+	ApplyVhostPlugin(
+		ctx context.Context,
+		pCtx *VirtualHostContext,
+		out *envoyroutev3.VirtualHost,
+	)
 
 	NetworkFilters(ctx context.Context) ([]plugins.StagedNetworkFilter, error)
 
@@ -182,9 +187,45 @@ type ProxyTranslationPass interface {
 	ResourcesToAdd(ctx context.Context) Resources
 }
 
+type AgentGatewayRouteContext struct {
+	Rule *gwv1.HTTPRouteRule
+}
+
+type AgentGatewayTranslationBackendContext struct {
+	Backend        *BackendObjectIR
+	GatewayContext GatewayContext
+}
+
+type AgentGatewayTranslationPass interface {
+	// ApplyForRoute processes route-level configuration
+	ApplyForRoute(pCtx *AgentGatewayRouteContext, out *api.Route) error
+
+	// ApplyForBackend processes backend-level configuration for each backend referenced in routes
+	ApplyForBackend(pCtx *AgentGatewayTranslationBackendContext, out *api.Backend) error
+
+	// ApplyForRouteBackend processes route-specific backend configuration
+	ApplyForRouteBackend(policy PolicyIR, pCtx *AgentGatewayTranslationBackendContext) error
+}
+
 type UnimplementedProxyTranslationPass struct{}
 
 var _ ProxyTranslationPass = UnimplementedProxyTranslationPass{}
+
+type UnimplementedAgentGatewayTranslationPass struct{}
+
+var _ AgentGatewayTranslationPass = UnimplementedAgentGatewayTranslationPass{}
+
+func (s UnimplementedAgentGatewayTranslationPass) ApplyForRoute(pCtx *AgentGatewayRouteContext, out *api.Route) error {
+	return nil
+}
+
+func (s UnimplementedAgentGatewayTranslationPass) ApplyForBackend(pCtx *AgentGatewayTranslationBackendContext, out *api.Backend) error {
+	return nil
+}
+
+func (s UnimplementedAgentGatewayTranslationPass) ApplyForRouteBackend(policy PolicyIR, pCtx *AgentGatewayTranslationBackendContext) error {
+	return nil
+}
 
 func (s UnimplementedProxyTranslationPass) ApplyListenerPlugin(ctx context.Context, pCtx *ListenerContext, out *envoylistenerv3.Listener) {
 }

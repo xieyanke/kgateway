@@ -21,8 +21,8 @@ import (
 	"github.com/kgateway-dev/kgateway/v2/internal/kgateway/extensions2/common"
 	extensionsplug "github.com/kgateway-dev/kgateway/v2/internal/kgateway/extensions2/plugin"
 	"github.com/kgateway-dev/kgateway/v2/internal/kgateway/ir"
-	"github.com/kgateway-dev/kgateway/v2/internal/kgateway/translator/metrics"
 	"github.com/kgateway-dev/kgateway/v2/internal/kgateway/utils"
+	"github.com/kgateway-dev/kgateway/v2/internal/kgateway/wellknown"
 	"github.com/kgateway-dev/kgateway/v2/pkg/settings"
 )
 
@@ -39,12 +39,6 @@ func (t *BackendTranslator) TranslateBackend(
 	ucc ir.UniqlyConnectedClient,
 	backend *ir.BackendObjectIR,
 ) (*envoyclusterv3.Cluster, error) {
-	var rErr error
-	finishMetrics := metrics.NewTranslatorMetricsRecorder("TranslateBackend").TranslationStart()
-	defer func() {
-		finishMetrics(rErr)
-	}()
-
 	gk := schema.GroupKind{
 		Group: backend.Group,
 		Kind:  backend.Kind,
@@ -54,7 +48,7 @@ func (t *BackendTranslator) TranslateBackend(
 		return nil, errors.New("no backend translator found for " + gk.String())
 	}
 
-	if process.InitBackend == nil {
+	if process.InitEnvoyBackend == nil {
 		return nil, errors.New("no backend plugin found for " + gk.String())
 	}
 
@@ -65,13 +59,11 @@ func (t *BackendTranslator) TranslateBackend(
 		// from backend object translation.
 		// this cluster will ultimately be dropped before it added to the xDS snapshot
 		// see: internal/kgateway/proxy_syncer/perclient.go
-		out := buildBlackholeCluster(backend)
-		rErr = errors.Join(backend.Errors...)
-		return out, rErr
+		return buildBlackholeCluster(backend), errors.Join(backend.Errors...)
 	}
 
 	out := initializeCluster(backend)
-	inlineEps := process.InitBackend(context.TODO(), *backend, out)
+	inlineEps := process.InitEnvoyBackend(context.TODO(), *backend, out)
 	processDnsLookupFamily(out, t.CommonCols)
 
 	// now process backend policies
@@ -222,7 +214,7 @@ func initializeCluster(b *ir.BackendObjectIR) *envoyclusterv3.Cluster {
 		// this field can be overridden by plugins
 		ConnectTimeout:                durationpb.New(ClusterConnectionTimeout),
 		TypedExtensionProtocolOptions: translateAppProtocol(b.AppProtocol),
-
+		CommonLbConfig:                createCommonLbConfig(b),
 		// Http2ProtocolOptions:      getHttp2options(upstream),
 		// IgnoreHealthOnHostRemoval: upstream.GetIgnoreHealthOnHostRemoval().GetValue(),
 		//	RespectDnsTtl:             upstream.GetRespectDnsTtl().GetValue(),
@@ -258,4 +250,15 @@ func buildBlackholeCluster(b *ir.BackendObjectIR) *envoyclusterv3.Cluster {
 		},
 	}
 	return out
+}
+
+func createCommonLbConfig(b *ir.BackendObjectIR) *envoyclusterv3.Cluster_CommonLbConfig {
+	if b.TrafficDistribution != wellknown.TrafficDistributionAny {
+		return &envoyclusterv3.Cluster_CommonLbConfig{
+			LocalityConfigSpecifier: &envoyclusterv3.Cluster_CommonLbConfig_LocalityWeightedLbConfig_{
+				LocalityWeightedLbConfig: &envoyclusterv3.Cluster_CommonLbConfig_LocalityWeightedLbConfig{},
+			},
+		}
+	}
+	return nil
 }

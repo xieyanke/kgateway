@@ -140,12 +140,13 @@ func deepMergePodTemplate(dst, src *v1alpha1.Pod) *v1alpha1.Pod {
 	dst.SecurityContext = deepMergePodSecurityContext(dst.GetSecurityContext(), src.GetSecurityContext())
 	dst.ImagePullSecrets = DeepMergeSlices(dst.GetImagePullSecrets(), src.GetImagePullSecrets())
 	dst.NodeSelector = DeepMergeMaps(dst.GetNodeSelector(), src.GetNodeSelector())
-	dst.Affinity = deepMergeAffinity(dst.GetAffinity(), src.GetAffinity())
+	dst.Affinity = DeepMergeAffinity(dst.GetAffinity(), src.GetAffinity())
 	dst.Tolerations = DeepMergeSlices(dst.GetTolerations(), src.GetTolerations())
 	dst.GracefulShutdown = deepMergeGracefulShutdown(dst.GetGracefulShutdown(), src.GetGracefulShutdown())
 	dst.TerminationGracePeriodSeconds = MergePointers(dst.TerminationGracePeriodSeconds, src.TerminationGracePeriodSeconds)
 	dst.ReadinessProbe = deepMergeProbe(dst.GetReadinessProbe(), src.GetReadinessProbe())
 	dst.LivenessProbe = deepMergeProbe(dst.GetLivenessProbe(), src.GetLivenessProbe())
+	dst.TopologySpreadConstraints = DeepMergeSlices(dst.GetTopologySpreadConstraints(), src.GetTopologySpreadConstraints())
 
 	return dst
 }
@@ -226,7 +227,7 @@ func deepMergeSeccompProfile(dst, src *corev1.SeccompProfile) *corev1.SeccompPro
 	return dst
 }
 
-func deepMergeAffinity(dst, src *corev1.Affinity) *corev1.Affinity {
+func DeepMergeAffinity(dst, src *corev1.Affinity) *corev1.Affinity {
 	// nil src override means just use dst
 	if src == nil {
 		return dst
@@ -734,7 +735,6 @@ func deepMergeAIExtensionTracing(dst, src *v1alpha1.AiExtensionTrace) *v1alpha1.
 	dst.Sampler = MergePointers(dst.Sampler, src.Sampler)
 	dst.Timeout = MergePointers(dst.Timeout, src.Timeout)
 	dst.Protocol = MergePointers(dst.Protocol, src.Protocol)
-	dst.TransportSecurity = MergePointers(dst.TransportSecurity, src.TransportSecurity)
 	return dst
 }
 

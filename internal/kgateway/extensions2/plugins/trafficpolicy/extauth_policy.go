@@ -4,10 +4,8 @@ import (
 	"fmt"
 
 	envoy_ext_authz_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/ext_authz/v3"
-	set_metadata "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/set_metadata/v3"
 	envoy_matcher_v3 "github.com/envoyproxy/go-control-plane/envoy/type/matcher/v3"
 	"google.golang.org/protobuf/proto"
-	"google.golang.org/protobuf/types/known/structpb"
 	"istio.io/istio/pkg/kube/krt"
 
 	"github.com/kgateway-dev/kgateway/v2/api/v1alpha1"
@@ -16,62 +14,55 @@ import (
 	"github.com/kgateway-dev/kgateway/v2/pkg/utils/cmputils"
 )
 
-var (
-	setMetadataConfig = &set_metadata.Config{
-		Metadata: []*set_metadata.Metadata{
-			{
-				MetadataNamespace: extAuthGlobalDisableFilterMetadataNamespace,
-				Value: &structpb.Struct{Fields: map[string]*structpb.Value{
-					extAuthGlobalDisableKey: structpb.NewBoolValue(true),
-				}},
-			},
-		},
-	}
-
-	ExtAuthzEnabledMetadataMatcher = &envoy_matcher_v3.MetadataMatcher{
-		Filter: extAuthGlobalDisableFilterMetadataNamespace,
-		Invert: true,
-		Path: []*envoy_matcher_v3.MetadataMatcher_PathSegment{
-			{
-				Segment: &envoy_matcher_v3.MetadataMatcher_PathSegment_Key{
-					Key: extAuthGlobalDisableKey,
-				},
-			},
-		},
-		Value: &envoy_matcher_v3.ValueMatcher{
-			MatchPattern: &envoy_matcher_v3.ValueMatcher_BoolMatch{
-				BoolMatch: true,
-			},
-		},
-	}
+const (
+	ExtAuthGlobalDisableFilterName              = "global_disable/ext_auth"
+	ExtAuthGlobalDisableFilterMetadataNamespace = "dev.kgateway.disable_ext_auth"
+	globalFilterDisableMetadataKey              = "disable"
+	extauthFilterNamePrefix                     = "ext_auth"
 )
 
-type extAuthIR struct {
-	provider        *TrafficPolicyGatewayExtensionIR
-	enablement      *v1alpha1.ExtAuthEnabled
-	extauthPerRoute *envoy_ext_authz_v3.ExtAuthzPerRoute
+var ExtAuthzEnabledMetadataMatcher = &envoy_matcher_v3.MetadataMatcher{
+	Filter: ExtAuthGlobalDisableFilterMetadataNamespace,
+	Invert: true,
+	Path: []*envoy_matcher_v3.MetadataMatcher_PathSegment{
+		{
+			Segment: &envoy_matcher_v3.MetadataMatcher_PathSegment_Key{
+				Key: globalFilterDisableMetadataKey,
+			},
+		},
+	},
+	Value: &envoy_matcher_v3.ValueMatcher{
+		MatchPattern: &envoy_matcher_v3.ValueMatcher_BoolMatch{
+			BoolMatch: true,
+		},
+	},
 }
 
-// Equals compares two extAuthIR instances for equality
-func (e *extAuthIR) Equals(other *extAuthIR) bool {
-	if e == nil && other == nil {
-		return true
-	}
-	if e == nil || other == nil {
+type extAuthIR struct {
+	provider            *TrafficPolicyGatewayExtensionIR
+	disableAllProviders bool
+	perRoute            *envoy_ext_authz_v3.ExtAuthzPerRoute
+}
+
+var _ PolicySubIR = &extAuthIR{}
+
+// Equals compares two ExtAuthIR instances for equality
+func (e *extAuthIR) Equals(other PolicySubIR) bool {
+	otherExtAuth, ok := other.(*extAuthIR)
+	if !ok {
 		return false
 	}
-
-	// Compare enablement
-	if e.enablement != other.enablement {
+	if e == nil || otherExtAuth == nil {
+		return e == nil && otherExtAuth == nil
+	}
+	if e.disableAllProviders != otherExtAuth.disableAllProviders {
 		return false
 	}
-
-	if !proto.Equal(e.extauthPerRoute, other.extauthPerRoute) {
+	if !proto.Equal(e.perRoute, otherExtAuth.perRoute) {
 		return false
 	}
-
 	// Compare providers
-	if !cmputils.CompareWithNils(e.provider, other.provider, func(a, b *TrafficPolicyGatewayExtensionIR) bool {
+	if !cmputils.CompareWithNils(e.provider, otherExtAuth.provider, func(a, b *TrafficPolicyGatewayExtensionIR) bool {
 		return a.Equals(*b)
 	}) {
 		return false
@@ -79,30 +70,43 @@ func (e *extAuthIR) Equals(other *extAuthIR) bool {
 	return true
 }
 
-// extAuthForSpec translates the ExtAuthz spec into the Envoy configuration
-
-func (b *TrafficPolicyBuilder) extAuthForSpec(
-	krtctx krt.HandlerContext,
-	trafficPolicy *v1alpha1.TrafficPolicy,
-	out *trafficPolicySpecIr,
-) error {
-	policySpec := &trafficPolicy.Spec
-
-	if policySpec.ExtAuth == nil {
+func (e *extAuthIR) Validate() error {
+	if e == nil {
 		return nil
 	}
-	spec := policySpec.ExtAuth
+	if e.perRoute != nil {
+		if err := e.perRoute.ValidateAll(); err != nil {
+			return err
+		}
+	}
+	if e.provider != nil {
+		return e.provider.Validate()
+	}
+	return nil
+}
 
-	if spec.Enablement != nil && *spec.Enablement == v1alpha1.ExtAuthDisableAll {
+// constructExtAuth constructs the external authentication policy IR from the policy specification.
+func constructExtAuth(
+	krtctx krt.HandlerContext,
+	in *v1alpha1.TrafficPolicy,
+	fetchGatewayExtension FetchGatewayExtensionFunc,
+	out *trafficPolicySpecIr,
+) error {
+	spec := in.Spec.ExtAuth
+	if spec == nil {
+		return nil
+	}
+
+	if spec.Disable != nil {
 		out.extAuth = &extAuthIR{
-			provider:        nil,
-			enablement:      spec.Enablement,
-			extauthPerRoute: translatePerFilterConfig(spec),
+			disableAllProviders: true,
 		}
 		return nil
 	}
 
-	provider, err := b.FetchGatewayExtension(krtctx, spec.ExtensionRef, trafficPolicy.GetNamespace())
+	perRouteCfg := buildExtAuthPerRouteFilterConfig(spec)
+
+	provider, err := fetchGatewayExtension(krtctx, spec.ExtensionRef, in.GetNamespace())
 	if err != nil {
 		return fmt.Errorf("extauthz: %w", err)
 	}
@@ -111,14 +115,15 @@ func (b *TrafficPolicyBuilder) extAuthForSpec(
 	}
 
 	out.extAuth = &extAuthIR{
-		provider:        provider,
-		enablement:      spec.Enablement,
-		extauthPerRoute: translatePerFilterConfig(spec),
+		provider: provider,
+		perRoute: perRouteCfg,
 	}
 	return nil
 }
 
-func translatePerFilterConfig(spec *v1alpha1.ExtAuthPolicy) *envoy_ext_authz_v3.ExtAuthzPerRoute {
+func buildExtAuthPerRouteFilterConfig(
+	spec *v1alpha1.ExtAuthPolicy,
+) *envoy_ext_authz_v3.ExtAuthzPerRoute {
 	checkSettings := &envoy_ext_authz_v3.CheckSettings{}
 
 	// Create the ExtAuthz configuration
@@ -158,21 +163,20 @@ func (p *trafficPolicyPluginGwPass) handleExtAuth(fcn string, pCtxTypedFilterCon
 		return
 	}
 
-	// Handle the enablement state
-	if extAuth.enablement != nil && *extAuth.enablement == v1alpha1.ExtAuthDisableAll {
-		// Disable the filter under all providers via the metadata match
-		// we have to use the metadata as we dont know what other configurations may have extauth
-		pCtxTypedFilterConfig.AddTypedConfig(extAuthGlobalDisableFilterName, EnableFilterPerRoute)
+	// Add the global disable all filter if all providers are disabled
+	if extAuth.disableAllProviders {
+		pCtxTypedFilterConfig.AddTypedConfig(ExtAuthGlobalDisableFilterName, EnableFilterPerRoute)
+		return
+	}
+
+	providerName := extAuth.provider.ResourceName()
+	p.extAuthPerProvider.Add(fcn, providerName, extAuth.provider)
+
+	// Filter is not disabled, set the PerRouteConfig
+	if extAuth.perRoute != nil {
+		pCtxTypedFilterConfig.AddTypedConfig(extAuthFilterName(providerName), extAuth.perRoute)
 	} else {
-		providerName := extAuth.provider.ResourceName()
-		if extAuth.extauthPerRoute != nil {
-			pCtxTypedFilterConfig.AddTypedConfig(extAuthFilterName(providerName),
-				extAuth.extauthPerRoute,
-			)
-		} else {
-			// if you are on a route and not trying to disable it then we need to override the top level disable on the filter chain
-			pCtxTypedFilterConfig.AddTypedConfig(extAuthFilterName(providerName), EnableFilterPerRoute)
-		}
-		p.extAuthPerProvider.Add(fcn, providerName, extAuth.provider)
+		// if you are on a route and not trying to disable it then we need to override the top level disable on the filter chain
+		pCtxTypedFilterConfig.AddTypedConfig(extAuthFilterName(providerName), EnableFilterPerRoute)
 	}
 }

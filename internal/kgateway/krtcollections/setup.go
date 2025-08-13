@@ -21,7 +21,7 @@ import (
 	extensionsplug "github.com/kgateway-dev/kgateway/v2/internal/kgateway/extensions2/plugin"
 	"github.com/kgateway-dev/kgateway/v2/internal/kgateway/extensions2/settings"
 	"github.com/kgateway-dev/kgateway/v2/internal/kgateway/ir"
-	"github.com/kgateway-dev/kgateway/v2/internal/kgateway/utils/krtutil"
+	krtinternal "github.com/kgateway-dev/kgateway/v2/internal/kgateway/utils/krtutil"
 	"github.com/kgateway-dev/kgateway/v2/internal/kgateway/wellknown"
 	"github.com/kgateway-dev/kgateway/v2/pkg/client/clientset/versioned"
 	"github.com/kgateway-dev/kgateway/v2/pkg/metrics"
@@ -101,7 +101,7 @@ func InitCollections(
 	istioClient kube.Client,
 	ourClient versioned.Interface,
 	refgrants *RefGrantIndex,
-	krtopts krtutil.KrtOptions,
+	krtopts krtinternal.KrtOptions,
 	globalSettings settings.Settings,
 ) (*GatewayIndex, *RoutesIndex, *BackendIndex, krt.Collection[ir.EndpointsForBackend]) {
 	registerTypes(ourClient)
@@ -134,6 +134,12 @@ func InitCollections(
 	namespaces, _ := NewNamespaceCollection(ctx, istioClient, krtopts)
 
 	policies := NewPolicyIndex(krtopts, plugins.ContributesPolicies, globalSettings)
+	for _, plugin := range plugins.ContributesPolicies {
+		if plugin.Policies != nil {
+			metrics.RegisterEvents(plugin.Policies, GetResourceMetricEventHandler[ir.PolicyWrapper]())
+		}
+	}
+
 	backendIndex := NewBackendIndex(krtopts, policies, refgrants)
 	initBackends(plugins, backendIndex)
 	endpointIRs := initEndpoints(plugins, krtopts)
@@ -151,7 +157,7 @@ func initBackends(plugins extensionsplug.Plugin, backendIndex *BackendIndex) {
 	}
 }
 
-func initEndpoints(plugins extensionsplug.Plugin, krtopts krtutil.KrtOptions) krt.Collection[ir.EndpointsForBackend] {
+func initEndpoints(plugins extensionsplug.Plugin, krtopts krtinternal.KrtOptions) krt.Collection[ir.EndpointsForBackend] {
 	allEndpoints := []krt.Collection[ir.EndpointsForBackend]{}
 	for _, plugin := range plugins.ContributesBackends {
 		if plugin.Endpoints != nil {

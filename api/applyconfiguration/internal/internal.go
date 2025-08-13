@@ -74,6 +74,17 @@ var schemaYAML = typed.YAMLObject(`types:
     - name: response
       type:
         namedType: com.github.kgateway-dev.kgateway.v2.api.v1alpha1.PromptguardResponse
+- name: com.github.kgateway-dev.kgateway.v2.api.v1alpha1.AWSGuardrailConfig
+  map:
+    fields:
+    - name: identifier
+      type:
+        scalar: string
+      default: ""
+    - name: version
+      type:
+        scalar: string
+      default: ""
 - name: com.github.kgateway-dev.kgateway.v2.api.v1alpha1.AccessLog
   map:
     fields:
@@ -259,9 +270,6 @@ var schemaYAML = typed.YAMLObject(`types:
     - name: timeout
       type:
         namedType: io.k8s.apimachinery.pkg.apis.meta.v1.Duration
-    - name: transportSecurity
-      type:
-        scalar: string
 - name: com.github.kgateway-dev.kgateway.v2.api.v1alpha1.AlwaysOnConfig
   map:
     elementType:
@@ -477,6 +485,9 @@ var schemaYAML = typed.YAMLObject(`types:
     - name: dynamicForwardProxy
       type:
         namedType: com.github.kgateway-dev.kgateway.v2.api.v1alpha1.DynamicForwardProxyBackend
+    - name: mcp
+      type:
+        namedType: com.github.kgateway-dev.kgateway.v2.api.v1alpha1.MCP
     - name: static
       type:
         namedType: com.github.kgateway-dev.kgateway.v2.api.v1alpha1.StaticBackend
@@ -493,6 +504,8 @@ var schemaYAML = typed.YAMLObject(`types:
         discriminatorValue: Aws
       - fieldName: dynamicForwardProxy
         discriminatorValue: DynamicForwardProxy
+      - fieldName: mcp
+        discriminatorValue: MCP
       - fieldName: static
         discriminatorValue: Static
 - name: com.github.kgateway-dev.kgateway.v2.api.v1alpha1.BackendStatus
@@ -515,6 +528,22 @@ var schemaYAML = typed.YAMLObject(`types:
     - name: maxInterval
       type:
         namedType: io.k8s.apimachinery.pkg.apis.meta.v1.Duration
+- name: com.github.kgateway-dev.kgateway.v2.api.v1alpha1.BedrockConfig
+  map:
+    fields:
+    - name: auth
+      type:
+        namedType: com.github.kgateway-dev.kgateway.v2.api.v1alpha1.AwsAuth
+    - name: guardrail
+      type:
+        namedType: com.github.kgateway-dev.kgateway.v2.api.v1alpha1.AWSGuardrailConfig
+    - name: model
+      type:
+        scalar: string
+      default: ""
+    - name: region
+      type:
+        scalar: string
 - name: com.github.kgateway-dev.kgateway.v2.api.v1alpha1.BodyTransformation
   map:
     fields:
@@ -528,6 +557,9 @@ var schemaYAML = typed.YAMLObject(`types:
 - name: com.github.kgateway-dev.kgateway.v2.api.v1alpha1.Buffer
   map:
     fields:
+    - name: disable
+      type:
+        namedType: com.github.kgateway-dev.kgateway.v2.api.v1alpha1.PolicyDisable
     - name: maxRequestSize
       type:
         namedType: io.k8s.apimachinery.pkg.api.resource.Quantity
@@ -681,6 +713,9 @@ var schemaYAML = typed.YAMLObject(`types:
           elementType:
             scalar: string
           elementRelationship: associative
+    - name: disable
+      type:
+        namedType: com.github.kgateway-dev.kgateway.v2.api.v1alpha1.PolicyDisable
     - name: exposeHeaders
       type:
         list:
@@ -893,9 +928,9 @@ var schemaYAML = typed.YAMLObject(`types:
         map:
           elementType:
             scalar: string
-    - name: enablement
+    - name: disable
       type:
-        scalar: string
+        namedType: com.github.kgateway-dev.kgateway.v2.api.v1alpha1.PolicyDisable
     - name: extensionRef
       type:
         namedType: io.k8s.api.core.v1.LocalObjectReference
@@ -920,6 +955,9 @@ var schemaYAML = typed.YAMLObject(`types:
 - name: com.github.kgateway-dev.kgateway.v2.api.v1alpha1.ExtProcPolicy
   map:
     fields:
+    - name: disable
+      type:
+        namedType: com.github.kgateway-dev.kgateway.v2.api.v1alpha1.PolicyDisable
     - name: extensionRef
       type:
         namedType: io.k8s.api.core.v1.LocalObjectReference
@@ -1145,6 +1183,9 @@ var schemaYAML = typed.YAMLObject(`types:
     - name: healthCheck
       type:
         namedType: com.github.kgateway-dev.kgateway.v2.api.v1alpha1.EnvoyHealthCheck
+    - name: preserveHttp1HeaderCase
+      type:
+        scalar: boolean
     - name: serverHeaderTransformation
       type:
         scalar: string
@@ -1273,9 +1314,6 @@ var schemaYAML = typed.YAMLObject(`types:
       type:
         scalar: string
       default: ""
-    - name: insecureSkipVerify
-      type:
-        scalar: boolean
     - name: port
       type:
         scalar: numeric
@@ -1286,10 +1324,10 @@ var schemaYAML = typed.YAMLObject(`types:
     - name: enableTrailers
       type:
         scalar: boolean
-    - name: headerFormat
-      type:
-        scalar: string
     - name: overrideStreamErrorOnInvalidHttpMessage
+      type:
+        scalar: boolean
+    - name: preserveHttp1HeaderCase
       type:
         scalar: boolean
 - name: com.github.kgateway-dev.kgateway.v2.api.v1alpha1.Http2ProtocolOptions
@@ -1564,6 +1602,55 @@ var schemaYAML = typed.YAMLObject(`types:
     - name: tokenBucket
       type:
         namedType: com.github.kgateway-dev.kgateway.v2.api.v1alpha1.TokenBucket
+- name: com.github.kgateway-dev.kgateway.v2.api.v1alpha1.MCP
+  map:
+    fields:
+    - name: name
+      type:
+        scalar: string
+      default: ""
+    - name: targets
+      type:
+        list:
+          elementType:
+            namedType: com.github.kgateway-dev.kgateway.v2.api.v1alpha1.McpTargetSelector
+          elementRelationship: atomic
+- name: com.github.kgateway-dev.kgateway.v2.api.v1alpha1.McpSelector
+  map:
+    fields:
+    - name: namespaceSelector
+      type:
+        namedType: io.k8s.apimachinery.pkg.apis.meta.v1.LabelSelector
+    - name: serviceSelector
+      type:
+        namedType: io.k8s.apimachinery.pkg.apis.meta.v1.LabelSelector
+- name: com.github.kgateway-dev.kgateway.v2.api.v1alpha1.McpTarget
+  map:
+    fields:
+    - name: host
+      type:
+        scalar: string
+      default: ""
+    - name: name
+      type:
+        scalar: string
+      default: ""
+    - name: port
+      type:
+        scalar: numeric
+      default: 0
+    - name: protocol
+      type:
+        scalar: string
+- name: com.github.kgateway-dev.kgateway.v2.api.v1alpha1.McpTargetSelector
+  map:
+    fields:
+    - name: selectors
+      type:
+        namedType: com.github.kgateway-dev.kgateway.v2.api.v1alpha1.McpSelector
+    - name: static
+      type:
+        namedType: com.github.kgateway-dev.kgateway.v2.api.v1alpha1.McpTarget
 - name: com.github.kgateway-dev.kgateway.v2.api.v1alpha1.Message
   map:
     fields:
@@ -1740,6 +1827,24 @@ var schemaYAML = typed.YAMLObject(`types:
           elementType:
             namedType: io.k8s.api.core.v1.Toleration
           elementRelationship: atomic
+    - name: topologySpreadConstraints
+      type:
+        list:
+          elementType:
+            namedType: io.k8s.api.core.v1.TopologySpreadConstraint
+          elementRelationship: atomic
+- name: com.github.kgateway-dev.kgateway.v2.api.v1alpha1.PolicyDisable
+  map:
+    elementType:
+      scalar: untyped
+      list:
+        elementType:
+          namedType: __untyped_atomic_
+        elementRelationship: atomic
+      map:
+        elementType:
+          namedType: __untyped_deduced_
+        elementRelationship: separable
 - name: com.github.kgateway-dev.kgateway.v2.api.v1alpha1.Port
   map:
     fields:
@@ -2112,6 +2217,9 @@ var schemaYAML = typed.YAMLObject(`types:
     - name: azureopenai
       type:
         namedType: com.github.kgateway-dev.kgateway.v2.api.v1alpha1.AzureOpenAIConfig
+    - name: bedrock
+      type:
+        namedType: com.github.kgateway-dev.kgateway.v2.api.v1alpha1.BedrockConfig
     - name: gemini
       type:
         namedType: com.github.kgateway-dev.kgateway.v2.api.v1alpha1.GeminiConfig
@@ -2148,15 +2256,15 @@ var schemaYAML = typed.YAMLObject(`types:
     - name: insecureSkipVerify
       type:
         scalar: boolean
-    - name: oneWayTLS
-      type:
-        scalar: boolean
     - name: parameters
       type:
         namedType: com.github.kgateway-dev.kgateway.v2.api.v1alpha1.Parameters
     - name: secretRef
       type:
         namedType: io.k8s.api.core.v1.LocalObjectReference
+    - name: simpleTLS
+      type:
+        scalar: boolean
     - name: sni
       type:
         scalar: string
@@ -3127,6 +3235,39 @@ var schemaYAML = typed.YAMLObject(`types:
     - name: value
       type:
         scalar: string
+- name: io.k8s.api.core.v1.TopologySpreadConstraint
+  map:
+    fields:
+    - name: labelSelector
+      type:
+        namedType: io.k8s.apimachinery.pkg.apis.meta.v1.LabelSelector
+    - name: matchLabelKeys
+      type:
+        list:
+          elementType:
+            scalar: string
+          elementRelationship: atomic
+    - name: maxSkew
+      type:
+        scalar: numeric
+      default: 0
+    - name: minDomains
+      type:
+        scalar: numeric
+    - name: nodeAffinityPolicy
+      type:
+        scalar: string
+    - name: nodeTaintsPolicy
+      type:
+        scalar: string
+    - name: topologyKey
+      type:
+        scalar: string
+      default: ""
+    - name: whenUnsatisfiable
+      type:
+        scalar: string
+      default: ""
 - name: io.k8s.api.core.v1.VolumeDevice
   map:
     fields:

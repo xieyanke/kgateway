@@ -11,6 +11,7 @@ import (
 	envoy_service_secret_v3 "github.com/envoyproxy/go-control-plane/envoy/service/secret/v3"
 	"github.com/spf13/afero"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 
 	"github.com/kgateway-dev/kgateway/v2/internal/sds/pkg/run"
 	"github.com/kgateway-dev/kgateway/v2/internal/sds/pkg/server"
@@ -103,8 +104,7 @@ var _ = Describe("SDS Server E2E Test", Serial, func() {
 		}()
 
 		// Connect with the server
-		var conn *grpc.ClientConn
-		conn, err := grpc.Dial(testServerAddress, grpc.WithInsecure())
+		conn, err := grpc.NewClient(testServerAddress, grpc.WithTransportCredentials(insecure.NewCredentials()))
 		Expect(err).NotTo(HaveOccurred())
 		defer conn.Close()
 		client := envoy_service_secret_v3.NewSecretDiscoveryServiceClient(conn)
@@ -112,8 +112,8 @@ var _ = Describe("SDS Server E2E Test", Serial, func() {
 		// Check that we get a good response
 		Eventually(func() bool {
 			_, err = client.FetchSecrets(ctx, &envoy_service_discovery_v3.DiscoveryRequest{})
-			return err != nil
-		}, "5s", "1s").Should(BeTrue())
+			return err == nil
+		}, "30s", "1s").Should(BeTrue())
 
 		// Cancel the context in order to stop the gRPC server
 		cancel()
@@ -122,7 +122,7 @@ var _ = Describe("SDS Server E2E Test", Serial, func() {
 		Eventually(func() bool {
 			_, err = client.FetchSecrets(ctx, &envoy_service_discovery_v3.DiscoveryRequest{})
 			return err != nil
-		}, "5s", "1s").Should(BeTrue())
+		}, "30s", "1s").Should(BeTrue())
 
 	})
 
@@ -135,15 +135,15 @@ var _ = Describe("SDS Server E2E Test", Serial, func() {
 			}
 
 			secret.SslOcspFile = ocsp
-			_ = run.Run(ctx, []server.Secret{secret}, sdsClient, testServerAddress, logger)
+			err := run.Run(ctx, []server.Secret{secret}, sdsClient, testServerAddress, logger)
+			Expect(err).NotTo(HaveOccurred())
 		}()
 
 		// Give it a second to spin up + read the files
 		time.Sleep(1 * time.Second)
 
 		// Connect with the server
-		var conn *grpc.ClientConn
-		conn, err = grpc.Dial(testServerAddress, grpc.WithInsecure())
+		conn, err := grpc.NewClient(testServerAddress, grpc.WithTransportCredentials(insecure.NewCredentials()))
 		Expect(err).NotTo(HaveOccurred())
 		defer conn.Close()
 		client := envoy_service_secret_v3.NewSecretDiscoveryServiceClient(conn)
@@ -166,12 +166,12 @@ var _ = Describe("SDS Server E2E Test", Serial, func() {
 		Eventually(func() bool {
 			resp, err = client.FetchSecrets(ctx, &envoy_service_discovery_v3.DiscoveryRequest{})
 			return err == nil
-		}, "15s", "1s").Should(BeTrue())
+		}, "30s", "1s").Should(BeTrue())
 
 		Eventually(func() bool {
 			resp, err = client.FetchSecrets(ctx, &envoy_service_discovery_v3.DiscoveryRequest{})
 			return resp.VersionInfo == snapshotVersion
-		}, "15s", "1s").Should(BeTrue())
+		}, "30s", "1s").Should(BeTrue())
 
 		// Cert rotation #1
 		err = os.Remove(keyName)
@@ -195,7 +195,7 @@ var _ = Describe("SDS Server E2E Test", Serial, func() {
 			resp, err = client.FetchSecrets(ctx, &envoy_service_discovery_v3.DiscoveryRequest{})
 			Expect(err).NotTo(HaveOccurred())
 			return resp.VersionInfo == snapshotVersion
-		}, "15s", "1s").Should(BeTrue())
+		}, "30s", "1s").Should(BeTrue())
 
 		// Cert rotation #2
 		err = os.Remove(keyName)
@@ -219,7 +219,7 @@ var _ = Describe("SDS Server E2E Test", Serial, func() {
 			resp, err = client.FetchSecrets(ctx, &envoy_service_discovery_v3.DiscoveryRequest{})
 			Expect(err).NotTo(HaveOccurred())
 			return resp.VersionInfo == snapshotVersion
-		}, "15s", "1s").Should(BeTrue())
+		}, "30s", "1s").Should(BeTrue())
 	},
 		Entry("with ocsp", true, []string{"969835737182439215", "6265739243366543658", "14893951670674740726"}),
 		Entry("without ocsp", false, []string{"6730780456972595554", "16241649556325798095", "7644406922477208950"}),

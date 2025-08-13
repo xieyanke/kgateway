@@ -62,12 +62,15 @@ func translateGatewayHTTPRouteRulesUtil(
 		return
 	}
 
-	metricsRecorder := metrics.NewTranslatorMetricsRecorder("TranslateHTTPRoute")
-	defer metricsRecorder.TranslationStart()(nil)
-
 	// This function is called multiple times during translation of resources, and it is
 	// only required to start the resource metrics tracking when the parent is a Gateway.
 	if routeInfo.ParentRef.Kind != nil && *routeInfo.ParentRef.Kind == wellknown.GatewayKind {
+		defer (metrics.CollectTranslationMetrics(metrics.TranslatorMetricLabels{
+			Name:       string(routeInfo.ParentRef.Name),
+			Namespace:  routeInfo.GetNamespace(),
+			Translator: "TranslateHTTPRoute",
+		}))(nil)
+
 		metrics.StartResourceSync(routeInfo.GetName(), metrics.ResourceMetricLabels{
 			Gateway:   string(routeInfo.ParentRef.Name),
 			Namespace: routeInfo.GetNamespace(),
@@ -106,7 +109,6 @@ func translateGatewayHTTPRouteRulesUtil(
 	}
 }
 
-// MARK: translate rules
 func translateGatewayHTTPRouteRule(
 	ctx context.Context,
 	gwroute *query.RouteInfo,
@@ -129,17 +131,18 @@ func translateGatewayHTTPRouteRule(
 		uniqueRouteName := gwroute.UniqueRouteName(ruleIdx, idx, rule.Name)
 
 		outputRoute := ir.HttpRouteRuleMatchIR{
-			ExtensionRefs:     rule.ExtensionRefs,
-			AttachedPolicies:  rule.AttachedPolicies,
-			Parent:            parent,
-			ListenerParentRef: gwroute.ListenerParentRef,
-			ParentRef:         gwroute.ParentRef,
-			Name:              uniqueRouteName,
-			Backends:          nil,
-			MatchIndex:        idx,
-			Match:             match,
-			DelegatingParent:  delegatingParent,
-			PrecedenceWeight:  parent.PrecedenceWeight,
+			ExtensionRefs:        rule.ExtensionRefs,
+			AttachedPolicies:     rule.AttachedPolicies,
+			Parent:               parent,
+			ListenerParentRef:    gwroute.ListenerParentRef,
+			ParentRef:            gwroute.ParentRef,
+			Name:                 uniqueRouteName,
+			Backends:             nil,
+			MatchIndex:           idx,
+			Match:                match,
+			DelegatingParent:     delegatingParent,
+			PrecedenceWeight:     parent.PrecedenceWeight,
+			RouteAcceptanceError: rule.Err,
 		}
 
 		if len(rule.Backends) > 0 {
@@ -209,7 +212,7 @@ func setRouteAction(
 			)
 			if err != nil {
 				query.ProcessBackendError(err, reporter)
-				outputRoute.Error = err
+				outputRoute.RouteReplacementError = err
 			}
 			continue
 		}

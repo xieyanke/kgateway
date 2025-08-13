@@ -53,7 +53,7 @@ func TestBackendConfigPolicyFlow(t *testing.T) {
 					},
 					Http1ProtocolOptions: &v1alpha1.Http1ProtocolOptions{
 						EnableTrailers:                          ptr.To(true),
-						HeaderFormat:                            ptr.To(v1alpha1.PreserveCaseHeaderKeyFormat),
+						PreserveHttp1HeaderCase:                 ptr.To(true),
 						OverrideStreamErrorOnInvalidHttpMessage: ptr.To(true),
 					},
 				},
@@ -80,8 +80,7 @@ func TestBackendConfigPolicyFlow(t *testing.T) {
 							ExplicitHttpConfig: &envoy_upstreams_http_v3.HttpProtocolOptions_ExplicitHttpConfig{
 								ProtocolConfig: &envoy_upstreams_http_v3.HttpProtocolOptions_ExplicitHttpConfig_HttpProtocolOptions{
 									HttpProtocolOptions: &envoycorev3.Http1ProtocolOptions{
-										EnableTrailers:                          true,
-										OverrideStreamErrorOnInvalidHttpMessage: &wrapperspb.BoolValue{Value: true},
+										EnableTrailers: true,
 										HeaderKeyFormat: &envoycorev3.Http1ProtocolOptions_HeaderKeyFormat{
 											HeaderFormat: &envoycorev3.Http1ProtocolOptions_HeaderKeyFormat_StatefulFormatter{
 												StatefulFormatter: &envoycorev3.TypedExtensionConfig{
@@ -90,6 +89,7 @@ func TestBackendConfigPolicyFlow(t *testing.T) {
 												},
 											},
 										},
+										OverrideStreamErrorOnInvalidHttpMessage: &wrapperspb.BoolValue{Value: true},
 									},
 								},
 							},

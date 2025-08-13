@@ -3,7 +3,9 @@ package backend
 import (
 	"context"
 	"errors"
+	"fmt"
 
+	"github.com/agentgateway/agentgateway/go/api"
 	envoyclusterv3 "github.com/envoyproxy/go-control-plane/envoy/config/cluster/v3"
 	envoycorev3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
 	envoyroutev3 "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
@@ -23,6 +25,7 @@ import (
 	"github.com/kgateway-dev/kgateway/v2/api/v1alpha1"
 	"github.com/kgateway-dev/kgateway/v2/internal/kgateway/extensions2/common"
 	extensionsplug "github.com/kgateway-dev/kgateway/v2/internal/kgateway/extensions2/plugin"
+	agwbackend "github.com/kgateway-dev/kgateway/v2/internal/kgateway/extensions2/plugins/backend/agentgateway"
 	"github.com/kgateway-dev/kgateway/v2/internal/kgateway/extensions2/plugins/backend/ai"
 	"github.com/kgateway-dev/kgateway/v2/internal/kgateway/extensions2/pluginutils"
 	"github.com/kgateway-dev/kgateway/v2/internal/kgateway/krtcollections"
@@ -44,9 +47,10 @@ const (
 // BackendIr is the internal representation of a backend.
 // TODO: unexport
 type BackendIr struct {
-	AwsIr  *AwsIr
-	AIIr   *ai.IR
-	Errors []error
+	AwsIr          *AwsIr
+	AIIr           *ai.IR
+	AgentGatewayIr *agwbackend.AgentGatewayBackendIr
+	Errors         []error
 }
 
 func (u *BackendIr) Equals(other any) bool {
@@ -60,6 +64,10 @@ func (u *BackendIr) Equals(other any) bool {
 	}
 	// AWS
 	if !u.AwsIr.Equals(otherBackend.AwsIr) {
+		return false
+	}
+	// Agent Gateway
+	if !u.AgentGatewayIr.Equals(otherBackend.AgentGatewayIr) {
 		return false
 	}
 	return true
@@ -87,7 +95,7 @@ func NewPlugin(ctx context.Context, commoncol *common.CommonCollections) extensi
 	), commoncol.KrtOpts.ToOptions("Backends")...)
 
 	gk := wellknown.BackendGVK.GroupKind()
-	translateFn := buildTranslateFunc(ctx, commoncol.Secrets)
+	translateFn := buildTranslateFunc(ctx, commoncol.Secrets, commoncol.Services, commoncol.Namespaces)
 	bcol := krt.NewCollection(col, func(krtctx krt.HandlerContext, i *v1alpha1.Backend) *ir.BackendObjectIR {
 		backendIR := translateFn(krtctx, i)
 		if len(backendIR.Errors) > 0 {
@@ -115,7 +123,8 @@ func NewPlugin(ctx context.Context, commoncol *common.CommonCollections) extensi
 		ContributesBackends: map[schema.GroupKind]extensionsplug.BackendPlugin{
 			gk: {
 				BackendInit: ir.BackendInit{
-					InitBackend: processBackend,
+					InitEnvoyBackend: processBackendForEnvoy,
+					InitAgentBackend: processBackendForAgentGateway,
 				},
 				Endpoints: endpoints,
 				Backends:  bcol,
@@ -125,6 +134,7 @@ func NewPlugin(ctx context.Context, commoncol *common.CommonCollections) extensi
 			wellknown.BackendGVK.GroupKind(): {
 				Name:                      "backend",
 				NewGatewayTranslationPass: newPlug,
+				NewAgentGatewayPass:       agwbackend.NewAgentGatewayPlug,
 			},
 		},
 		ContributesRegistration: map[schema.GroupKind]func(){
@@ -138,9 +148,12 @@ func NewPlugin(ctx context.Context, commoncol *common.CommonCollections) extensi
 func buildTranslateFunc(
 	ctx context.Context,
 	secrets *krtcollections.SecretIndex,
+	services krt.Collection[*corev1.Service],
+	namespaces krt.Collection[krtcollections.NamespaceMetadata],
 ) func(krtctx krt.HandlerContext, i *v1alpha1.Backend) *BackendIr {
 	return func(krtctx krt.HandlerContext, i *v1alpha1.Backend) *BackendIr {
 		var backendIr BackendIr
+		backendIr.AgentGatewayIr = agwbackend.BuildAgentGatewayBackendIr(krtctx, secrets, services, namespaces, i)
 		switch i.Spec.Type {
 		case v1alpha1.BackendTypeAWS:
 			region := getRegion(i.Spec.Aws)
@@ -251,7 +264,7 @@ func getAISecretRef(llm v1alpha1.SupportedLLMProvider) *corev1.LocalObjectRefere
 	return secretRef
 }
 
-func processBackend(ctx context.Context, in ir.BackendObjectIR, out *envoyclusterv3.Cluster) *ir.EndpointsForBackend {
+func processBackendForEnvoy(ctx context.Context, in ir.BackendObjectIR, out *envoyclusterv3.Cluster) *ir.EndpointsForBackend {
 	be, ok := in.Obj.(*v1alpha1.Backend)
 	if !ok {
 		logger.Error("failed to cast backend object")
@@ -268,7 +281,7 @@ func processBackend(ctx context.Context, in ir.BackendObjectIR, out *envoycluste
 	spec := be.Spec
 	switch spec.Type {
 	case v1alpha1.BackendTypeStatic:
-		if err := processStatic(spec.Static, out); err != nil {
+		if err := processStaticBackendForEnvoy(spec.Static, out); err != nil {
 			logger.Error("failed to process static backend", "error", err)
 		}
 	case v1alpha1.BackendTypeAWS:
@@ -290,6 +303,31 @@ func processBackend(ctx context.Context, in ir.BackendObjectIR, out *envoycluste
 		}
 	}
 	return nil
+}
+
+// processBackendForAgentGateway handles the main backend processing logic for agent gateway
+func processBackendForAgentGateway(in ir.BackendObjectIR) ([]*api.Backend, []*api.Policy, error) {
+	be, ok := in.Obj.(*v1alpha1.Backend)
+	if !ok {
+		return nil, nil, fmt.Errorf("failed to cast backend object")
+	}
+	ir, ok := in.ObjIr.(*BackendIr)
+	if !ok {
+		return nil, nil, fmt.Errorf("failed to cast backend ir")
+	}
+	if ir.AgentGatewayIr == nil {
+		return nil, nil, fmt.Errorf("agent gateway backend ir is nil")
+	}
+	switch be.Spec.Type {
+	case v1alpha1.BackendTypeStatic:
+		return agwbackend.ProcessStaticBackendForAgentGateway(ir.AgentGatewayIr)
+	case v1alpha1.BackendTypeAI:
+		return agwbackend.ProcessAIBackendForAgentGateway(ir.AgentGatewayIr)
+	case v1alpha1.BackendTypeMCP:
+		return agwbackend.ProcessMCPBackendForAgentGateway(ir.AgentGatewayIr)
+	default:
+		return nil, nil, fmt.Errorf("backend of type %s is not supported for agent gateway", be.Spec.Type)
+	}
 }
 
 func parseAppProtocol(b *v1alpha1.Backend) ir.AppProtocol {

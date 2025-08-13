@@ -11,7 +11,7 @@ import (
 
 	"github.com/kgateway-dev/kgateway/v2/internal/kgateway/ir"
 	"github.com/kgateway-dev/kgateway/v2/internal/kgateway/utils"
-	"github.com/kgateway-dev/kgateway/v2/internal/kgateway/utils/krtutil"
+	krtinternal "github.com/kgateway-dev/kgateway/v2/internal/kgateway/utils/krtutil"
 	"github.com/kgateway-dev/kgateway/v2/pkg/metrics"
 )
 
@@ -49,7 +49,7 @@ func (c endpointsWithUccName) Equals(k endpointsWithUccName) bool {
 }
 
 func snapshotPerClient(
-	krtopts krtutil.KrtOptions,
+	krtopts krtinternal.KrtOptions,
 	uccCol krt.Collection[ir.UniqlyConnectedClient],
 	mostXdsSnapshots krt.Collection[GatewayXdsResources],
 	endpoints PerClientEnvoyEndpoints,
@@ -111,10 +111,8 @@ func snapshotPerClient(
 		}
 	}, krtopts.ToOptions("EndpointResources")...)
 
-	metricsRecorder := newSnapshotMetricsRecorder()
-
 	xdsSnapshotsForUcc := krt.NewCollection(uccCol, func(kctx krt.HandlerContext, ucc ir.UniqlyConnectedClient) *XdsSnapWrapper {
-		defer metricsRecorder.transformStart(ucc.ResourceName())(nil)
+		defer (collectXDSTransformMetrics(ucc.ResourceName()))(nil)
 
 		listenerRouteSnapshot := krt.FetchOne(kctx, mostXdsSnapshots, krt.FilterKey(ucc.Role))
 		if listenerRouteSnapshot == nil {

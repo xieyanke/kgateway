@@ -39,7 +39,7 @@ export VERSION
 SOURCES := $(shell find . -name "*.go" | grep -v test.go)
 
 # Note: When bumping this version, update the version in pkg/validator/validator.go as well.
-export ENVOY_IMAGE ?= quay.io/solo-io/envoy-gloo:1.34.1-patch3
+export ENVOY_IMAGE ?= quay.io/solo-io/envoy-gloo:1.35.0-patch1
 export LDFLAGS := -X 'github.com/kgateway-dev/kgateway/v2/internal/version.Version=$(VERSION)'
 export GCFLAGS ?=
 
@@ -221,7 +221,7 @@ envtest-path: ## Set the envtest path
 #----------------------------------------------------------------------------------
 
 GO_TEST_ENV ?=
-# Testings flags: https://pkg.go.dev/cmd/go#hdr-Testing_flags
+# Testing flags: https://pkg.go.dev/cmd/go#hdr-Testing_flags
 # The default timeout for a suite is 10 minutes, but this can be overridden by setting the -timeout flag. Currently set
 # to 25 minutes based on the time it takes to run the longest test setup (kgateway_test).
 GO_TEST_ARGS ?= -timeout=25m -cpu=4 -race -outputdir=$(OUTPUT_DIR)
@@ -497,9 +497,12 @@ CONFORMANCE_VERSION ?= v1.3.0
 gw-api-crds: ## Install the Gateway API CRDs
 	kubectl apply --kustomize "https://github.com/kubernetes-sigs/gateway-api/config/crd/$(CONFORMANCE_CHANNEL)?ref=$(CONFORMANCE_VERSION)"
 
+# The version of the k8s gateway api inference extension CRDs to install.
+GIE_CRD_VERSION ?= $(shell go list -m sigs.k8s.io/gateway-api-inference-extension | awk '{print $$2}')
+
 .PHONY: gie-crds
 gie-crds: gw-api-crds ## Install the Gateway API Inference Extension CRDs
-	kubectl apply --kustomize "https://github.com/kubernetes-sigs/gateway-api-inference-extension/config/crd/"
+	kubectl apply -f "https://github.com/kubernetes-sigs/gateway-api-inference-extension/releases/download/$(GIE_CRD_VERSION)/manifests.yaml"
 
 .PHONY: kind-metallb
 metallb: ## Install the MetalLB load balancer
@@ -612,15 +615,28 @@ conformance-%: $(TEST_ASSET_DIR)/conformance/conformance_test.go
 # Targets for running Gateway API Inference Extension conformance tests
 #----------------------------------------------------------------------------------
 
-# Where the inference extension module is checked out in our Go module cache.
-INFERENCE_CONFORMANCE_DIR := $(shell go list -m -f '{{.Dir}}' sigs.k8s.io/gateway-api-inference-extension)/conformance
+# Reporting flags, identical to CONFORMANCE_REPORT_ARGS but with "inference-"
+GIE_CONFORMANCE_REPORT_ARGS ?= \
+    -report-output=$(TEST_ASSET_DIR)/conformance/inference-$(VERSION)-report.yaml \
+    -organization=kgateway-dev \
+    -project=kgateway \
+    -version=$(VERSION) \
+    -url=github.com/kgateway-dev/kgateway \
+    -contact=github.com/kgateway-dev/kgateway/issues/new/choose
+
+# The args to pass into the Gateway API Inference Extension conformance test suite.
+GIE_CONFORMANCE_ARGS := \
+    -gateway-class=$(CONFORMANCE_GATEWAY_CLASS) \
+    $(GIE_CONFORMANCE_REPORT_ARGS)
+
 # Allow skipping known‐failing tests.
 INFERENCE_SKIP_TESTS ?= -skip-tests EppUnAvailableFailOpen
-# The Gateway API Inference Extension conformance suite requires a GatewayClass to be specified.
-GIE_CONFORMANCE_ARGS := -gateway-class=$(CONFORMANCE_GATEWAY_CLASS)
+
+INFERENCE_CONFORMANCE_DIR := $(shell go list -m -f '{{.Dir}}' sigs.k8s.io/gateway-api-inference-extension)/conformance
 
 .PHONY: gie-conformance
 gie-conformance: gie-crds ## Run the Gateway API Inference Extension conformance suite
+	@mkdir -p $(TEST_ASSET_DIR)/conformance
 	go test -mod=mod -ldflags='$(LDFLAGS)' \
 	    -tags conformance \
 	    -timeout=25m \
@@ -629,12 +645,12 @@ gie-conformance: gie-crds ## Run the Gateway API Inference Extension conformance
 
 .PHONY: gie-conformance-%
 gie-conformance-%: gie-crds ## Run only the specified Gateway API Inference Extension conformance test by ShortName
+	@mkdir -p $(TEST_ASSET_DIR)/conformance
 	go test -mod=mod -ldflags='$(LDFLAGS)' \
 	    -tags conformance \
 	    -timeout=25m \
-	    -v $(INFERENCE_CONFORMANCE_DIR) \
-	    -args $(CONFORMANCE_ARGS) $(INFERENCE_SKIP_TESTS) \
-	    -run-test=$*
+	    -v $(INFERENCE_CONFORMANCE_DIR) $(INFERENCE_SKIP_TESTS) \
+	    -args $(GIE_CONFORMANCE_ARGS) -run-test=$*
 
 # An alias to run both Gateway API and Inference Extension conformance tests.
 .PHONY: all-conformance

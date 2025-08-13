@@ -95,10 +95,10 @@ type Http1ProtocolOptions struct {
 	// +optional
 	EnableTrailers *bool `json:"enableTrailers,omitempty"`
 
-	// The format of the header key.
+	// PreserveHttp1HeaderCase determines whether to preserve the case of HTTP1 response headers.
+	// See here for more information: https://www.envoyproxy.io/docs/envoy/latest/configuration/http/http_conn_man/header_casing
 	// +optional
-	// +kubebuilder:validation:Enum=ProperCaseHeaderKeyFormat;PreserveCaseHeaderKeyFormat
-	HeaderFormat *HeaderFormat `json:"headerFormat,omitempty"`
+	PreserveHttp1HeaderCase *bool `json:"preserveHttp1HeaderCase,omitempty"`
 
 	// Allows invalid HTTP messaging. When this option is false, then Envoy will terminate
 	// HTTP/1.1 connections upon receiving an invalid HTTP message. However,
@@ -107,13 +107,6 @@ type Http1ProtocolOptions struct {
 	// +optional
 	OverrideStreamErrorOnInvalidHttpMessage *bool `json:"overrideStreamErrorOnInvalidHttpMessage,omitempty"`
 }
-
-const (
-	ProperCaseHeaderKeyFormat   HeaderFormat = "ProperCaseHeaderKeyFormat"
-	PreserveCaseHeaderKeyFormat HeaderFormat = "PreserveCaseHeaderKeyFormat"
-)
-
-type HeaderFormat string
 
 // CommonHttpProtocolOptions are options that are applicable to both HTTP1 and HTTP2 requests.
 // See [Envoy documentation](https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/core/v3/protocol.proto#envoy-v3-api-msg-config-core-v3-httpprotocoloptions) for more details.
@@ -233,11 +226,11 @@ type TLS struct {
 	// +optional
 	AllowRenegotiation *bool `json:"allowRenegotiation,omitempty"`
 
-	// If the TLS config has the ca.crt (root CA) provided, kgateway uses it to perform mTLS by default.
-	// Set oneWayTls to true to disable mTLS in favor of server-only TLS (one-way TLS), even if kgateway has the root CA.
+	// If the TLS config has the tls cert and key provided, kgateway uses it to perform mTLS by default.
+	// Set simpleTLS to true to disable mTLS in favor of server-only TLS (one-way TLS), even if kgateway has the client cert.
 	// If unset, defaults to false.
 	// +optional
-	OneWayTLS *bool `json:"oneWayTLS,omitempty"`
+	SimpleTLS *bool `json:"simpleTLS,omitempty"`
 }
 
 // TLSVersion defines the TLS version.

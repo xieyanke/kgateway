@@ -40,33 +40,25 @@ func translateHttp1ProtocolOptions(http1ProtocolOptions *v1alpha1.Http1ProtocolO
 		out.EnableTrailers = *http1ProtocolOptions.EnableTrailers
 	}
 
+	if http1ProtocolOptions.PreserveHttp1HeaderCase != nil && *http1ProtocolOptions.PreserveHttp1HeaderCase {
+		typedConfig, err := utils.MessageToAny(&preserve_case_v3.PreserveCaseFormatterConfig{})
+		if err != nil {
+			return nil, err
+		}
+		out.HeaderKeyFormat = &envoycorev3.Http1ProtocolOptions_HeaderKeyFormat{
+			HeaderFormat: &envoycorev3.Http1ProtocolOptions_HeaderKeyFormat_StatefulFormatter{
+				StatefulFormatter: &envoycorev3.TypedExtensionConfig{
+					Name:        PreserveCasePlugin,
+					TypedConfig: typedConfig,
+				},
+			},
+		}
+	}
+
 	if http1ProtocolOptions.OverrideStreamErrorOnInvalidHttpMessage != nil {
 		out.OverrideStreamErrorOnInvalidHttpMessage = &wrapperspb.BoolValue{Value: *http1ProtocolOptions.OverrideStreamErrorOnInvalidHttpMessage}
 	}
 
-	if http1ProtocolOptions.HeaderFormat != nil {
-		switch *http1ProtocolOptions.HeaderFormat {
-		case v1alpha1.ProperCaseHeaderKeyFormat:
-			out.HeaderKeyFormat = &envoycorev3.Http1ProtocolOptions_HeaderKeyFormat{
-				HeaderFormat: &envoycorev3.Http1ProtocolOptions_HeaderKeyFormat_ProperCaseWords_{
-					ProperCaseWords: &envoycorev3.Http1ProtocolOptions_HeaderKeyFormat_ProperCaseWords{},
-				},
-			}
-		case v1alpha1.PreserveCaseHeaderKeyFormat:
-			typedConfig, err := utils.MessageToAny(&preserve_case_v3.PreserveCaseFormatterConfig{})
-			if err != nil {
-				return nil, err
-			}
-			out.HeaderKeyFormat = &envoycorev3.Http1ProtocolOptions_HeaderKeyFormat{
-				HeaderFormat: &envoycorev3.Http1ProtocolOptions_HeaderKeyFormat_StatefulFormatter{
-					StatefulFormatter: &envoycorev3.TypedExtensionConfig{
-						Name:        PreserveCasePlugin,
-						TypedConfig: typedConfig,
-					},
-				},
-			}
-		}
-	}
 	return out, nil
 }
 

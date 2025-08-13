@@ -10,30 +10,27 @@ import (
 	"reflect"
 	"sort"
 	"strings"
-	"time"
+	"testing"
 
+	envoyclusterv3 "github.com/envoyproxy/go-control-plane/envoy/config/cluster/v3"
 	envoylistenerv3 "github.com/envoyproxy/go-control-plane/envoy/config/listener/v3"
 	envoyroutev3 "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
-	"github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
+	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/testing/protocmp"
 	"istio.io/istio/pkg/config/schema/gvr"
 	kubeclient "istio.io/istio/pkg/kube"
-
 	"istio.io/istio/pkg/kube/kclient/clienttest"
 	"istio.io/istio/pkg/kube/krt"
-	"istio.io/istio/pkg/test"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	gwv1 "sigs.k8s.io/gateway-api/apis/v1"
-
-	envoyclusterv3 "github.com/envoyproxy/go-control-plane/envoy/config/cluster/v3"
+	gwv1a2 "sigs.k8s.io/gateway-api/apis/v1alpha2"
 
 	"github.com/kgateway-dev/kgateway/v2/api/v1alpha1"
 	extensionsplug "github.com/kgateway-dev/kgateway/v2/internal/kgateway/extensions2/plugin"
@@ -42,12 +39,12 @@ import (
 	"github.com/kgateway-dev/kgateway/v2/internal/kgateway/translator"
 	"github.com/kgateway-dev/kgateway/v2/internal/kgateway/translator/irtranslator"
 	"github.com/kgateway-dev/kgateway/v2/internal/kgateway/translator/listener"
-	"github.com/kgateway-dev/kgateway/v2/internal/kgateway/utils/krtutil"
 	"github.com/kgateway-dev/kgateway/v2/internal/kgateway/wellknown"
 	"github.com/kgateway-dev/kgateway/v2/pkg/client/clientset/versioned/fake"
 	"github.com/kgateway-dev/kgateway/v2/pkg/pluginsdk"
 	common "github.com/kgateway-dev/kgateway/v2/pkg/pluginsdk/collections"
 	"github.com/kgateway-dev/kgateway/v2/pkg/pluginsdk/ir"
+	"github.com/kgateway-dev/kgateway/v2/pkg/pluginsdk/krtutil"
 	"github.com/kgateway-dev/kgateway/v2/pkg/pluginsdk/reporter"
 	"github.com/kgateway-dev/kgateway/v2/pkg/reports"
 	"github.com/kgateway-dev/kgateway/v2/pkg/schemes"
@@ -212,7 +209,7 @@ func NewScheme(extraSchemes runtime.SchemeBuilder) *runtime.Scheme {
 }
 
 func TestTranslation(
-	t test.Failer,
+	t *testing.T,
 	ctx context.Context,
 	inputFiles []string,
 	outputFile string,
@@ -224,7 +221,7 @@ func TestTranslation(
 }
 
 func TestTranslationWithExtraPlugins(
-	t test.Failer,
+	t *testing.T,
 	ctx context.Context,
 	inputFiles []string,
 	outputFile string,
@@ -236,14 +233,14 @@ func TestTranslationWithExtraPlugins(
 	settingsOpts ...SettingsOpts,
 ) {
 	scheme := NewScheme(extraSchemes)
+	r := require.New(t)
 
 	results, err := TestCase{
 		InputFiles: inputFiles,
 	}.Run(t, ctx, scheme, extraPluginsFn, extraGroups, settingsOpts...)
-	Expect(err).NotTo(HaveOccurred())
-	// TODO allow expecting multiple gateways in the output (map nns -> outputFile?)
-	Expect(results).To(HaveLen(1))
-	Expect(results).To(HaveKey(gwNN))
+	r.NoError(err, "error running test case")
+	r.Len(results, 1, "expected exactly one gateway in the results")
+	r.Contains(results, gwNN)
 	result := results[gwNN]
 
 	//// do a json round trip to normalize the output (i.e. things like omit empty)
@@ -261,25 +258,30 @@ func TestTranslationWithExtraPlugins(
 		Clusters:      result.Clusters,
 	}
 	outputYaml, err := MarshalAnyYaml(output)
-	fmt.Fprintf(ginkgo.GinkgoWriter, "actual result:\n %s \nerror: %v", outputYaml, err)
-	Expect(err).NotTo(HaveOccurred())
+	r.NoErrorf(err, "error marshaling output to YAML; actual result: %s", outputYaml)
 
 	if envutils.IsEnvTruthy("REFRESH_GOLDEN") {
 		// create parent directory if it doesn't exist
 		dir := filepath.Dir(outputFile)
 		if err := os.MkdirAll(dir, 0o755); err != nil {
-			Expect(err).NotTo(HaveOccurred())
+			r.NoErrorf(err, "error creating directory %s", dir)
 		}
+		t.Log("REFRESH_GOLDEN is set, writing output file", outputFile)
 		os.WriteFile(outputFile, outputYaml, 0o644)
 	}
 
-	Expect(compareProxy(outputFile, result.Proxy)).To(BeEmpty())
-	Expect(compareClusters(outputFile, result.Clusters)).To(BeEmpty())
+	gotProxy, err := compareProxy(outputFile, result.Proxy)
+	r.Emptyf(gotProxy, "unexpected diff in proxy output; actual result: %s", outputYaml)
+	r.NoError(err, "error comparing proxy output")
+
+	gotClusters, err := compareClusters(outputFile, result.Clusters)
+	r.Emptyf(gotClusters, "unexpected diff in clusters output; actual result: %s", outputYaml)
+	r.NoError(err, "error comparing clusters output")
 
 	if assertReports != nil {
 		assertReports(gwNN, result.ReportsMap)
 	} else {
-		Expect(AreReportsSuccess(gwNN, result.ReportsMap)).NotTo(HaveOccurred())
+		r.NoError(AreReportsSuccess(gwNN, result.ReportsMap), "expected status reports to not have errors")
 	}
 }
 
@@ -354,11 +356,19 @@ func GetHTTPRouteStatusError(
 	reportsMap reports.ReportMap,
 	route *types.NamespacedName,
 ) error {
-	for nns, routeReport := range reportsMap.HTTPRoutes {
+	for nns := range reportsMap.HTTPRoutes {
 		if route != nil && nns != *route {
 			continue
 		}
-		for ref, parentRefReport := range routeReport.Parents {
+		r := gwv1.HTTPRoute{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      nns.Name,
+				Namespace: nns.Namespace,
+			},
+		}
+		status := reportsMap.BuildRouteStatus(context.Background(), &r, wellknown.DefaultGatewayClassName)
+
+		for ref, parentRefReport := range status.Parents {
 			for _, c := range parentRefReport.Conditions {
 				// most route conditions true is good, except RouteConditionPartiallyInvalid
 				if c.Type == string(gwv1.RouteConditionPartiallyInvalid) && c.Status != metav1.ConditionFalse {
@@ -376,14 +386,15 @@ func GetPolicyStatusError(
 	reportsMap reports.ReportMap,
 	policy *reporter.PolicyKey,
 ) error {
-	for key, policyReport := range reportsMap.Policies {
+	for key := range reportsMap.Policies {
 		if policy != nil && *policy != key {
 			continue
 		}
-		for ancestor, report := range policyReport.Ancestors {
+		status := reportsMap.BuildPolicyStatus(context.Background(), key, wellknown.DefaultGatewayControllerName, gwv1a2.PolicyStatus{})
+		for ancestor, report := range status.Ancestors {
 			for _, c := range report.Conditions {
 				if c.Status != metav1.ConditionTrue {
-					return fmt.Errorf("condition error for policy: %v, ancestor ref: %v, condition: %v", policy, ancestor, c)
+					return fmt.Errorf("condition error for policy: %v, ancestor ref: %v, condition: %v", key, ancestor, c)
 				}
 			}
 		}
@@ -397,8 +408,16 @@ func AreReportsSuccess(gwNN types.NamespacedName, reportsMap reports.ReportMap) 
 		return err
 	}
 
-	for nns, routeReport := range reportsMap.TCPRoutes {
-		for ref, parentRefReport := range routeReport.Parents {
+	for nns := range reportsMap.TCPRoutes {
+		r := gwv1a2.TCPRoute{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      nns.Name,
+				Namespace: nns.Namespace,
+			},
+		}
+		status := reportsMap.BuildRouteStatus(context.Background(), &r, wellknown.DefaultGatewayClassName)
+
+		for ref, parentRefReport := range status.Parents {
 			for _, c := range parentRefReport.Conditions {
 				// most route conditions true is good, except RouteConditionPartiallyInvalid
 				if c.Type == string(gwv1.RouteConditionPartiallyInvalid) && c.Status != metav1.ConditionFalse {
@@ -410,8 +429,16 @@ func AreReportsSuccess(gwNN types.NamespacedName, reportsMap reports.ReportMap) 
 		}
 	}
 
-	for nns, routeReport := range reportsMap.TLSRoutes {
-		for ref, parentRefReport := range routeReport.Parents {
+	for nns := range reportsMap.TLSRoutes {
+		r := gwv1a2.TLSRoute{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      nns.Name,
+				Namespace: nns.Namespace,
+			},
+		}
+		status := reportsMap.BuildRouteStatus(context.Background(), &r, wellknown.DefaultGatewayClassName)
+
+		for ref, parentRefReport := range status.Parents {
 			for _, c := range parentRefReport.Conditions {
 				// most route conditions true is good, except RouteConditionPartiallyInvalid
 				if c.Type == string(gwv1.RouteConditionPartiallyInvalid) && c.Status != metav1.ConditionFalse {
@@ -423,8 +450,16 @@ func AreReportsSuccess(gwNN types.NamespacedName, reportsMap reports.ReportMap) 
 		}
 	}
 
-	for nns, routeReport := range reportsMap.GRPCRoutes {
-		for ref, parentRefReport := range routeReport.Parents {
+	for nns := range reportsMap.GRPCRoutes {
+		r := gwv1.GRPCRoute{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      nns.Name,
+				Namespace: nns.Namespace,
+			},
+		}
+		status := reportsMap.BuildRouteStatus(context.Background(), &r, wellknown.DefaultGatewayClassName)
+
+		for ref, parentRefReport := range status.Parents {
 			for _, c := range parentRefReport.Conditions {
 				// most route conditions true is good, except RouteConditionPartiallyInvalid
 				if c.Type == string(gwv1.RouteConditionPartiallyInvalid) && c.Status != metav1.ConditionFalse {
@@ -436,8 +471,15 @@ func AreReportsSuccess(gwNN types.NamespacedName, reportsMap reports.ReportMap) 
 		}
 	}
 
-	for nns, gwReport := range reportsMap.Gateways {
-		for _, c := range gwReport.GetConditions() {
+	for nns := range reportsMap.Gateways {
+		g := gwv1.Gateway{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      nns.Name,
+				Namespace: nns.Namespace,
+			},
+		}
+		status := reportsMap.BuildGWStatus(context.Background(), g)
+		for _, c := range status.Conditions {
 			if c.Type == listener.AttachedListenerSetsConditionType {
 				// A gateway might or might not have AttachedListenerSets so skip this condition
 				continue
@@ -459,7 +501,7 @@ func AreReportsSuccess(gwNN types.NamespacedName, reportsMap reports.ReportMap) 
 type SettingsOpts func(*settings.Settings)
 
 func (tc TestCase) Run(
-	t test.Failer,
+	t *testing.T,
 	ctx context.Context,
 	scheme *runtime.Scheme,
 	extraPluginsFn ExtraPluginsFn,
@@ -470,8 +512,10 @@ func (tc TestCase) Run(
 		anyObjs []runtime.Object
 		ourObjs []runtime.Object
 	)
+	r := require.New(t)
+
 	for _, file := range tc.InputFiles {
-		objs, err := LoadFromFiles(ctx, file, scheme)
+		objs, err := LoadFromFiles(file, scheme)
 		if err != nil {
 			return nil, err
 		}
@@ -592,11 +636,11 @@ func (tc TestCase) Run(
 		Name:      "example-svc",
 	}, 80, "")
 	extensions.ContributesBackends[gk] = extensionsplug.BackendPlugin{
-		Backends: krt.NewStaticCollection([]ir.BackendObjectIR{
+		Backends: krt.NewStaticCollection(nil, []ir.BackendObjectIR{
 			testBackend,
 		}),
 		BackendInit: ir.BackendInit{
-			InitBackend: func(ctx context.Context, in ir.BackendObjectIR, out *envoyclusterv3.Cluster) *ir.EndpointsForBackend {
+			InitEnvoyBackend: func(ctx context.Context, in ir.BackendObjectIR, out *envoyclusterv3.Cluster) *ir.EndpointsForBackend {
 				return nil
 			},
 		},
@@ -620,8 +664,6 @@ func (tc TestCase) Run(
 		kubeclient.WaitForCacheSync(fmt.Sprintf("extra-%d", i), ctx.Done(), plug.HasSynced)
 	}
 
-	time.Sleep(1 * time.Second)
-
 	results := make(map[types.NamespacedName]ActualTestResult)
 
 	for _, gw := range commoncol.GatewayIndex.Gateways.List() {
@@ -643,7 +685,7 @@ func (tc TestCase) Run(
 		for _, col := range commoncol.BackendIndex.BackendsWithPolicy() {
 			for _, backend := range col.List() {
 				cluster, err := translator.GetUpstreamTranslator().TranslateBackend(krt.TestingDummyContext{}, ucc, backend)
-				Expect(err).NotTo(HaveOccurred())
+				r.NoErrorf(err, "error translating backend %s", backend.GetName())
 				clusters = append(clusters, cluster)
 			}
 		}

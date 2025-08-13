@@ -80,9 +80,9 @@ func WithRestConfig(rc *rest.Config) func(*setup) {
 	}
 }
 
-func WithControllerManagerOptions(opts *ctrl.Options) func(*setup) {
+func WithControllerManagerOptions(f func(context.Context) *ctrl.Options) func(*setup) {
 	return func(s *setup) {
-		s.ctrlMgrOptionsInitFunc = func(context.Context) *ctrl.Options { return opts }
+		s.ctrlMgrOptionsInitFunc = f
 	}
 }
 
@@ -194,7 +194,7 @@ func New(opts ...func(*setup)) (*setup, error) {
 func (s *setup) Start(ctx context.Context) error {
 	slog.Info("starting kgateway")
 
-	setupLogging(s.globalSettings.LogLevel)
+	SetupLogging(s.globalSettings.LogLevel)
 
 	mgrOpts := s.ctrlMgrOptionsInitFunc(ctx)
 
@@ -288,7 +288,7 @@ func BuildKgatewayWithConfig(
 	slog.Info("creating krt collections")
 	krtOpts := krtutil.NewKrtOptions(ctx.Done(), setupOpts.KrtDebugger)
 
-	augmentedPods := krtcollections.NewPodsCollection(kubeClient, krtOpts)
+	augmentedPods, _ := krtcollections.NewPodsCollection(kubeClient, krtOpts)
 	augmentedPodsForUcc := augmentedPods
 	if envutils.IsEnvTruthy("DISABLE_POD_LOCALITY_XDS") {
 		augmentedPodsForUcc = nil
@@ -325,8 +325,8 @@ func BuildKgatewayWithConfig(
 	return c.Build(ctx)
 }
 
-// setupLogging configures the global slog logger
-func setupLogging(levelStr string) {
+// SetupLogging configures the global slog logger
+func SetupLogging(levelStr string) {
 	if levelStr == "" {
 		return
 	}

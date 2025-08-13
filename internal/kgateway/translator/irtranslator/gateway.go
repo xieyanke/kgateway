@@ -21,6 +21,7 @@ import (
 	"github.com/kgateway-dev/kgateway/v2/pkg/logging"
 	sdkreporter "github.com/kgateway-dev/kgateway/v2/pkg/pluginsdk/reporter"
 	"github.com/kgateway-dev/kgateway/v2/pkg/settings"
+	"github.com/kgateway-dev/kgateway/v2/pkg/validator"
 )
 
 var logger = logging.New("translator/ir")
@@ -28,6 +29,7 @@ var logger = logging.New("translator/ir")
 type Translator struct {
 	ContributedPolicies  map[schema.GroupKind]extensionsplug.PolicyPlugin
 	RouteReplacementMode settings.RouteReplacementMode
+	Validator            validator.Validator
 }
 
 type TranslationPassPlugins map[schema.GroupKind]*TranslationPass
@@ -90,6 +92,8 @@ func (t *Translator) ComputeListener(
 	}
 	t.runListenerPlugins(ctx, pass, gw, lis, reporter, ret)
 
+	domains := map[string]struct{}{}
+
 	for _, hfc := range lis.HttpFilterChain {
 		fct := filterChainTranslator{
 			listener:        lis,
@@ -111,6 +115,7 @@ func (t *Translator) ComputeListener(
 			PluginPass:               pass,
 			logger:                   logger.With("route_config_name", hfc.FilterChainName),
 			routeReplacementMode:     t.RouteReplacementMode,
+			validator:                t.Validator,
 		}
 		rc := hr.ComputeRouteConfiguration(ctx, hfc.Vhosts)
 		if rc != nil {
@@ -118,17 +123,12 @@ func (t *Translator) ComputeListener(
 
 			// Record metrics for the number of domains per listener.
 			// Only one domain per virtual host is supported currently, but that may change in the future,
-			// so loop through the virtual hosts and count the domains.
-			domainsOnListener := 0
-			for _, vhost := range rc.GetVirtualHosts() {
-				domainsOnListener += len(vhost.GetDomains())
+			// so loop through the virtual hosts and count the unique domains.
+			for _, vhost := range rc.VirtualHosts {
+				for _, domain := range vhost.Domains {
+					domains[domain] = struct{}{}
+				}
 			}
-
-			setDomainsPerListener(domainsPerListenerMetricLabels{
-				Namespace:   hr.gw.SourceObject.GetNamespace(),
-				GatewayName: hr.gw.SourceObject.GetName(),
-				Port:        strconv.Itoa(int(lis.BindPort)),
-			}, domainsOnListener)
 		}
 
 		// compute chains
@@ -142,6 +142,13 @@ func (t *Translator) ComputeListener(
 			hasTls = true
 		}
 	}
+
+	// Update the domains per listener metric with number of domains found.
+	setDomainsPerListener(domainsPerListenerMetricLabels{
+		Namespace:   gw.SourceObject.GetNamespace(),
+		GatewayName: gw.SourceObject.GetName(),
+		Port:        strconv.Itoa(int(lis.BindPort)),
+	}, len(domains))
 
 	fct := filterChainTranslator{
 		listener:   lis,
@@ -212,7 +219,6 @@ func (t *Translator) newPass(reporter sdkreporter.Reporter) TranslationPassPlugi
 		if v.NewGatewayTranslationPass == nil {
 			continue
 		}
-
 		tp := v.NewGatewayTranslationPass(context.TODO(), ir.GwTranslationCtx{}, reporter)
 		if tp != nil {
 			ret[k] = &TranslationPass{

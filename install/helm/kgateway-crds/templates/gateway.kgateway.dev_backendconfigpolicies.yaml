@@ -112,12 +112,9 @@ spec:
                 properties:
                   enableTrailers:
                     type: boolean
-                  headerFormat:
-                    enum:
-                    - ProperCaseHeaderKeyFormat
-                    - PreserveCaseHeaderKeyFormat
-                    type: string
                   overrideStreamErrorOnInvalidHttpMessage:
+                    type: boolean
+                  preserveHttp1HeaderCase:
                     type: boolean
                 type: object
               http2ProtocolOptions:
@@ -326,8 +323,6 @@ spec:
                     type: array
                   insecureSkipVerify:
                     type: boolean
-                  oneWayTLS:
-                    type: boolean
                   parameters:
                     properties:
                       cipherSuites:
@@ -362,6 +357,8 @@ spec:
                         type: string
                     type: object
                     x-kubernetes-map-type: atomic
+                  simpleTLS:
+                    type: boolean
                   sni:
                     minLength: 1
                     type: string
