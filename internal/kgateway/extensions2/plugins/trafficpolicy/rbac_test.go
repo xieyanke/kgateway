@@ -5,7 +5,7 @@ import (
 
 	cncfcorev3 "github.com/cncf/xds/go/xds/core/v3"
 	cncfmatcherv3 "github.com/cncf/xds/go/xds/type/matcher/v3"
-	envoycfgauthz "github.com/envoyproxy/go-control-plane/envoy/config/rbac/v3"
+	envoyrbacv3 "github.com/envoyproxy/go-control-plane/envoy/config/rbac/v3"
 	envoyauthz "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/rbac/v3"
 	"github.com/google/cel-go/cel"
 	"github.com/stretchr/testify/assert"
@@ -106,8 +106,8 @@ func TestTranslateRbac(t *testing.T) {
 			},
 			expected: &envoyauthz.RBACPerRoute{
 				Rbac: &envoyauthz.RBAC{
-					Rules: &envoycfgauthz.RBAC{
-						Action: envoycfgauthz.RBAC_DENY,
+					Rules: &envoyrbacv3.RBAC{
+						Action: envoyrbacv3.RBAC_DENY,
 					},
 					Matcher: createExpectedMatcher(v1alpha1.AuthorizationPolicyActionDeny, 0),
 				},
