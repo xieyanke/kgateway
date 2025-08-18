@@ -588,6 +588,29 @@ spec:
                         type: object
                     type: object
                 type: object
+              rbac:
+                properties:
+                  action:
+                    default: Allow
+                    enum:
+                    - Allow
+                    - Deny
+                    type: string
+                  policies:
+                    items:
+                      properties:
+                        matchExpressions:
+                          items:
+                            type: string
+                          minItems: 1
+                          type: array
+                      type: object
+                    maxItems: 16
+                    minItems: 1
+                    type: array
+                required:
+                - policies
+                type: object
               retry:
                 properties:
                   attempts:

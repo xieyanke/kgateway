@@ -14,6 +14,7 @@ import (
 	envoy_csrf_v3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/csrf/v3"
 	dynamicmodulesv3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/dynamic_modules/v3"
 	localratelimitv3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/local_ratelimit/v3"
+	envoyrbacv3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/rbac/v3"
 	envoy_wellknown "github.com/envoyproxy/go-control-plane/pkg/wellknown"
 	"google.golang.org/protobuf/types/known/anypb"
 	"google.golang.org/protobuf/types/known/wrapperspb"
@@ -51,6 +52,7 @@ const (
 	localRateLimitFilterNamePrefix = "ratelimit/local"
 	localRateLimitStatPrefix       = "http_local_rate_limiter"
 	rateLimitFilterNamePrefix      = "ratelimit"
+	rbacFilterNamePrefix           = "envoy.filters.http.rbac"
 )
 
 var (
@@ -93,6 +95,7 @@ type trafficPolicySpecIr struct {
 	autoHostRewrite *autoHostRewriteIR
 	retry           *retryIR
 	timeouts        *timeoutsIR
+	rbac            *rbacIr
 }
 
 func (d *TrafficPolicy) CreationTime() time.Time {
@@ -147,6 +150,9 @@ func (d *TrafficPolicy) Equals(in any) bool {
 	if !d.spec.timeouts.Equals(d2.spec.timeouts) {
 		return false
 	}
+	if !d.spec.rbac.Equals(d2.spec.rbac) {
+		return false
+	}
 	return true
 }
 
@@ -166,6 +172,7 @@ func (p *TrafficPolicy) Validate() error {
 	validators = append(validators, p.spec.cors.Validate)
 	validators = append(validators, p.spec.buffer.Validate)
 	validators = append(validators, p.spec.autoHostRewrite.Validate)
+	validators = append(validators, p.spec.rbac.Validate)
 	for _, validator := range validators {
 		if err := validator(); err != nil {
 			return err
@@ -186,6 +193,7 @@ type trafficPolicyPluginGwPass struct {
 	extAuthPerProvider    ProviderNeededMap
 	extProcPerProvider    ProviderNeededMap
 	rateLimitPerProvider  ProviderNeededMap
+	rbacInChain           map[string]*envoyrbacv3.RBAC
 	corsInChain           map[string]*corsv3.Cors
 	csrfInChain           map[string]*envoy_csrf_v3.CsrfPolicy
 	bufferInChain         map[string]*bufferv3.Buffer
@@ -574,6 +582,16 @@ func (p *trafficPolicyPluginGwPass) HttpFilters(ctx context.Context, fcc ir.Filt
 		filters = append(filters, filter)
 	}
 
+	// Add the RBAC filter to enable RBAC for the listener.
+	// Requires the RBAC policy to be set as typed_per_filter_config.
+	if f := p.rbacInChain[fcc.FilterChainName]; f != nil {
+		filter := plugins.MustNewStagedFilter(rbacFilterNamePrefix,
+			p.rbacInChain[fcc.FilterChainName],
+			plugins.DuringStage(plugins.AuthZStage))
+		filter.Filter.Disabled = true
+		filters = append(filters, filter)
+	}
+
 	if len(filters) == 0 {
 		return nil, nil
 	}
@@ -598,6 +616,7 @@ func (p *trafficPolicyPluginGwPass) handlePolicies(
 	p.handleCors(fcn, typedFilterConfig, spec.cors)
 	p.handleCsrf(fcn, typedFilterConfig, spec.csrf)
 	p.handleBuffer(fcn, typedFilterConfig, spec.buffer)
+	p.handleRbac(fcn, typedFilterConfig, spec.rbac)
 }
 
 // handlePerRoutePolicies handles policies that are meant to be processed at the route level
@@ -678,6 +697,7 @@ func MergeTrafficPolicies(
 		mergeAutoHostRewrite,
 		mergeTimeouts,
 		mergeRetry,
+		mergeRbac,
 	}
 
 	for _, mergeFunc := range mergeFuncs {
