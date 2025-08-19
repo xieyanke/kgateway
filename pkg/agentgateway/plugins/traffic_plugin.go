@@ -263,11 +263,11 @@ func (p *TrafficPlugin) processRBACPolicy(
 	var allowPolicies, denyPolicies []string
 	if trafficPolicy.Spec.RBAC.Action == v1alpha1.AuthorizationPolicyActionDeny {
 		for _, policy := range trafficPolicy.Spec.RBAC.Policies {
-			allowPolicies = append(allowPolicies, policy.MatchExpressions...)
+			denyPolicies = append(denyPolicies, policy.MatchExpressions...)
 		}
 	} else {
 		for _, policy := range trafficPolicy.Spec.RBAC.Policies {
-			denyPolicies = append(allowPolicies, policy.MatchExpressions...)
+			allowPolicies = append(allowPolicies, policy.MatchExpressions...)
 		}
 	}
 
