@@ -80,10 +80,8 @@ func TestTranslateRBAC(t *testing.T) {
 			tpName: "test-policy",
 			rbac: &v1alpha1.RBAC{
 				Action: v1alpha1.AuthorizationPolicyActionAllow,
-				Policies: []v1alpha1.RBACPolicy{
-					{
-						MatchExpressions: []string{"request.auth.claims.groups == 'group1'", "request.auth.claims.groups == 'group2'"},
-					},
+				Policy: v1alpha1.RBACPolicy{
+					MatchExpressions: []string{"request.auth.claims.groups == 'group1'", "request.auth.claims.groups == 'group2'"},
 				},
 			},
 			expected: &envoyauthz.RBACPerRoute{
@@ -101,8 +99,8 @@ func TestTranslateRBAC(t *testing.T) {
 			ns:     "test-ns",
 			tpName: "test-policy",
 			rbac: &v1alpha1.RBAC{
-				Action:   v1alpha1.AuthorizationPolicyActionDeny,
-				Policies: []v1alpha1.RBACPolicy{},
+				Action: v1alpha1.AuthorizationPolicyActionDeny,
+				Policy: v1alpha1.RBACPolicy{},
 			},
 			expected: &envoyauthz.RBACPerRoute{
 				Rbac: &envoyauthz.RBAC{

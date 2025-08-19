@@ -2,14 +2,10 @@ package v1alpha1
 
 // RBAC defines the configuration for role-based access control.
 type RBAC struct {
-	// Policies defines a list of roles and the principals that are assigned/denied the role.
-	// A policy matches if and only if at least one of its permissions match the action taking place
-	// AND at least one of its principals match the downstream
-	// AND the condition is true if specified.
+	// Policy specifies the RBAC rule to evaluate.
+	// A policy matches only **all** the conditions evaluates to true.
 	// +required
-	// +kubebuilder:validation:MinItems=1
-	// +kubebuilder:validation:MaxItems=16
-	Policies []RBACPolicy `json:"policies"`
+	Policy RBACPolicy `json:"policies"`
 
 	// Action defines whether the rule allows or denies the request if matched.
 	// If unspecified, the default is "Allow".

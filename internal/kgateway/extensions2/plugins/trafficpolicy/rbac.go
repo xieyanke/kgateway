@@ -87,15 +87,12 @@ func translateRBAC(rbac *v1alpha1.RBAC) (*envoyauthz.RBACPerRoute, error) {
 	// Create matcher-based RBAC configuration
 	var matchers []*cncfmatcherv3.Matcher_MatcherList_FieldMatcher
 
-	for _, rule := range rbac.Policies {
-		if rule.MatchExpressions != nil && len(rule.MatchExpressions) > 0 {
-			matcher, err := createCELMatcher(rule.MatchExpressions, rbac.Action)
-			if err != nil {
-				errs = append(errs, err)
-				continue
-			}
-			matchers = append(matchers, matcher)
+	if rbac.Policy.MatchExpressions != nil && len(rbac.Policy.MatchExpressions) > 0 {
+		matcher, err := createCELMatcher(rbac.Policy.MatchExpressions, rbac.Action)
+		if err != nil {
+			errs = append(errs, err)
 		}
+		matchers = append(matchers, matcher)
 	}
 
 	if len(matchers) == 0 {

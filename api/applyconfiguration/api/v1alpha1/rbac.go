@@ -9,9 +9,9 @@ import (
 // RBACApplyConfiguration represents a declarative configuration of the RBAC type for use
 // with apply.
 type RBACApplyConfiguration struct {
-	Policies []RBACPolicyApplyConfiguration         `json:"policies,omitempty"`
-	Action   *apiv1alpha1.AuthorizationPolicyAction `json:"action,omitempty"`
-	Disable  *apiv1alpha1.PolicyDisable             `json:"disable,omitempty"`
+	Policy  *RBACPolicyApplyConfiguration          `json:"policies,omitempty"`
+	Action  *apiv1alpha1.AuthorizationPolicyAction `json:"action,omitempty"`
+	Disable *apiv1alpha1.PolicyDisable             `json:"disable,omitempty"`
 }
 
 // RBACApplyConfiguration constructs a declarative configuration of the RBAC type for use with
@@ -20,16 +20,11 @@ func RBAC() *RBACApplyConfiguration {
 	return &RBACApplyConfiguration{}
 }
 
-// WithPolicies adds the given value to the Policies field in the declarative configuration
-// and returns the receiver, so that objects can be build by chaining "With" function invocations.
-// If called multiple times, values provided by each call will be appended to the Policies field.
-func (b *RBACApplyConfiguration) WithPolicies(values ...*RBACPolicyApplyConfiguration) *RBACApplyConfiguration {
-	for i := range values {
-		if values[i] == nil {
-			panic("nil value passed to WithPolicies")
-		}
-		b.Policies = append(b.Policies, *values[i])
-	}
+// WithPolicy sets the Policy field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the Policy field is set to the value of the last call.
+func (b *RBACApplyConfiguration) WithPolicy(value *RBACPolicyApplyConfiguration) *RBACApplyConfiguration {
+	b.Policy = value
 	return b
 }
 

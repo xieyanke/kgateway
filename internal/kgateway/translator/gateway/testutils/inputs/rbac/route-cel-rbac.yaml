@@ -61,7 +61,7 @@ metadata:
 spec:
   rbac:
     action: Allow
-    policies:
-      - matchExpressions:
+    policy:
+      matchExpressions:
           - "metadata.filter_metadata['envoy.filters.http.jwt_authn']['payload']['test'] == 'bar'"
           - "metadata.filter_metadata['envoy.filters.http.jwt_authn']['payload']['groups'].contains('group2')"

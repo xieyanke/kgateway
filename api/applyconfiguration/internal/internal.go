@@ -1960,10 +1960,8 @@ var schemaYAML = typed.YAMLObject(`types:
         namedType: com.github.kgateway-dev.kgateway.v2.api.v1alpha1.PolicyDisable
     - name: policies
       type:
-        list:
-          elementType:
-            namedType: com.github.kgateway-dev.kgateway.v2.api.v1alpha1.RBACPolicy
-          elementRelationship: atomic
+        namedType: com.github.kgateway-dev.kgateway.v2.api.v1alpha1.RBACPolicy
+      default: {}
 - name: com.github.kgateway-dev.kgateway.v2.api.v1alpha1.RBACPolicy
   map:
     fields:

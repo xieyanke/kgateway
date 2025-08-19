@@ -599,17 +599,13 @@ spec:
                   disable:
                     type: object
                   policies:
-                    items:
-                      properties:
-                        matchExpressions:
-                          items:
-                            type: string
-                          minItems: 1
-                          type: array
-                      type: object
-                    maxItems: 16
-                    minItems: 1
-                    type: array
+                    properties:
+                      matchExpressions:
+                        items:
+                          type: string
+                        minItems: 1
+                        type: array
+                    type: object
                 required:
                 - policies
                 type: object

@@ -6009,16 +6009,9 @@ func schema_kgateway_v2_api_v1alpha1_RBAC(ref common.ReferenceCallback) common.O
 				Properties: map[string]spec.Schema{
 					"policies": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Policies defines a list of roles and the principals that are assigned/denied the role. A policy matches if and only if at least one of its permissions match the action taking place AND at least one of its principals match the downstream AND the condition is true if specified.",
-							Type:        []string{"array"},
-							Items: &spec.SchemaOrArray{
-								Schema: &spec.Schema{
-									SchemaProps: spec.SchemaProps{
-										Default: map[string]interface{}{},
-										Ref:     ref("github.com/kgateway-dev/kgateway/v2/api/v1alpha1.RBACPolicy"),
-									},
-								},
-							},
+							Description: "Policy specifies the RBAC rule to evaluate. A policy matches only **all** the conditions evaluates to true.",
+							Default:     map[string]interface{}{},
+							Ref:         ref("github.com/kgateway-dev/kgateway/v2/api/v1alpha1.RBACPolicy"),
 						},
 					},
 					"action": {

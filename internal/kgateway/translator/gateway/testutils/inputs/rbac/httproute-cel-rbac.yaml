@@ -59,7 +59,7 @@ spec:
       name: example-route
   rbac:
     action: Allow
-    policies:
-      - matchExpressions:
+    policy:
+      matchExpressions:
           - "metadata.filter_metadata['envoy.filters.http.jwt_authn']['payload']['test'] == 'foo'"
           - "metadata.filter_metadata['envoy.filters.http.jwt_authn']['payload']['groups'].contains('group1')"

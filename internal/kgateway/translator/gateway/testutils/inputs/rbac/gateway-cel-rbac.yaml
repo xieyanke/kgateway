@@ -59,7 +59,7 @@ spec:
       name: example-gateway
   rbac:
     action: Deny
-    policies:
-      - matchExpressions:
+    policy:
+      matchExpressions:
           - "request.headers['x-foo'] == 'bar'"
           - "request.headers['x-bar'] == 'foo'"
