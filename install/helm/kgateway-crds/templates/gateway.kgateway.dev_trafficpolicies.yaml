@@ -598,7 +598,7 @@ spec:
                     type: string
                   disable:
                     type: object
-                  policies:
+                  policy:
                     properties:
                       matchExpressions:
                         items:
@@ -607,7 +607,7 @@ spec:
                         type: array
                     type: object
                 required:
-                - policies
+                - policy
                 type: object
               retry:
                 properties:

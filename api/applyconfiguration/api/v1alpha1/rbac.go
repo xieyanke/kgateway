@@ -9,7 +9,7 @@ import (
 // RBACApplyConfiguration represents a declarative configuration of the RBAC type for use
 // with apply.
 type RBACApplyConfiguration struct {
-	Policy  *RBACPolicyApplyConfiguration          `json:"policies,omitempty"`
+	Policy  *RBACPolicyApplyConfiguration          `json:"policy,omitempty"`
 	Action  *apiv1alpha1.AuthorizationPolicyAction `json:"action,omitempty"`
 	Disable *apiv1alpha1.PolicyDisable             `json:"disable,omitempty"`
 }

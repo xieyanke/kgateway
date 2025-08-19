@@ -5,7 +5,7 @@ type RBAC struct {
 	// Policy specifies the RBAC rule to evaluate.
 	// A policy matches only **all** the conditions evaluates to true.
 	// +required
-	Policy RBACPolicy `json:"policies"`
+	Policy RBACPolicy `json:"policy"`
 
 	// Action defines whether the rule allows or denies the request if matched.
 	// If unspecified, the default is "Allow".

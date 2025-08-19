@@ -6007,7 +6007,7 @@ func schema_kgateway_v2_api_v1alpha1_RBAC(ref common.ReferenceCallback) common.O
 				Description: "RBAC defines the configuration for role-based access control.",
 				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
-					"policies": {
+					"policy": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Policy specifies the RBAC rule to evaluate. A policy matches only **all** the conditions evaluates to true.",
 							Default:     map[string]interface{}{},
@@ -6028,7 +6028,7 @@ func schema_kgateway_v2_api_v1alpha1_RBAC(ref common.ReferenceCallback) common.O
 						},
 					},
 				},
-				Required: []string{"policies"},
+				Required: []string{"policy"},
 			},
 		},
 		Dependencies: []string{
