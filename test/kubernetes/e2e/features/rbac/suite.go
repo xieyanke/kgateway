@@ -45,7 +45,7 @@ func NewTestingSuite(ctx context.Context, testInst *e2e.TestInstallation) suite.
 func (s *testingSuite) SetupSuite() {
 	// Initialize test manifest mappings
 	s.manifests = map[string][]string{
-		"TestRbacHeaderAuthorization": {rbacManifest},
+		"TestRBACHeaderAuthorization": {rbacManifest},
 	}
 
 	// Apply core infrastructure
@@ -122,8 +122,8 @@ func (s *testingSuite) AfterTest(suiteName, testName string) {
 	}
 }
 
-// TestRbacHeaderAuthorization tests header based rbac
-func (s *testingSuite) TestRbacHeaderAuthorization() {
+// TestRBACHeaderAuthorization tests header based rbac
+func (s *testingSuite) TestRBACHeaderAuthorization() {
 	statusReqCurlOpts := []curl.Option{
 		curl.WithHost(kubeutils.ServiceFQDN(gatewayService.ObjectMeta)),
 		curl.WithHostHeader("httpbin"),
@@ -151,7 +151,7 @@ func (s *testingSuite) TestRbacHeaderAuthorization() {
 		s.ctx,
 		testdefaults.CurlPodExecOpt,
 		getReqCurlOpts,
-		expectRbacDenied,
+		expectRBACDenied,
 	)
 	// has header, should succeed
 	s.T().Log("The /get route has an rbac policy applied at the route level, should succeed when the header is present")

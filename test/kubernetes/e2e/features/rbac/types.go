@@ -36,7 +36,7 @@ var (
 		StatusCode: http.StatusOK,
 		Body:       nil,
 	}
-	expectRbacDenied = &matchers.HttpResponse{
+	expectRBACDenied = &matchers.HttpResponse{
 		StatusCode: http.StatusForbidden,
 		Body:       gomega.ContainSubstring("RBAC: access denied"),
 	}

@@ -1949,6 +1949,30 @@ var schemaYAML = typed.YAMLObject(`types:
     - name: replicas
       type:
         scalar: numeric
+- name: com.github.kgateway-dev.kgateway.v2.api.v1alpha1.RBAC
+  map:
+    fields:
+    - name: action
+      type:
+        scalar: string
+    - name: disable
+      type:
+        namedType: com.github.kgateway-dev.kgateway.v2.api.v1alpha1.PolicyDisable
+    - name: policies
+      type:
+        list:
+          elementType:
+            namedType: com.github.kgateway-dev.kgateway.v2.api.v1alpha1.RBACPolicy
+          elementRelationship: atomic
+- name: com.github.kgateway-dev.kgateway.v2.api.v1alpha1.RBACPolicy
+  map:
+    fields:
+    - name: matchExpressions
+      type:
+        list:
+          elementType:
+            scalar: string
+          elementRelationship: atomic
 - name: com.github.kgateway-dev.kgateway.v2.api.v1alpha1.RateLimit
   map:
     fields:
@@ -2019,27 +2043,6 @@ var schemaYAML = typed.YAMLObject(`types:
     - name: timeout
       type:
         namedType: io.k8s.apimachinery.pkg.apis.meta.v1.Duration
-- name: com.github.kgateway-dev.kgateway.v2.api.v1alpha1.Rbac
-  map:
-    fields:
-    - name: action
-      type:
-        scalar: string
-    - name: policies
-      type:
-        list:
-          elementType:
-            namedType: com.github.kgateway-dev.kgateway.v2.api.v1alpha1.RbacPolicy
-          elementRelationship: atomic
-- name: com.github.kgateway-dev.kgateway.v2.api.v1alpha1.RbacPolicy
-  map:
-    fields:
-    - name: matchExpressions
-      type:
-        list:
-          elementType:
-            scalar: string
-          elementRelationship: atomic
 - name: com.github.kgateway-dev.kgateway.v2.api.v1alpha1.Regex
   map:
     fields:
@@ -2477,7 +2480,7 @@ var schemaYAML = typed.YAMLObject(`types:
         namedType: com.github.kgateway-dev.kgateway.v2.api.v1alpha1.RateLimit
     - name: rbac
       type:
-        namedType: com.github.kgateway-dev.kgateway.v2.api.v1alpha1.Rbac
+        namedType: com.github.kgateway-dev.kgateway.v2.api.v1alpha1.RBAC
     - name: retry
       type:
         namedType: com.github.kgateway-dev.kgateway.v2.api.v1alpha1.Retry

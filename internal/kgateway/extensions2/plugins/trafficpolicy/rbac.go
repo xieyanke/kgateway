@@ -18,11 +18,11 @@ import (
 )
 
 // rbacIr is the internal representation of an RBAC policy.
-type rbacIr struct {
+type rbacIR struct {
 	rbacConfig *envoyauthz.RBACPerRoute
 }
 
-func (r *rbacIr) Equals(other *rbacIr) bool {
+func (r *rbacIR) Equals(other *rbacIR) bool {
 	if r == nil && other == nil {
 		return true
 	}
@@ -32,8 +32,20 @@ func (r *rbacIr) Equals(other *rbacIr) bool {
 	return proto.Equal(r.rbacConfig, other.rbacConfig)
 }
 
-// handleRbac configures the RBAC filter and per-route RBAC configuration for a specific route
-func (p *trafficPolicyPluginGwPass) handleRbac(fcn string, pCtxTypedFilterConfig *ir.TypedFilterConfigMap, rbacIr *rbacIr) {
+// Validate performs validation on the rbac component.
+func (r *rbacIR) Validate() error {
+	if r == nil {
+		return nil
+	}
+	if r.rbacConfig == nil {
+		return nil
+	}
+
+	return r.rbacConfig.Validate()
+}
+
+// handleRBAC configures the RBAC filter and per-route RBAC configuration for a specific route
+func (p *trafficPolicyPluginGwPass) handleRBAC(fcn string, pCtxTypedFilterConfig *ir.TypedFilterConfigMap, rbacIr *rbacIR) {
 	if rbacIr == nil || rbacIr.rbacConfig == nil {
 		return
 	}
@@ -51,33 +63,33 @@ func (p *trafficPolicyPluginGwPass) handleRbac(fcn string, pCtxTypedFilterConfig
 	pCtxTypedFilterConfig.AddTypedConfig(rbacFilterNamePrefix, rbacIr.rbacConfig)
 }
 
-// constructRbac translates the RBAC spec into an envoy RBAC policy and stores it in the traffic policy IR
-func constructRbac(policy *v1alpha1.TrafficPolicy, out *trafficPolicySpecIr) error {
+// constructRBAC translates the RBAC spec into an envoy RBAC policy and stores it in the traffic policy IR
+func constructRBAC(policy *v1alpha1.TrafficPolicy, out *trafficPolicySpecIr) error {
 	spec := policy.Spec
 	if spec.RBAC == nil {
 		return nil
 	}
 
-	rbacConfig, err := translateRbac(spec.RBAC)
+	rbacConfig, err := translateRBAC(spec.RBAC)
 	if err != nil {
 		return err
 	}
 
-	out.rbac = &rbacIr{
+	out.rbac = &rbacIR{
 		rbacConfig: rbacConfig,
 	}
 	return nil
 }
 
-func translateRbac(rbac *v1alpha1.Rbac) (*envoyauthz.RBACPerRoute, error) {
+func translateRBAC(rbac *v1alpha1.RBAC) (*envoyauthz.RBACPerRoute, error) {
 	var errs []error
 
 	// Create matcher-based RBAC configuration
 	var matchers []*cncfmatcherv3.Matcher_MatcherList_FieldMatcher
 
 	for _, rule := range rbac.Policies {
-		if rule.CelMatchExpression != nil && len(rule.CelMatchExpression) > 0 {
-			matcher, err := createCELMatcher(rule.CelMatchExpression, rbac.Action)
+		if rule.MatchExpressions != nil && len(rule.MatchExpressions) > 0 {
+			matcher, err := createCELMatcher(rule.MatchExpressions, rbac.Action)
 			if err != nil {
 				errs = append(errs, err)
 				continue
@@ -316,6 +328,3 @@ func parseCELExpression(env *cel.Env, celExpr string) (*expr.ParsedExpr, error) 
 
 	return &celDevParsed, nil
 }
-
-// Validate performs validation on the rbac component.
-func (a *rbacIr) Validate() error { return a.rbacConfig.Validate() }

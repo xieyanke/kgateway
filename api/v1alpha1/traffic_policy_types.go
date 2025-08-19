@@ -110,7 +110,7 @@ type TrafficPolicySpec struct {
 	// RBAC specifies the role-based access control configuration for the policy.
 	// This defines the rules for authorization based on roles and permissions.
 	// +optional
-	RBAC *Rbac `json:"rbac,omitempty"`
+	RBAC *RBAC `json:"rbac,omitempty"`
 }
 
 // TransformationPolicy config is used to modify envoy behavior at a route level.

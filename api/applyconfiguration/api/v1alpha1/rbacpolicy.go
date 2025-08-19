@@ -2,24 +2,24 @@
 
 package v1alpha1
 
-// RbacPolicyApplyConfiguration represents a declarative configuration of the RbacPolicy type for use
+// RBACPolicyApplyConfiguration represents a declarative configuration of the RBACPolicy type for use
 // with apply.
-type RbacPolicyApplyConfiguration struct {
-	CelMatchExpression []string `json:"matchExpressions,omitempty"`
+type RBACPolicyApplyConfiguration struct {
+	MatchExpressions []string `json:"matchExpressions,omitempty"`
 }
 
-// RbacPolicyApplyConfiguration constructs a declarative configuration of the RbacPolicy type for use with
+// RBACPolicyApplyConfiguration constructs a declarative configuration of the RBACPolicy type for use with
 // apply.
-func RbacPolicy() *RbacPolicyApplyConfiguration {
-	return &RbacPolicyApplyConfiguration{}
+func RBACPolicy() *RBACPolicyApplyConfiguration {
+	return &RBACPolicyApplyConfiguration{}
 }
 
-// WithCelMatchExpression adds the given value to the CelMatchExpression field in the declarative configuration
+// WithMatchExpressions adds the given value to the MatchExpressions field in the declarative configuration
 // and returns the receiver, so that objects can be build by chaining "With" function invocations.
-// If called multiple times, values provided by each call will be appended to the CelMatchExpression field.
-func (b *RbacPolicyApplyConfiguration) WithCelMatchExpression(values ...string) *RbacPolicyApplyConfiguration {
+// If called multiple times, values provided by each call will be appended to the MatchExpressions field.
+func (b *RBACPolicyApplyConfiguration) WithMatchExpressions(values ...string) *RBACPolicyApplyConfiguration {
 	for i := range values {
-		b.CelMatchExpression = append(b.CelMatchExpression, values[i])
+		b.MatchExpressions = append(b.MatchExpressions, values[i])
 	}
 	return b
 }

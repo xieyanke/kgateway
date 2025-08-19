@@ -6,23 +6,24 @@ import (
 	apiv1alpha1 "github.com/kgateway-dev/kgateway/v2/api/v1alpha1"
 )
 
-// RbacApplyConfiguration represents a declarative configuration of the Rbac type for use
+// RBACApplyConfiguration represents a declarative configuration of the RBAC type for use
 // with apply.
-type RbacApplyConfiguration struct {
-	Policies []RbacPolicyApplyConfiguration         `json:"policies,omitempty"`
+type RBACApplyConfiguration struct {
+	Policies []RBACPolicyApplyConfiguration         `json:"policies,omitempty"`
 	Action   *apiv1alpha1.AuthorizationPolicyAction `json:"action,omitempty"`
+	Disable  *apiv1alpha1.PolicyDisable             `json:"disable,omitempty"`
 }
 
-// RbacApplyConfiguration constructs a declarative configuration of the Rbac type for use with
+// RBACApplyConfiguration constructs a declarative configuration of the RBAC type for use with
 // apply.
-func Rbac() *RbacApplyConfiguration {
-	return &RbacApplyConfiguration{}
+func RBAC() *RBACApplyConfiguration {
+	return &RBACApplyConfiguration{}
 }
 
 // WithPolicies adds the given value to the Policies field in the declarative configuration
 // and returns the receiver, so that objects can be build by chaining "With" function invocations.
 // If called multiple times, values provided by each call will be appended to the Policies field.
-func (b *RbacApplyConfiguration) WithPolicies(values ...*RbacPolicyApplyConfiguration) *RbacApplyConfiguration {
+func (b *RBACApplyConfiguration) WithPolicies(values ...*RBACPolicyApplyConfiguration) *RBACApplyConfiguration {
 	for i := range values {
 		if values[i] == nil {
 			panic("nil value passed to WithPolicies")
@@ -35,7 +36,15 @@ func (b *RbacApplyConfiguration) WithPolicies(values ...*RbacPolicyApplyConfigur
 // WithAction sets the Action field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the Action field is set to the value of the last call.
-func (b *RbacApplyConfiguration) WithAction(value apiv1alpha1.AuthorizationPolicyAction) *RbacApplyConfiguration {
+func (b *RBACApplyConfiguration) WithAction(value apiv1alpha1.AuthorizationPolicyAction) *RBACApplyConfiguration {
 	b.Action = &value
+	return b
+}
+
+// WithDisable sets the Disable field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the Disable field is set to the value of the last call.
+func (b *RBACApplyConfiguration) WithDisable(value apiv1alpha1.PolicyDisable) *RBACApplyConfiguration {
+	b.Disable = &value
 	return b
 }

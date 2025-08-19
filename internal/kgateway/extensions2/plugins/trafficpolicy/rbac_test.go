@@ -64,12 +64,12 @@ func createExpectedMatcher(action v1alpha1.AuthorizationPolicyAction, numRules i
 	}
 }
 
-func TestTranslateRbac(t *testing.T) {
+func TestTranslateRBAC(t *testing.T) {
 	tests := []struct {
 		name             string
 		ns               string
 		tpName           string
-		rbac             *v1alpha1.Rbac
+		rbac             *v1alpha1.RBAC
 		expected         *envoyauthz.RBACPerRoute
 		expectedCELRules map[string][]string // policy name -> expected CEL expressions
 		wantErr          bool
@@ -78,11 +78,11 @@ func TestTranslateRbac(t *testing.T) {
 			name:   "allow action with single rule",
 			ns:     "test-ns",
 			tpName: "test-policy",
-			rbac: &v1alpha1.Rbac{
+			rbac: &v1alpha1.RBAC{
 				Action: v1alpha1.AuthorizationPolicyActionAllow,
-				Policies: []v1alpha1.RbacPolicy{
+				Policies: []v1alpha1.RBACPolicy{
 					{
-						CelMatchExpression: []string{"request.auth.claims.groups == 'group1'", "request.auth.claims.groups == 'group2'"},
+						MatchExpressions: []string{"request.auth.claims.groups == 'group1'", "request.auth.claims.groups == 'group2'"},
 					},
 				},
 			},
@@ -100,9 +100,9 @@ func TestTranslateRbac(t *testing.T) {
 			name:   "deny action with empty rules",
 			ns:     "test-ns",
 			tpName: "test-policy",
-			rbac: &v1alpha1.Rbac{
+			rbac: &v1alpha1.RBAC{
 				Action:   v1alpha1.AuthorizationPolicyActionDeny,
-				Policies: []v1alpha1.RbacPolicy{},
+				Policies: []v1alpha1.RBACPolicy{},
 			},
 			expected: &envoyauthz.RBACPerRoute{
 				Rbac: &envoyauthz.RBAC{
@@ -119,7 +119,7 @@ func TestTranslateRbac(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := translateRbac(tt.rbac)
+			got, err := translateRBAC(tt.rbac)
 			if tt.wantErr {
 				assert.Error(t, err)
 				return

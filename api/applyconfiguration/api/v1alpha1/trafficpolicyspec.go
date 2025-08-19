@@ -18,7 +18,7 @@ type TrafficPolicySpecApplyConfiguration struct {
 	Buffer          *BufferApplyConfiguration                                     `json:"buffer,omitempty"`
 	Timeouts        *TimeoutsApplyConfiguration                                   `json:"timeouts,omitempty"`
 	Retry           *RetryApplyConfiguration                                      `json:"retry,omitempty"`
-	RBAC            *RbacApplyConfiguration                                       `json:"rbac,omitempty"`
+	RBAC            *RBACApplyConfiguration                                       `json:"rbac,omitempty"`
 }
 
 // TrafficPolicySpecApplyConfiguration constructs a declarative configuration of the TrafficPolicySpec type for use with
@@ -144,7 +144,7 @@ func (b *TrafficPolicySpecApplyConfiguration) WithRetry(value *RetryApplyConfigu
 // WithRBAC sets the RBAC field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the RBAC field is set to the value of the last call.
-func (b *TrafficPolicySpecApplyConfiguration) WithRBAC(value *RbacApplyConfiguration) *TrafficPolicySpecApplyConfiguration {
+func (b *TrafficPolicySpecApplyConfiguration) WithRBAC(value *RBACApplyConfiguration) *TrafficPolicySpecApplyConfiguration {
 	b.RBAC = value
 	return b
 }
