@@ -8,10 +8,12 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
-	"github.com/kgateway-dev/kgateway/v2/test/gomega/matchers"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/kgateway-dev/kgateway/v2/pkg/utils/fsutils"
+	"github.com/kgateway-dev/kgateway/v2/test/gomega/matchers"
+	"github.com/kgateway-dev/kgateway/v2/test/kubernetes/e2e/defaults"
+	"github.com/kgateway-dev/kgateway/v2/test/kubernetes/e2e/tests/base"
 )
 
 var (
@@ -39,5 +41,24 @@ var (
 	expectRBACDenied = &matchers.HttpResponse{
 		StatusCode: http.StatusForbidden,
 		Body:       gomega.ContainSubstring("RBAC: access denied"),
+	}
+
+	// Base test setup - common infrastructure for all tests
+	setup = base.TestCase{
+		Manifests: []string{setupManifest, defaults.HttpbinManifest, defaults.CurlPodManifest},
+		Resources: []client.Object{
+			gatewayService,
+			gatewayDeployment,
+			httpbinDeployment,
+			defaults.CurlPod,
+		},
+	}
+
+	// Individual test cases - test-specific manifests and resources
+	testCases = map[string]base.TestCase{
+		"TestRBACHeaderAuthorization": {
+			Manifests: []string{rbacManifest},
+			Resources: []client.Object{},
+		},
 	}
 )

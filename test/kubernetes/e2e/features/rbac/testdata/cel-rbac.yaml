@@ -29,22 +29,22 @@ spec:
           name: httpbin
           port: 8000
           weight: 1
+      name: httpbin-get
       matches:
         - path:
             type: PathPrefix
             value: /get
-      filters:
-        - type: ExtensionRef
-          extensionRef:
-            group: gateway.kgateway.dev
-            kind: TrafficPolicy
-            name: cel-rbac-policy
 ---
 apiVersion: gateway.kgateway.dev/v1alpha1
 kind: TrafficPolicy
 metadata:
   name: cel-rbac-policy
 spec:
+  targetRefs:
+    - name: httpbin-route
+      kind: HTTPRoute
+      group: gateway.networking.k8s.io
+      sectionName: httpbin-get
   rbac:
     policies:
       - matchExpressions:
