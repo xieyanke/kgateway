@@ -3,7 +3,7 @@ module github.com/kgateway-dev/kgateway/v2
 go 1.24.6
 
 require (
-	github.com/agentgateway/agentgateway v0.7.3
+	//github.com/agentgateway/agentgateway v0.7.3
 	github.com/avast/retry-go v2.4.3+incompatible
 	github.com/avast/retry-go/v4 v4.3.3
 	github.com/cncf/xds/go v0.0.0-20250501225837-2ac532fd4443
@@ -51,6 +51,8 @@ require (
 	sigs.k8s.io/structured-merge-diff/v4 v4.7.0
 	sigs.k8s.io/yaml v1.5.0
 )
+
+require github.com/agentgateway/agentgateway v0.0.0-00010101000000-000000000000
 
 require (
 	github.com/42wim/httpsig v1.2.2 // indirect
@@ -629,6 +631,8 @@ require (
 replace sigs.k8s.io/controller-tools => github.com/shashankram/controller-tools v0.0.0-20250626172831-f7be064a9132
 
 replace github.com/imdario/mergo => github.com/imdario/mergo v0.3.16
+
+replace github.com/agentgateway/agentgateway => github.com/npolshakova/agentgateway v0.0.0-20250819153936-0abe6bae9250
 
 // Use a patched version of gengo to produce consistent zz_generated.openapi.go
 // Ref: https://github.com/kubernetes/gengo/issues/292

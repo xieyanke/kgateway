@@ -322,4 +322,20 @@ var _ = DescribeTable("Basic agentgateway Tests",
 	//		Name:      "example-gateway",
 	//	},
 	//}),
+	Entry("TrafficPolicy with rbac on http route", translatorTestCase{
+		inputFile:  "trafficpolicy/http-rbac.yaml",
+		outputFile: "trafficpolicy/http-rbac.yaml",
+		gwNN: types.NamespacedName{
+			Namespace: "default",
+			Name:      "example-gateway",
+		},
+	}),
+	Entry("TrafficPolicy with mcp rbac", translatorTestCase{
+		inputFile:  "trafficpolicy/mcp-rbac.yaml",
+		outputFile: "trafficpolicy/mcp-rbac.yaml",
+		gwNN: types.NamespacedName{
+			Namespace: "default",
+			Name:      "example-gateway",
+		},
+	}),
 )
