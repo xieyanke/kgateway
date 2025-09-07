@@ -150,35 +150,45 @@ func TranslateGatewayExtensionBuilder(commoncol *common.CommonCollections) func(
 	}
 }
 
-func ResolveExtGrpcService(krtctx krt.HandlerContext, backends *krtcollections.BackendIndex, disableExtensionRefValidation bool, objectSource ir.ObjectSource, grpcService *v1alpha1.ExtGrpcService) (*envoycorev3.GrpcService, error) {
-	var clusterName string
-	var authority string
-	if grpcService != nil {
-		if grpcService.BackendRef == nil {
-			return nil, errors.New("backend not provided")
-		}
-		backendRef := grpcService.BackendRef.BackendObjectReference
+func ResolveExtGrpcService(
+	krtctx krt.HandlerContext,
+	backends *krtcollections.BackendIndex,
+	disableExtensionRefValidation bool,
+	objectSource ir.ObjectSource,
+	grpcService *v1alpha1.ExtGrpcService,
+) (*envoycorev3.GrpcService, error) {
+	// defensive checks, both of these fields are required
+	if grpcService == nil {
+		return nil, errors.New("grpcService not provided")
+	}
+	if grpcService.BackendRef == nil {
+		return nil, errors.New("backend not provided")
+	}
 
-		var backend *ir.BackendObjectIR
-		var err error
-		if disableExtensionRefValidation {
-			backend, err = backends.GetBackendFromRefWithoutRefGrantValidation(krtctx, objectSource, backendRef)
-		} else {
-			backend, err = backends.GetBackendFromRef(krtctx, objectSource, backendRef)
-		}
-		if err != nil {
-			return nil, err
-		}
-		if backend != nil {
-			clusterName = backend.ClusterName()
-		}
-		if grpcService.Authority != nil {
-			authority = *grpcService.Authority
-		}
+	var backend *ir.BackendObjectIR
+	var err error
+	backendRef := grpcService.BackendRef.BackendObjectReference
+	if disableExtensionRefValidation {
+		backend, err = backends.GetBackendFromRefWithoutRefGrantValidation(krtctx, objectSource, backendRef)
+	} else {
+		backend, err = backends.GetBackendFromRef(krtctx, objectSource, backendRef)
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	var clusterName string
+	if backend != nil {
+		clusterName = backend.ClusterName()
 	}
 	if clusterName == "" {
 		return nil, errors.New("backend not found")
 	}
+	var authority string
+	if grpcService.Authority != nil {
+		authority = *grpcService.Authority
+	}
+
 	envoyGrpcService := &envoycorev3.GrpcService{
 		TargetSpecifier: &envoycorev3.GrpcService_EnvoyGrpc_{
 			EnvoyGrpc: &envoycorev3.GrpcService_EnvoyGrpc{
@@ -186,6 +196,9 @@ func ResolveExtGrpcService(krtctx krt.HandlerContext, backends *krtcollections.B
 				Authority:   authority,
 			},
 		},
+	}
+	if grpcService.RequestTimeout != nil {
+		envoyGrpcService.Timeout = durationpb.New(grpcService.RequestTimeout.Duration)
 	}
 	return envoyGrpcService, nil
 }

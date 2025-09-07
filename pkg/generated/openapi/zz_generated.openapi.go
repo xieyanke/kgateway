@@ -3151,12 +3151,18 @@ func schema_kgateway_v2_api_v1alpha1_ExtGrpcService(ref common.ReferenceCallback
 							Format:      "",
 						},
 					},
+					"requestTimeout": {
+						SchemaProps: spec.SchemaProps{
+							Description: "RequestTimeout is the timeout for the gRPC request. This is the timeout for a specific request.",
+							Ref:         ref("k8s.io/apimachinery/pkg/apis/meta/v1.Duration"),
+						},
+					},
 				},
 				Required: []string{"backendRef"},
 			},
 		},
 		Dependencies: []string{
-			"sigs.k8s.io/gateway-api/apis/v1.BackendRef"},
+			"k8s.io/apimachinery/pkg/apis/meta/v1.Duration", "sigs.k8s.io/gateway-api/apis/v1.BackendRef"},
 	}
 }
 
@@ -6400,7 +6406,7 @@ func schema_kgateway_v2_api_v1alpha1_RateLimitProvider(ref common.ReferenceCallb
 					},
 					"timeout": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Timeout for requests to the rate limit service.",
+							Description: "Timeout provides an optional timeout value for requests to the rate limit service. For rate limiting, prefer using this timeout rather than setting the generic `timeout` on the `GrpcService`. See [envoy issue](https://github.com/envoyproxy/envoy/issues/20070) for more info.",
 							Ref:         ref("k8s.io/apimachinery/pkg/apis/meta/v1.Duration"),
 						},
 					},

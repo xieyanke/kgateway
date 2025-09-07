@@ -962,6 +962,9 @@ var schemaYAML = typed.YAMLObject(`types:
     - name: backendRef
       type:
         namedType: io.k8s.sigs.gateway-api.apis.v1.BackendRef
+    - name: requestTimeout
+      type:
+        namedType: io.k8s.apimachinery.pkg.apis.meta.v1.Duration
 - name: com.github.kgateway-dev.kgateway.v2.api.v1alpha1.ExtProcPolicy
   map:
     fields:
