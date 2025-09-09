@@ -30,10 +30,29 @@ spec:
         type: PathPrefix
         value: /example-route
 ---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: example-route-2
+  namespace: infra
+spec:
+  parentRefs:
+  - name: example-gateway
+  hostnames:
+  - "example.com"
+  rules:
+  - backendRefs:
+    - name: example-svc
+      port: 80
+    matches:
+    - path:
+        type: PathPrefix
+        value: /example-route-2
+---
 apiVersion: gateway.kgateway.dev/v1alpha1
 kind: TrafficPolicy
 metadata:
-  name: extauth-for-http-route
+  name: extproc-for-http-route
   namespace: infra
 spec:
   targetRefs:
@@ -43,6 +62,20 @@ spec:
   extProc:
     extensionRef:
       name: basic-extproc
+---
+apiVersion: gateway.kgateway.dev/v1alpha1
+kind: TrafficPolicy
+metadata:
+  name: extproc-for-http-route-2
+  namespace: infra
+spec:
+  targetRefs:
+  - group: gateway.networking.k8s.io
+    kind: HTTPRoute
+    name: example-route-2
+  extProc:
+    extensionRef:
+      name: basic-extproc-2
 ---
 apiVersion: gateway.kgateway.dev/v1alpha1
 kind: GatewayExtension
@@ -56,7 +89,23 @@ spec:
       backendRef:
         name: extproc
         port: 9000
+      requestTimeout: 300ms
+    failOpen: false
+---
+apiVersion: gateway.kgateway.dev/v1alpha1
+kind: GatewayExtension
+metadata:
+  name: basic-extproc-2
+  namespace: infra
+spec:
+  type: ExtProc
+  extProc:
+    grpcService:
+      backendRef:
+        name: extproc
+        port: 9000
       requestTimeout: 200ms
+    failOpen: true # this the CRD default but setting explicitly for translator tests
 ---
 apiVersion: v1
 kind: Service

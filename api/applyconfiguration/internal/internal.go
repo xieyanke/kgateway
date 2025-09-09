@@ -950,6 +950,10 @@ var schemaYAML = typed.YAMLObject(`types:
 - name: com.github.kgateway-dev.kgateway.v2.api.v1alpha1.ExtAuthProvider
   map:
     fields:
+    - name: failOpen
+      type:
+        scalar: boolean
+      default: false
     - name: grpcService
       type:
         namedType: com.github.kgateway-dev.kgateway.v2.api.v1alpha1.ExtGrpcService
@@ -980,6 +984,10 @@ var schemaYAML = typed.YAMLObject(`types:
 - name: com.github.kgateway-dev.kgateway.v2.api.v1alpha1.ExtProcProvider
   map:
     fields:
+    - name: failOpen
+      type:
+        scalar: boolean
+      default: false
     - name: grpcService
       type:
         namedType: com.github.kgateway-dev.kgateway.v2.api.v1alpha1.ExtGrpcService
@@ -2092,6 +2100,7 @@ var schemaYAML = typed.YAMLObject(`types:
     - name: failOpen
       type:
         scalar: boolean
+      default: false
     - name: grpcService
       type:
         namedType: com.github.kgateway-dev.kgateway.v2.api.v1alpha1.ExtGrpcService

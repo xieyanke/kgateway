@@ -41,6 +41,12 @@ type ExtAuthProvider struct {
 	// GrpcService is the GRPC service that will handle the authentication.
 	// +required
 	GrpcService *ExtGrpcService `json:"grpcService"`
+
+	// FailOpen determines if requests are allowed when the ext auth service is unavailable.
+	// Defaults to false, meaning requests will be denied if the ext auth service is unavailable.
+	// +optional
+	// +kubebuilder:default=false
+	FailOpen bool `json:"failOpen"`
 }
 
 // ExtProcProvider defines the configuration for an ExtProc provider.
@@ -48,6 +54,12 @@ type ExtProcProvider struct {
 	// GrpcService is the GRPC service that will handle the processing.
 	// +required
 	GrpcService *ExtGrpcService `json:"grpcService"`
+
+	// FailOpen determines if requests are allowed when the ext proc service is unavailable.
+	// Defaults to true, meaning requests are allowed upstream even if the ext proc service is unavailable.
+	// +optional
+	// +kubebuilder:default=true
+	FailOpen bool `json:"failOpen"`
 }
 
 // ExtGrpcService defines the GRPC service that will handle the processing.
@@ -80,10 +92,10 @@ type RateLimitProvider struct {
 	Domain string `json:"domain"`
 
 	// FailOpen determines if requests are limited when the rate limit service is unavailable.
-	// When true, requests are not limited if the rate limit service is unavailable.
+	// Defaults to true, meaning requests are allowed upstream and not limited if the rate limit service is unavailable.
 	// +optional
 	// +kubebuilder:default=true
-	FailOpen bool `json:"failOpen,omitempty"`
+	FailOpen bool `json:"failOpen"`
 
 	// Timeout provides an optional timeout value for requests to the rate limit service.
 	// For rate limiting, prefer using this timeout rather than setting the generic `timeout` on the `GrpcService`.
